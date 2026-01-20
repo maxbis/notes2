@@ -15,7 +15,10 @@
     <div class="container">
         <header>
             <h1>📝 Notes</h1>
-            <button class="btn-primary" id="newNoteBtn">New Note</button>
+            <div class="header-actions">
+                <button class="btn-secondary mobile-only" id="showNotesBtn" type="button" title="Search / Notes" aria-label="Search / Notes">🔍</button>
+                <button class="btn-primary" id="newNoteBtn" type="button" title="Create a new note" aria-label="Create a new note">New</button>
+            </div>
         </header>
 
         <div class="main-content">
@@ -34,33 +37,39 @@
                         <span id="unsavedIndicator" class="unsaved-indicator" title="Unsaved changes"></span>
                         <input type="text" id="noteTitle" placeholder="Title...">
                     </div>
-                    <div class="editor-actions">
-                        <button class="btn-danger" id="deleteBtn">Delete</button>
-                    </div>
                 </div>
                 <div class="toolbar">
-                    <button class="toolbar-btn" id="boldBtn" title="Bold (Ctrl+B)">
+                    <button class="toolbar-btn" id="boldBtn" title="Bold (Ctrl+B)" aria-label="Bold">
                         <strong>B</strong>
                     </button>
-                    <button class="toolbar-btn" id="italicBtn" title="Italic (Ctrl+I)">
+                    <button class="toolbar-btn" id="italicBtn" title="Italic (Ctrl+I)" aria-label="Italic">
                         <em>I</em>
                     </button>
-                    <button class="toolbar-btn" id="bulletListBtn" title="Bullet List">
+                    <button class="toolbar-btn" id="bulletListBtn" title="Bullet List" aria-label="Bullet list">
                         •
                     </button>
-                    <button class="toolbar-btn" id="numberedListBtn" title="Numbered List">
+                    <button class="toolbar-btn" id="numberedListBtn" title="Numbered List" aria-label="Numbered list">
                         1.
                     </button>
-                    <button class="toolbar-btn" id="insertDateBtn" title="Insert Date">
+                    <div class="toolbar-group" aria-label="Headings">
+                        <button class="toolbar-btn" id="h1Btn" title="Heading 1" aria-label="Heading 1">H1</button>
+                        <button class="toolbar-btn" id="h2Btn" title="Heading 2" aria-label="Heading 2">H2</button>
+                        <button class="toolbar-btn" id="h3Btn" title="Heading 3" aria-label="Heading 3">H3</button>
+                        <button class="toolbar-btn" id="preBtn" title="Preformatted (monospace)" aria-label="Preformatted (monospace)"><></button>
+                    </div>
+                    <button class="toolbar-btn" id="insertDateBtn" title="Insert Date (;d)" aria-label="Insert date (shortcut ;d)">
                         📅
                     </button>
-                    <button class="toolbar-btn" id="insertCheckmarkBtn" title="Insert Checkmark">
+                    <button class="toolbar-btn" id="insertCheckmarkBtn" title="Insert Checkmark (;v)" aria-label="Insert checkmark (shortcut ;v)">
                         ✅
                     </button>
                 </div>
                 <div class="editor-content" id="noteContent" contenteditable="true" placeholder="Start writing your note..."></div>
                 <div class="editor-footer">
                     <span id="noteMeta"></span>
+                    <div class="editor-actions">
+                        <button class="btn-danger" id="deleteBtn" type="button" title="Delete this note" aria-label="Delete this note">Delete</button>
+                    </div>
                     <span id="lastSaved" class="last-saved"></span>
                 </div>
             </main>

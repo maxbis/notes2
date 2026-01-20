@@ -6,6 +6,25 @@ let savedTitle = '';
 let savedContent = '';
 let originalUpdatedAt = null; // Store original timestamp for conflict detection
 let pendingSaveAction = null; // Store pending save callback
+let isIndicatorSaveInProgress = false;
+
+function isMobileLayout() {
+    return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+}
+
+function showNotesSidebarAndFocusSearch() {
+    document.body.classList.remove('mobile-sidebar-hidden');
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        // Delay focus slightly to ensure layout is visible
+        setTimeout(() => searchInput.focus(), 0);
+    }
+}
+
+function hideNotesSidebarForEditing() {
+    if (!isMobileLayout()) return;
+    document.body.classList.add('mobile-sidebar-hidden');
+}
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,21 +34,76 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUnsavedIndicator();
 });
 
+async function readJsonResponse(response, context = 'request') {
+    const text = await response.text();
+    try {
+        return JSON.parse(text);
+    } catch (e) {
+        const snippet = text.slice(0, 300);
+        const err = new Error(`[${context}] Expected JSON but got: ${snippet}`);
+        err.cause = e;
+        err.status = response.status;
+        throw err;
+    }
+}
+
 function setupEventListeners() {
     document.getElementById('newNoteBtn').addEventListener('click', createNewNote);
     document.getElementById('deleteBtn').addEventListener('click', deleteNote);
     document.getElementById('searchInput').addEventListener('input', filterNotes);
+    const showNotesBtn = document.getElementById('showNotesBtn');
+    if (showNotesBtn) {
+        showNotesBtn.addEventListener('click', () => {
+            showNotesSidebarAndFocusSearch();
+        });
+    }
     
     // Setup formatting toolbar
     setupFormattingToolbar();
+
+    // Make the unsaved ("dirty") indicator clickable to save immediately
+    const unsavedIndicator = document.getElementById('unsavedIndicator');
+    if (unsavedIndicator) {
+        unsavedIndicator.setAttribute('role', 'button');
+        unsavedIndicator.setAttribute('tabindex', '0');
+        unsavedIndicator.setAttribute('aria-label', 'Unsaved changes indicator');
+
+        const triggerSaveFromIndicator = async () => {
+            if (!hasUnsavedChanges) return;
+            if (isIndicatorSaveInProgress) return;
+
+            isIndicatorSaveInProgress = true;
+            clearTimeout(autoSaveTimer);
+
+            try {
+                await saveNote(true);
+            } finally {
+                isIndicatorSaveInProgress = false;
+            }
+        };
+
+        unsavedIndicator.addEventListener('click', triggerSaveFromIndicator);
+        unsavedIndicator.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                triggerSaveFromIndicator();
+            }
+        });
+    }
     
     // Track changes on content change
     document.getElementById('noteTitle').addEventListener('input', trackChanges);
     document.getElementById('noteContent').addEventListener('input', trackChanges);
+
+    // Mobile UX: tapping into the editor should hide the notes list
+    document.getElementById('noteTitle').addEventListener('focus', hideNotesSidebarForEditing);
+    document.getElementById('noteContent').addEventListener('focus', hideNotesSidebarForEditing);
+    document.getElementById('noteTitle').addEventListener('pointerdown', hideNotesSidebarForEditing);
+    document.getElementById('noteContent').addEventListener('pointerdown', hideNotesSidebarForEditing);
     
     // Save on tab switch or page hide
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden && hasUnsavedChanges && currentNote) {
+        if (document.hidden && hasUnsavedChanges) {
             // Save when tab becomes hidden (user switches tab or minimizes)
             saveBeforeUnload();
         }
@@ -37,7 +111,7 @@ function setupEventListeners() {
     
     // Save on page leave (closing tab/browser, navigating away)
     window.addEventListener('beforeunload', (e) => {
-        if (hasUnsavedChanges && currentNote) {
+        if (hasUnsavedChanges) {
             // Save synchronously before leaving
             saveBeforeUnload();
         }
@@ -45,7 +119,7 @@ function setupEventListeners() {
     
     // Also save when window loses focus (user clicks away)
     window.addEventListener('blur', () => {
-        if (hasUnsavedChanges && currentNote) {
+        if (hasUnsavedChanges) {
             saveBeforeUnload();
         }
     });
@@ -76,6 +150,30 @@ function setupFormattingToolbar() {
         document.getElementById('noteContent').focus();
         trackChanges();
     });
+
+    document.getElementById('h1Btn').addEventListener('click', () => {
+        document.execCommand('formatBlock', false, 'h1');
+        document.getElementById('noteContent').focus();
+        trackChanges();
+    });
+
+    document.getElementById('h2Btn').addEventListener('click', () => {
+        document.execCommand('formatBlock', false, 'h2');
+        document.getElementById('noteContent').focus();
+        trackChanges();
+    });
+
+    document.getElementById('h3Btn').addEventListener('click', () => {
+        document.execCommand('formatBlock', false, 'h3');
+        document.getElementById('noteContent').focus();
+        trackChanges();
+    });
+
+    document.getElementById('preBtn').addEventListener('click', () => {
+        document.execCommand('formatBlock', false, 'pre');
+        document.getElementById('noteContent').focus();
+        trackChanges();
+    });
     
     document.getElementById('insertDateBtn').addEventListener('click', () => {
         insertDate();
@@ -101,12 +199,91 @@ function setupFormattingToolbar() {
             }
         }
     });
+
+    // Inline shortcuts:
+    // - type ";d" to insert date
+    // - type ";v" to insert a checkmark
+    document.getElementById('noteContent').addEventListener('beforeinput', (e) => {
+        // Only handle literal character insertions (avoid paste, delete, IME composition, etc.)
+        if (e.inputType !== 'insertText' || typeof e.data !== 'string') return;
+        if (e.data !== 'd' && e.data !== 'v') return;
+
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return;
+
+        const range = selection.getRangeAt(0);
+        if (!range.collapsed) return;
+
+        const { node, offset } = getTextNodeAndOffsetAtCaret(range);
+        if (!node || offset < 1) return;
+
+        // Only trigger if the character immediately before the caret is ';'
+        if (node.data[offset - 1] !== ';') return;
+
+        // Prevent inserting the typed character ('d'/'v'), then replace ";d"/";v"
+        e.preventDefault();
+
+        // Delete the ';' before the caret
+        const deleteRange = document.createRange();
+        deleteRange.setStart(node, offset - 1);
+        deleteRange.setEnd(node, offset);
+        deleteRange.deleteContents();
+
+        // Place caret where the ';' was, then insert replacement
+        const newRange = document.createRange();
+        newRange.setStart(node, offset - 1);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+
+        if (e.data === 'd') {
+            insertDate();
+        } else {
+            insertCheckmark();
+        }
+        trackChanges();
+    });
     
     // Update toolbar button states based on selection
     document.getElementById('noteContent').addEventListener('input', updateToolbarState);
     document.addEventListener('selectionchange', updateToolbarState);
     document.getElementById('noteContent').addEventListener('mouseup', updateToolbarState);
     document.getElementById('noteContent').addEventListener('keyup', updateToolbarState);
+}
+
+function getTextNodeAndOffsetAtCaret(range) {
+    const container = range.startContainer;
+    const offset = range.startOffset;
+
+    // Common case: caret is inside a text node
+    if (container && container.nodeType === Node.TEXT_NODE) {
+        return { node: container, offset };
+    }
+
+    // Fallback: caret is in an element node, try to find a nearby text node
+    if (!container || container.nodeType !== Node.ELEMENT_NODE) {
+        return { node: null, offset: 0 };
+    }
+
+    // Try text node immediately before the caret position
+    const childBefore = offset > 0 ? container.childNodes[offset - 1] : null;
+    if (childBefore) {
+        const lastText = findLastTextNode(childBefore);
+        if (lastText) return { node: lastText, offset: lastText.data.length };
+    }
+
+    return { node: null, offset: 0 };
+}
+
+function findLastTextNode(node) {
+    if (!node) return null;
+    if (node.nodeType === Node.TEXT_NODE) return node;
+    // Walk backwards through descendants
+    for (let i = node.childNodes.length - 1; i >= 0; i--) {
+        const found = findLastTextNode(node.childNodes[i]);
+        if (found) return found;
+    }
+    return null;
 }
 
 function updateToolbarState() {
@@ -202,11 +379,11 @@ function trackChanges() {
     
     // Reset and start auto-save timer (20 seconds)
     clearTimeout(autoSaveTimer);
-    if (hasUnsavedChanges && currentNote) {
-    autoSaveTimer = setTimeout(() => {
+    if (hasUnsavedChanges) {
+        autoSaveTimer = setTimeout(() => {
             if (hasUnsavedChanges) {
-            saveNote(false);
-        }
+                saveNote(false);
+            }
         }, 4000);
     }
 }
@@ -217,7 +394,7 @@ function saveBeforeUnload() {
     const title = document.getElementById('noteTitle').value.trim() || 'Untitled';
     const content = document.getElementById('noteContent').innerHTML;
     
-    if (currentNote && hasUnsavedChanges) {
+    if (hasUnsavedChanges && currentNote) {
         console.log(`[SAVE UNLOAD] Saving before page unload`, {
             noteId: currentNote.hash_id,
             title: title.substring(0, 50),
@@ -239,7 +416,7 @@ function saveBeforeUnload() {
             }),
             keepalive: true  // Critical: allows request to complete even after page unloads
         }).then(response => {
-            return response.json().then(data => {
+            return readJsonResponse(response, 'saveBeforeUnload').then(data => {
                 if (data.error) {
                     console.error(`[SAVE UNLOAD ERROR] Failed to save on unload:`, data.error);
                 } else {
@@ -253,6 +430,38 @@ function saveBeforeUnload() {
             // Silently fail - page is unloading anyway
             console.error(`[SAVE UNLOAD EXCEPTION] Error during unload save:`, err);
         });
+    } else if (hasUnsavedChanges && !currentNote) {
+        // New note that hasn't been created on the server yet — try to create it on unload.
+        console.log(`[SAVE UNLOAD] Creating new note before page unload`, {
+            title: title.substring(0, 50),
+            contentLength: content.length,
+            timestamp: new Date().toISOString()
+        });
+
+        fetch('index.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: title || 'Untitled',
+                content: content
+            }),
+            keepalive: true
+        }).then(response => {
+            return readJsonResponse(response, 'saveBeforeUnload:create').then(data => {
+                if (data.error) {
+                    console.error(`[SAVE UNLOAD ERROR] Failed to create on unload:`, data.error);
+                } else {
+                    console.log(`[SAVE UNLOAD SUCCESS] Created successfully on unload`, {
+                        noteId: data.hash_id,
+                        timestamp: data.updated_at
+                    });
+                }
+            });
+        }).catch(err => {
+            console.error(`[SAVE UNLOAD EXCEPTION] Error during unload create:`, err);
+        });
     } else {
         console.log(`[SAVE UNLOAD] No save needed`, {
             hasNote: !!currentNote,
@@ -265,7 +474,14 @@ function saveBeforeUnload() {
 async function loadNotes() {
     try {
         const response = await fetch('index.php');
-        notes = await response.json();
+        const data = await readJsonResponse(response, 'loadNotes');
+        if (!response.ok) {
+            throw new Error(data?.error || `HTTP ${response.status}`);
+        }
+        if (data?.error) {
+            throw new Error(data.error);
+        }
+        notes = Array.isArray(data) ? data : [];
         renderNotesList();
         if (notes.length > 0 && !currentNote) {
             selectNote(notes[0].hash_id);
@@ -296,9 +512,11 @@ function renderNotesList(searchTerm = '') {
     notesList.innerHTML = notesToShow.map(note => `
         <div class="note-item ${currentNote && currentNote.hash_id === note.hash_id ? 'active' : ''}" 
              onclick="selectNote('${note.hash_id}')">
-            <div class="note-item-title">${escapeHtml(note.title || 'Untitled')}</div>
+            <div class="note-item-header">
+                <div class="note-item-title">${escapeHtml(note.title || 'Untitled')}</div>
+                <div class="note-item-date">${formatDate(note.updated_at)}</div>
+            </div>
             <div class="note-item-preview">${escapeHtml(stripHtmlTags(note.content).substring(0, 100))}</div>
-            <div class="note-item-date">${formatDate(note.updated_at)}</div>
         </div>
     `).join('');
 }
@@ -312,7 +530,7 @@ async function selectNote(hashId) {
     // Save the hash_id we're switching to before saving, in case currentNote changes
     const targetHashId = hashId;
     
-    if (hasUnsavedChanges && currentNote) {
+    if (hasUnsavedChanges) {
         await saveNote(false);
     }
     
@@ -346,12 +564,15 @@ async function selectNote(hashId) {
     updateLastSavedTime(updatedAt);
 
     renderNotesList(document.getElementById('searchInput').value);
+
+    // Mobile UX: once a note is opened, hide the list to maximize editor space
+    hideNotesSidebarForEditing();
 }
 
-function createNewNote() {
+async function createNewNote() {
     // Save current note if there are unsaved changes
-    if (hasUnsavedChanges && currentNote) {
-        saveNote(false);
+    if (hasUnsavedChanges) {
+        await saveNote(false);
     }
     
     currentNote = null;
@@ -396,7 +617,7 @@ async function saveNote(showFeedback = true, forceOverwrite = false) {
                 });
                 // Fetch current version from server to check timestamp
                 const checkResponse = await fetch(`index.php?id=${currentNote.hash_id}`);
-                const serverNote = await checkResponse.json();
+                const serverNote = await readJsonResponse(checkResponse, 'conflictCheck');
                 
                 if (serverNote && serverNote.updated_at !== originalUpdatedAt) {
                     // Conflict detected!
@@ -463,7 +684,7 @@ async function saveNote(showFeedback = true, forceOverwrite = false) {
             });
         }
 
-        const savedNote = await response.json();
+        const savedNote = await readJsonResponse(response, `saveNote:${saveType}`);
         
         if (savedNote.error) {
             console.error(`[SAVE ERROR] Failed to save note:`, savedNote.error, {
@@ -521,8 +742,11 @@ async function saveNote(showFeedback = true, forceOverwrite = false) {
         // Only re-render notes list if called from auto-save (not from selectNote)
         // When called from selectNote (showFeedback=false), selectNote will handle rendering
         if (!showFeedback) {
-            // Auto-save: don't re-render, let selectNote handle it if switching
-            // This prevents double-rendering when switching notes
+            // Auto-save: for CREATE we must render so the new note appears in the sidebar.
+            // For UPDATE we keep the old behavior to avoid double-rendering during note switches.
+            if (saveType === 'CREATE') {
+                renderNotesList(document.getElementById('searchInput').value);
+            }
         } else {
             // This branch is no longer needed since we removed manual save button
             // But keeping it for safety in case showFeedback is true elsewhere
@@ -557,7 +781,7 @@ async function deleteNote() {
             })
         });
 
-        const result = await response.json();
+        const result = await readJsonResponse(response, 'deleteNote');
         
         if (result.error) {
             alert('Error deleting note: ' + result.error);
@@ -603,10 +827,16 @@ function updateUnsavedIndicator() {
     const indicator = document.getElementById('unsavedIndicator');
     if (!indicator) return;
     
-    if (hasUnsavedChanges && currentNote) {
+    if (hasUnsavedChanges) {
         indicator.classList.add('visible');
+        indicator.title = isIndicatorSaveInProgress
+            ? 'Saving...'
+            : 'Unsaved changes — click to save now';
+        indicator.setAttribute('aria-label', 'Unsaved changes — click to save now');
     } else {
         indicator.classList.remove('visible');
+        indicator.title = 'Saved';
+        indicator.setAttribute('aria-label', 'Saved');
     }
 }
 
@@ -744,7 +974,7 @@ async function refreshCurrentNote() {
     
     try {
         const response = await fetch(`index.php?id=${currentNote.hash_id}`);
-        const note = await response.json();
+        const note = await readJsonResponse(response, 'refreshCurrentNote');
         
         if (note && !note.error) {
             // Update the note in the notes array

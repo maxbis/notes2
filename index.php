@@ -4,7 +4,16 @@ require_once 'config.php';
 header('Content-Type: application/json');
 
 $method = $_SERVER['REQUEST_METHOD'];
-$conn = getDBConnection();
+try {
+    $conn = getDBConnection();
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo json_encode([
+        'error' => 'Database connection failed',
+        'details' => $e->getMessage()
+    ]);
+    exit;
+}
 
 switch ($method) {
     case 'GET':
