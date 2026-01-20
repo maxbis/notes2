@@ -18,17 +18,18 @@ require_once __DIR__ . '/../zendure/login/validate.php';
     <meta name="theme-color" content="#007aff">
     <title>Notes - Simple Note Taking</title>
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <!-- iOS Home Screen icon prefers PNG (180x180). Keep SVG as fallback. -->
+    <link rel="icon" href="icons/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+    <!-- iOS Home Screen icon prefers PNG (180x180). -->
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
-    <link rel="apple-touch-icon" href="favicon.svg">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <header>
             <h1 class="app-title">
-                <img class="app-logo" src="favicon.svg" alt="" aria-hidden="true">
+                <img class="app-logo" src="icons/favicon-32x32.png" alt="" aria-hidden="true">
                 <span>Notes</span>
             </h1>
             <div class="header-actions">
