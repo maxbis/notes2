@@ -60,6 +60,7 @@
                         <button class="toolbar-btn" id="h3Btn" title="Heading 3" aria-label="Heading 3">H3</button>
                         <button class="toolbar-btn" id="preBtn" title="Preformatted (monospace)" aria-label="Preformatted (monospace)"><></button>
                     </div>
+                    <button class="toolbar-btn" id="htmlModeBtn" title="Edit HTML" aria-label="Edit HTML">HTML</button>
                     <button class="toolbar-btn" id="insertDateBtn" title="Insert Date (;d)" aria-label="Insert date (shortcut ;d)">
                         📅
                     </button>
@@ -68,6 +69,7 @@
                     </button>
                 </div>
                 <div class="editor-content" id="noteContent" contenteditable="true" placeholder="Start writing your note..."></div>
+                <textarea class="editor-content-html" id="noteContentHtml" hidden spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="Edit raw HTML..."></textarea>
                 <div class="editor-footer">
                     <span id="noteMeta"></span>
                     <div class="editor-actions">

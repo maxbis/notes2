@@ -9,6 +9,45 @@ let pendingSaveAction = null; // Store pending save callback
 let isIndicatorSaveInProgress = false;
 
 const API_ENDPOINT = 'api.php';
+let isHtmlMode = false;
+
+function getEditorHtml() {
+    if (isHtmlMode) {
+        const htmlEl = document.getElementById('noteContentHtml');
+        return htmlEl ? htmlEl.value : '';
+    }
+    const editor = document.getElementById('noteContent');
+    return editor ? editor.innerHTML : '';
+}
+
+function setEditorHtml(html) {
+    const editor = document.getElementById('noteContent');
+    const htmlEl = document.getElementById('noteContentHtml');
+    if (editor) editor.innerHTML = html ?? '';
+    if (htmlEl) htmlEl.value = html ?? '';
+}
+
+function setHtmlMode(enabled) {
+    isHtmlMode = !!enabled;
+    const editor = document.getElementById('noteContent');
+    const htmlEl = document.getElementById('noteContentHtml');
+    const btn = document.getElementById('htmlModeBtn');
+    if (!editor || !htmlEl || !btn) return;
+
+    if (isHtmlMode) {
+        htmlEl.value = editor.innerHTML;
+        htmlEl.hidden = false;
+        editor.hidden = true;
+        btn.classList.add('active');
+        htmlEl.focus();
+    } else {
+        editor.innerHTML = htmlEl.value;
+        editor.hidden = false;
+        htmlEl.hidden = true;
+        btn.classList.remove('active');
+        editor.focus();
+    }
+}
 
 function isMobileLayout() {
     return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
@@ -32,6 +71,8 @@ function hideNotesSidebarForEditing() {
 document.addEventListener('DOMContentLoaded', () => {
     loadNotes();
     setupEventListeners();
+    // Ensure we start in WYSIWYG mode (HTML textarea hidden)
+    setHtmlMode(false);
     // Initialize unsaved indicator state
     updateUnsavedIndicator();
 });
@@ -62,6 +103,10 @@ function setupEventListeners() {
     
     // Setup formatting toolbar
     setupFormattingToolbar();
+    const htmlModeBtn = document.getElementById('htmlModeBtn');
+    if (htmlModeBtn) {
+        htmlModeBtn.addEventListener('click', () => setHtmlMode(!isHtmlMode));
+    }
 
     // Make the unsaved ("dirty") indicator clickable to save immediately
     const unsavedIndicator = document.getElementById('unsavedIndicator');
@@ -86,9 +131,12 @@ function setupEventListeners() {
                 // Restore focus so caret doesn't "disappear" after clicking the indicator.
                 // Prefer restoring prior focus if it was in the editor; otherwise focus the editor.
                 const restore =
-                    previouslyFocused && (previouslyFocused.id === 'noteTitle' || previouslyFocused.id === 'noteContent')
+                    previouslyFocused &&
+                    (previouslyFocused.id === 'noteTitle' ||
+                        previouslyFocused.id === 'noteContent' ||
+                        previouslyFocused.id === 'noteContentHtml')
                         ? previouslyFocused
-                        : document.getElementById('noteContent');
+                        : document.getElementById(isHtmlMode ? 'noteContentHtml' : 'noteContent');
                 if (restore && typeof restore.focus === 'function') restore.focus();
             }
         };
@@ -105,10 +153,18 @@ function setupEventListeners() {
     // Track changes on content change
     document.getElementById('noteTitle').addEventListener('input', trackChanges);
     document.getElementById('noteContent').addEventListener('input', trackChanges);
+    const noteContentHtml = document.getElementById('noteContentHtml');
+    if (noteContentHtml) {
+        noteContentHtml.addEventListener('input', trackChanges);
+    }
 
     // Mobile UX: tapping into the editor should hide the notes list
     document.getElementById('noteTitle').addEventListener('focus', hideNotesSidebarForEditing);
     document.getElementById('noteContent').addEventListener('focus', hideNotesSidebarForEditing);
+    if (noteContentHtml) {
+        noteContentHtml.addEventListener('focus', hideNotesSidebarForEditing);
+        noteContentHtml.addEventListener('pointerdown', hideNotesSidebarForEditing);
+    }
     document.getElementById('noteTitle').addEventListener('pointerdown', hideNotesSidebarForEditing);
     document.getElementById('noteContent').addEventListener('pointerdown', hideNotesSidebarForEditing);
     
@@ -369,7 +425,7 @@ function insertCheckmark() {
 
 function trackChanges() {
     const title = document.getElementById('noteTitle').value.trim() || '';
-    const content = document.getElementById('noteContent').innerHTML;
+    const content = getEditorHtml();
     
     // Check if there are actual changes
     const titleChanged = title !== savedTitle;
@@ -403,7 +459,7 @@ function saveBeforeUnload() {
     // Save using fetch with keepalive for reliable sending during page unload
     // The keepalive flag ensures the request continues even after the page starts unloading
     const title = document.getElementById('noteTitle').value.trim() || 'Untitled';
-    const content = document.getElementById('noteContent').innerHTML;
+    const content = getEditorHtml();
     
     if (hasUnsavedChanges && currentNote) {
         console.log(`[SAVE UNLOAD] Saving before page unload`, {
@@ -553,7 +609,7 @@ async function selectNote(hashId) {
     const content = note.content || '';
     
     document.getElementById('noteTitle').value = title;
-    document.getElementById('noteContent').innerHTML = content;
+    setEditorHtml(content);
     
     // Update saved state
     savedTitle = title;
@@ -588,7 +644,7 @@ async function createNewNote() {
     
     currentNote = null;
     document.getElementById('noteTitle').value = '';
-    document.getElementById('noteContent').innerHTML = '';
+    setEditorHtml('');
     document.getElementById('noteMeta').textContent = '';
     document.getElementById('lastSaved').textContent = '';
     
@@ -605,7 +661,7 @@ async function createNewNote() {
 
 async function saveNote(showFeedback = true, forceOverwrite = false) {
     const title = document.getElementById('noteTitle').value.trim() || 'Untitled';
-    const content = document.getElementById('noteContent').innerHTML;
+    const content = getEditorHtml();
     
     const timestamp = new Date().toISOString();
     const saveType = currentNote ? 'UPDATE' : 'CREATE';
@@ -803,7 +859,7 @@ async function deleteNote() {
         notes = notes.filter(n => n.hash_id !== currentNote.hash_id);
         currentNote = null;
         document.getElementById('noteTitle').value = '';
-        document.getElementById('noteContent').innerHTML = '';
+        setEditorHtml('');
         document.getElementById('noteMeta').textContent = '';
         document.getElementById('lastSaved').textContent = '';
         originalUpdatedAt = null;
@@ -1002,7 +1058,7 @@ async function refreshCurrentNote() {
             const content = note.content || '';
             
             document.getElementById('noteTitle').value = title;
-            document.getElementById('noteContent').innerHTML = content;
+            setEditorHtml(content);
             
             savedTitle = title;
             savedContent = content;
