@@ -189,12 +189,14 @@ header h1 {
     opacity: 0;
     transition: opacity 0.2s ease;
     flex-shrink: 0;
+    pointer-events: none; /* don't intercept clicks while hidden */
 }
 
 .unsaved-indicator.visible {
     opacity: 1;
     animation: pulse 2s ease-in-out infinite;
     cursor: pointer;
+    pointer-events: auto;
 }
 
 .unsaved-indicator:focus-visible {
@@ -297,6 +299,8 @@ header h1 {
     line-height: 1.6;
     overflow-y: auto;
     outline: none;
+    cursor: text;
+    caret-color: #007aff;
 }
 
 .editor-content:empty:before {
@@ -331,6 +335,10 @@ header h1 {
 
 #noteContent:focus {
     outline: none;
+}
+
+#noteTitle {
+    caret-color: #007aff;
 }
 
 .editor-footer {
@@ -390,7 +398,7 @@ button {
 
 
 .btn-primary:hover {
-    background: #0051d5;
+    background: #016bff;
     opacity: 1;
 }
 

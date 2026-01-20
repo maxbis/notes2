@@ -8,6 +8,8 @@ let originalUpdatedAt = null; // Store original timestamp for conflict detection
 let pendingSaveAction = null; // Store pending save callback
 let isIndicatorSaveInProgress = false;
 
+const API_ENDPOINT = 'api.php';
+
 function isMobileLayout() {
     return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
 }
@@ -65,13 +67,15 @@ function setupEventListeners() {
     const unsavedIndicator = document.getElementById('unsavedIndicator');
     if (unsavedIndicator) {
         unsavedIndicator.setAttribute('role', 'button');
-        unsavedIndicator.setAttribute('tabindex', '0');
-        unsavedIndicator.setAttribute('aria-label', 'Unsaved changes indicator');
+        // Don't let it steal focus/caret unless it's actually visible and actionable.
+        unsavedIndicator.setAttribute('tabindex', '-1');
+        unsavedIndicator.setAttribute('aria-label', 'Saved');
 
         const triggerSaveFromIndicator = async () => {
             if (!hasUnsavedChanges) return;
             if (isIndicatorSaveInProgress) return;
 
+            const previouslyFocused = document.activeElement;
             isIndicatorSaveInProgress = true;
             clearTimeout(autoSaveTimer);
 
@@ -79,16 +83,23 @@ function setupEventListeners() {
                 await saveNote(true);
             } finally {
                 isIndicatorSaveInProgress = false;
+                // Restore focus so caret doesn't "disappear" after clicking the indicator.
+                // Prefer restoring prior focus if it was in the editor; otherwise focus the editor.
+                const restore =
+                    previouslyFocused && (previouslyFocused.id === 'noteTitle' || previouslyFocused.id === 'noteContent')
+                        ? previouslyFocused
+                        : document.getElementById('noteContent');
+                if (restore && typeof restore.focus === 'function') restore.focus();
             }
         };
 
-        unsavedIndicator.addEventListener('click', triggerSaveFromIndicator);
-        unsavedIndicator.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                triggerSaveFromIndicator();
-            }
+        // Prevent the indicator from taking focus away from the editor on click/tap.
+        unsavedIndicator.addEventListener('pointerdown', (e) => {
+            if (hasUnsavedChanges) e.preventDefault();
         });
+        unsavedIndicator.addEventListener('click', triggerSaveFromIndicator);
+        // Note: keep it clickable, but don't rely on keyboard focus here
+        // (it can cause caret/focus confusion while typing).
     }
     
     // Track changes on content change
@@ -404,7 +415,7 @@ function saveBeforeUnload() {
         
         // Use fetch with keepalive flag - this is the standard way to send data during page unload
         // It's supported in all modern browsers and is more reliable than regular fetch
-        fetch('index.php', {
+        fetch(API_ENDPOINT, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -438,7 +449,7 @@ function saveBeforeUnload() {
             timestamp: new Date().toISOString()
         });
 
-        fetch('index.php', {
+        fetch(API_ENDPOINT, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -473,7 +484,7 @@ function saveBeforeUnload() {
 
 async function loadNotes() {
     try {
-        const response = await fetch('index.php');
+        const response = await fetch(API_ENDPOINT);
         const data = await readJsonResponse(response, 'loadNotes');
         if (!response.ok) {
             throw new Error(data?.error || `HTTP ${response.status}`);
@@ -616,7 +627,7 @@ async function saveNote(showFeedback = true, forceOverwrite = false) {
                     currentTimestamp: originalUpdatedAt
                 });
                 // Fetch current version from server to check timestamp
-                const checkResponse = await fetch(`index.php?id=${currentNote.hash_id}`);
+                const checkResponse = await fetch(`${API_ENDPOINT}?id=${currentNote.hash_id}`);
                 const serverNote = await readJsonResponse(checkResponse, 'conflictCheck');
                 
                 if (serverNote && serverNote.updated_at !== originalUpdatedAt) {
@@ -658,7 +669,7 @@ async function saveNote(showFeedback = true, forceOverwrite = false) {
                 titleLength: title.length,
                 contentLength: content.length
             });
-            response = await fetch('index.php', {
+            response = await fetch(API_ENDPOINT, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -675,7 +686,7 @@ async function saveNote(showFeedback = true, forceOverwrite = false) {
                 titleLength: title.length,
                 contentLength: content.length
             });
-            response = await fetch('index.php', {
+            response = await fetch(API_ENDPOINT, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -771,7 +782,7 @@ async function deleteNote() {
     }
 
     try {
-        const response = await fetch('index.php', {
+        const response = await fetch(API_ENDPOINT, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -829,12 +840,14 @@ function updateUnsavedIndicator() {
     
     if (hasUnsavedChanges) {
         indicator.classList.add('visible');
+        indicator.setAttribute('tabindex', '0');
         indicator.title = isIndicatorSaveInProgress
             ? 'Saving...'
             : 'Unsaved changes — click to save now';
         indicator.setAttribute('aria-label', 'Unsaved changes — click to save now');
     } else {
         indicator.classList.remove('visible');
+        indicator.setAttribute('tabindex', '-1');
         indicator.title = 'Saved';
         indicator.setAttribute('aria-label', 'Saved');
     }
@@ -973,7 +986,7 @@ async function refreshCurrentNote() {
     if (!currentNote) return;
     
     try {
-        const response = await fetch(`index.php?id=${currentNote.hash_id}`);
+        const response = await fetch(`${API_ENDPOINT}?id=${currentNote.hash_id}`);
         const note = await readJsonResponse(response, 'refreshCurrentNote');
         
         if (note && !note.error) {
