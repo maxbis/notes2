@@ -296,11 +296,11 @@ header h1 {
 /* ContentEditable styles */
 .editor-content {
     flex: 1;
-    padding: 1.5rem;
+    padding: 0.75rem 1.5rem;
     border: none;
     font-size: 1rem;
     font-family: inherit;
-    color: #1d1d1f;
+    color: #1d1d1f; 
     line-height: 1.6;
     overflow-y: auto;
     outline: none;
