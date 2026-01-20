@@ -35,6 +35,18 @@ header h1 {
     color: #1d1d1f;
 }
 
+.app-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.app-logo {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 auto;
+}
+
 .header-actions {
     display: flex;
     gap: 0.5rem;

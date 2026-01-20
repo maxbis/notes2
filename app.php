@@ -14,7 +14,10 @@
 <body>
     <div class="container">
         <header>
-            <h1>📝 Notes</h1>
+            <h1 class="app-title">
+                <img class="app-logo" src="favicon.svg" alt="" aria-hidden="true">
+                <span>Notes</span>
+            </h1>
             <div class="header-actions">
                 <button class="btn-secondary mobile-only" id="showNotesBtn" type="button" title="Search / Notes" aria-label="Search / Notes">🔍</button>
                 <button class="btn-primary" id="newNoteBtn" type="button" title="Create a new note" aria-label="Create a new note">New</button>
