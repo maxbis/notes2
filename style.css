@@ -62,6 +62,10 @@ header h1 {
     display: none;
 }
 
+.desktop-only {
+    display: inline-flex;
+}
+
 .main-content {
     flex: 1;
     display: flex;
@@ -605,6 +609,10 @@ button {
         align-items: center;
         justify-content: center;
     }
+
+    .desktop-only {
+        display: none !important;
+    }
     
     .btn-primary {
         padding: 0.6rem 0.8rem;
@@ -719,12 +727,20 @@ button {
     }
     
     .toolbar-btn {
-        padding: 0.5rem 0.75rem;
-        min-width: 40px;
-        min-height: 40px;
-        font-size: 0.9rem;
+        /* ~10% smaller toolbar buttons on mobile */
+        padding: 0.45rem 0.675rem;
+        min-width: 36px;
+        min-height: 36px;
+        font-size: 0.81rem;
         touch-action: manipulation;
         flex-shrink: 0;
+    }
+
+    /* On mobile: only show labels up through the <> (pre) button */
+    #htmlModeBtn,
+    #insertDateBtn,
+    #insertCheckmarkBtn {
+        display: none;
     }
     
     .editor-content {
@@ -736,9 +752,10 @@ button {
     
     .editor-footer {
         padding: 0.5rem 0.75rem;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.2rem;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
         font-size: 0.75rem;
         flex-shrink: 0;
         /* Mobile/touch: no hover fade */
@@ -746,14 +763,66 @@ button {
         transition: none;
     }
 
-    /* Make Delete smaller in the mobile footer */
-    .editor-footer .btn-danger, .btn-primary, .btn-secondary {
-        min-width: unset;
-        min-height: 28px;
-        padding: 0.25rem 0.6rem;
+    /* Mobile footer: keep it minimal */
+    #noteMeta {
+        display: none;
+    }
+    .last-saved {
         font-size: 0.75rem;
-        opacity: 0.6;
-        box-shadow: none;
+        color: #86868b;
+        white-space: nowrap;
+    }
+    .editor-actions {
+        gap: 0.25rem;
+    }
+
+    /* Overflow menu */
+    .overflow-menu {
+        position: relative;
+        margin-left: auto;
+    }
+    .overflow-menu-btn {
+        list-style: none;
+        border: 1px solid #d2d2d7;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 0.25rem 0.55rem;
+        line-height: 1;
+        cursor: pointer;
+        user-select: none;
+    }
+    .overflow-menu summary::-webkit-details-marker {
+        display: none;
+    }
+    .overflow-menu-panel {
+        position: absolute;
+        right: 0;
+        bottom: calc(100% + 8px);
+        background: #ffffff;
+        border: 1px solid #e5e5e7;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        padding: 0.35rem;
+        min-width: 140px;
+        z-index: 50;
+    }
+    .overflow-menu-item {
+        width: 100%;
+        display: flex;
+        justify-content: flex-start;
+        padding: 0.45rem 0.6rem;
+        border-radius: 8px;
+        background: transparent;
+        border: none;
+        font-size: 0.85rem;
+        opacity: 1;
+    }
+    .overflow-menu-item.danger {
+        color: #d70015;
+        font-weight: 600;
+    }
+    .overflow-menu-item:active {
+        background: #f5f5f7;
     }
     
     .last-saved {

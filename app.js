@@ -92,7 +92,9 @@ async function readJsonResponse(response, context = 'request') {
 
 function setupEventListeners() {
     document.getElementById('newNoteBtn').addEventListener('click', createNewNote);
-    document.getElementById('deleteBtn').addEventListener('click', deleteNote);
+    document.querySelectorAll('.deleteBtn').forEach((btn) => {
+        btn.addEventListener('click', deleteNote);
+    });
     document.getElementById('searchInput').addEventListener('input', filterNotes);
     const showNotesBtn = document.getElementById('showNotesBtn');
     if (showNotesBtn) {
@@ -901,6 +903,12 @@ function updateUnsavedIndicator() {
             ? 'Saving...'
             : 'Unsaved changes — click to save now';
         indicator.setAttribute('aria-label', 'Unsaved changes — click to save now');
+
+        // Mobile: show compact status
+        if (isMobileLayout()) {
+            const lastSavedEl = document.getElementById('lastSaved');
+            if (lastSavedEl) lastSavedEl.textContent = isIndicatorSaveInProgress ? 'Saving…' : 'Unsaved';
+        }
     } else {
         indicator.classList.remove('visible');
         indicator.setAttribute('tabindex', '-1');
@@ -916,7 +924,9 @@ function updateLastSavedTime(date) {
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     const seconds = String(date.getSeconds()).padStart(2, '0');
-    lastSavedEl.textContent = `Saved at ${hours}:${minutes}:${seconds}`;
+    lastSavedEl.textContent = isMobileLayout()
+        ? `Saved ${hours}:${minutes}`
+        : `Saved at ${hours}:${minutes}:${seconds}`;
 }
 
 // Modal Dialog Functions

@@ -80,10 +80,20 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                 <textarea class="editor-content-html" id="noteContentHtml" hidden spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="Edit raw HTML..."></textarea>
                 <div class="editor-footer">
                     <span id="noteMeta"></span>
-                    <div class="editor-actions">
-                        <button class="btn-danger" id="deleteBtn" type="button" title="Delete this note" aria-label="Delete this note">Delete</button>
-                    </div>
                     <span id="lastSaved" class="last-saved"></span>
+
+                    <!-- Desktop: show Delete as a normal button -->
+                    <div class="editor-actions desktop-only">
+                        <button class="btn-danger deleteBtn" type="button" title="Delete this note" aria-label="Delete this note">Delete</button>
+                    </div>
+
+                    <!-- Mobile: overflow menu -->
+                    <details class="overflow-menu mobile-only">
+                        <summary class="overflow-menu-btn" aria-label="More actions" title="More actions">⋯</summary>
+                        <div class="overflow-menu-panel">
+                            <button class="overflow-menu-item danger deleteBtn" type="button">Delete</button>
+                        </div>
+                    </details>
                 </div>
             </main>
         </div>
