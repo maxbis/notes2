@@ -728,10 +728,10 @@ button {
     
     .toolbar-btn {
         /* ~10% smaller toolbar buttons on mobile */
-        padding: 0.45rem 0.675rem;
-        min-width: 36px;
-        min-height: 36px;
-        font-size: 0.81rem;
+        padding: 0.1rem 0.6rem;
+        min-width: 32px;
+        min-height: 32px;
+        font-size: 0.70rem;
         touch-action: manipulation;
         flex-shrink: 0;
     }

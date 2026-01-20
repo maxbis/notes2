@@ -199,48 +199,64 @@ function setupFormattingToolbar() {
     document.getElementById('boldBtn').addEventListener('click', () => {
         document.execCommand('bold', false, null);
         document.getElementById('noteContent').focus();
+        updateToolbarState();
         trackChanges();
     });
     
     document.getElementById('italicBtn').addEventListener('click', () => {
         document.execCommand('italic', false, null);
         document.getElementById('noteContent').focus();
+        updateToolbarState();
         trackChanges();
     });
     
     document.getElementById('bulletListBtn').addEventListener('click', () => {
         document.execCommand('insertUnorderedList', false, null);
         document.getElementById('noteContent').focus();
+        updateToolbarState();
         trackChanges();
     });
     
     document.getElementById('numberedListBtn').addEventListener('click', () => {
         document.execCommand('insertOrderedList', false, null);
         document.getElementById('noteContent').focus();
+        updateToolbarState();
         trackChanges();
     });
 
     document.getElementById('h1Btn').addEventListener('click', () => {
         document.execCommand('formatBlock', false, 'h1');
         document.getElementById('noteContent').focus();
+        updateToolbarState();
         trackChanges();
     });
 
     document.getElementById('h2Btn').addEventListener('click', () => {
         document.execCommand('formatBlock', false, 'h2');
         document.getElementById('noteContent').focus();
+        updateToolbarState();
         trackChanges();
     });
 
     document.getElementById('h3Btn').addEventListener('click', () => {
         document.execCommand('formatBlock', false, 'h3');
         document.getElementById('noteContent').focus();
+        updateToolbarState();
         trackChanges();
     });
 
     document.getElementById('preBtn').addEventListener('click', () => {
-        document.execCommand('formatBlock', false, 'pre');
+        // Toggle: if we're already in <pre>, switch back to normal paragraph
+        let currentBlock = '';
+        try {
+            currentBlock = String(document.queryCommandValue('formatBlock') || '').toLowerCase();
+        } catch {
+            currentBlock = '';
+        }
+        currentBlock = currentBlock.replace(/[<>]/g, '');
+        document.execCommand('formatBlock', false, currentBlock === 'pre' ? 'p' : 'pre');
         document.getElementById('noteContent').focus();
+        updateToolbarState();
         trackChanges();
     });
     
@@ -260,10 +276,12 @@ function setupFormattingToolbar() {
             if (e.key === 'b') {
                 e.preventDefault();
                 document.execCommand('bold', false, null);
+                setTimeout(updateToolbarState, 0);
                 setTimeout(trackChanges, 0);
             } else if (e.key === 'i') {
                 e.preventDefault();
                 document.execCommand('italic', false, null);
+                setTimeout(updateToolbarState, 0);
                 setTimeout(trackChanges, 0);
             }
         }
@@ -356,13 +374,48 @@ function findLastTextNode(node) {
 }
 
 function updateToolbarState() {
+    const editor = document.getElementById('noteContent');
+    if (!editor) return;
+
+    const selection = window.getSelection();
+    const anchorNode = selection && selection.anchorNode ? selection.anchorNode : null;
+    const isInEditor = document.activeElement === editor || (anchorNode && editor.contains(anchorNode));
+    if (!isInEditor) return;
+
     const boldBtn = document.getElementById('boldBtn');
     const italicBtn = document.getElementById('italicBtn');
-    
-    if (document.activeElement === document.getElementById('noteContent')) {
-        boldBtn.classList.toggle('active', document.queryCommandState('bold'));
-        italicBtn.classList.toggle('active', document.queryCommandState('italic'));
+    const bulletListBtn = document.getElementById('bulletListBtn');
+    const numberedListBtn = document.getElementById('numberedListBtn');
+    const h1Btn = document.getElementById('h1Btn');
+    const h2Btn = document.getElementById('h2Btn');
+    const h3Btn = document.getElementById('h3Btn');
+    const preBtn = document.getElementById('preBtn');
+
+    const setPressed = (btn, pressed) => {
+        if (!btn) return;
+        btn.classList.toggle('active', !!pressed);
+        // Helps screen readers; also matches the “toggle” mental model.
+        btn.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+    };
+
+    setPressed(boldBtn, document.queryCommandState('bold'));
+    setPressed(italicBtn, document.queryCommandState('italic'));
+    setPressed(bulletListBtn, document.queryCommandState('insertUnorderedList'));
+    setPressed(numberedListBtn, document.queryCommandState('insertOrderedList'));
+
+    let block = '';
+    try {
+        block = String(document.queryCommandValue('formatBlock') || '').toLowerCase();
+    } catch {
+        block = '';
     }
+    // Browsers vary: sometimes it’s "h1", sometimes "<h1>"
+    block = block.replace(/[<>]/g, '');
+
+    setPressed(h1Btn, block === 'h1');
+    setPressed(h2Btn, block === 'h2');
+    setPressed(h3Btn, block === 'h3');
+    setPressed(preBtn, block === 'pre');
 }
 
 function insertDate() {
