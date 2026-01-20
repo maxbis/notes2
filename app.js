@@ -32,6 +32,7 @@ function setHtmlMode(enabled) {
     const editor = document.getElementById('noteContent');
     const htmlEl = document.getElementById('noteContentHtml');
     const btn = document.getElementById('htmlModeBtn');
+    const btnMobile = document.getElementById('htmlModeBtnMobile');
     if (!editor || !htmlEl || !btn) return;
 
     if (isHtmlMode) {
@@ -39,12 +40,14 @@ function setHtmlMode(enabled) {
         htmlEl.hidden = false;
         editor.hidden = true;
         btn.classList.add('active');
+        if (btnMobile) btnMobile.classList.add('active');
         htmlEl.focus();
     } else {
         editor.innerHTML = htmlEl.value;
         editor.hidden = false;
         htmlEl.hidden = true;
         btn.classList.remove('active');
+        if (btnMobile) btnMobile.classList.remove('active');
         editor.focus();
     }
 }
@@ -108,6 +111,10 @@ function setupEventListeners() {
     const htmlModeBtn = document.getElementById('htmlModeBtn');
     if (htmlModeBtn) {
         htmlModeBtn.addEventListener('click', () => setHtmlMode(!isHtmlMode));
+    }
+    const htmlModeBtnMobile = document.getElementById('htmlModeBtnMobile');
+    if (htmlModeBtnMobile) {
+        htmlModeBtnMobile.addEventListener('click', () => setHtmlMode(!isHtmlMode));
     }
 
     // Make the unsaved ("dirty") indicator clickable to save immediately
@@ -196,56 +203,45 @@ function setupEventListeners() {
 }
 
 function setupFormattingToolbar() {
-    document.getElementById('boldBtn').addEventListener('click', () => {
-        document.execCommand('bold', false, null);
-        document.getElementById('noteContent').focus();
+    const bindClickIfExists = (id, handler) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('click', handler);
+    };
+
+    const focusEditorAndSync = () => {
+        const editor = document.getElementById('noteContent');
+        if (editor) editor.focus();
         updateToolbarState();
         trackChanges();
+    };
+
+    document.getElementById('boldBtn').addEventListener('click', () => {
+        document.execCommand('bold', false, null);
+        focusEditorAndSync();
     });
     
     document.getElementById('italicBtn').addEventListener('click', () => {
         document.execCommand('italic', false, null);
-        document.getElementById('noteContent').focus();
-        updateToolbarState();
-        trackChanges();
+        focusEditorAndSync();
     });
     
     document.getElementById('bulletListBtn').addEventListener('click', () => {
         document.execCommand('insertUnorderedList', false, null);
-        document.getElementById('noteContent').focus();
-        updateToolbarState();
-        trackChanges();
+        focusEditorAndSync();
     });
     
     document.getElementById('numberedListBtn').addEventListener('click', () => {
         document.execCommand('insertOrderedList', false, null);
-        document.getElementById('noteContent').focus();
-        updateToolbarState();
-        trackChanges();
+        focusEditorAndSync();
     });
 
-    document.getElementById('h1Btn').addEventListener('click', () => {
-        document.execCommand('formatBlock', false, 'h1');
-        document.getElementById('noteContent').focus();
-        updateToolbarState();
-        trackChanges();
-    });
+    const applyBlock = (tag) => {
+        document.execCommand('formatBlock', false, tag);
+        focusEditorAndSync();
+    };
 
-    document.getElementById('h2Btn').addEventListener('click', () => {
-        document.execCommand('formatBlock', false, 'h2');
-        document.getElementById('noteContent').focus();
-        updateToolbarState();
-        trackChanges();
-    });
-
-    document.getElementById('h3Btn').addEventListener('click', () => {
-        document.execCommand('formatBlock', false, 'h3');
-        document.getElementById('noteContent').focus();
-        updateToolbarState();
-        trackChanges();
-    });
-
-    document.getElementById('preBtn').addEventListener('click', () => {
+    const togglePre = () => {
         // Toggle: if we're already in <pre>, switch back to normal paragraph
         let currentBlock = '';
         try {
@@ -255,9 +251,48 @@ function setupFormattingToolbar() {
         }
         currentBlock = currentBlock.replace(/[<>]/g, '');
         document.execCommand('formatBlock', false, currentBlock === 'pre' ? 'p' : 'pre');
-        document.getElementById('noteContent').focus();
-        updateToolbarState();
-        trackChanges();
+        focusEditorAndSync();
+    };
+
+    const closeParentDetails = (fromEl) => {
+        if (!fromEl || typeof fromEl.closest !== 'function') return;
+        const details = fromEl.closest('details');
+        if (details && details.hasAttribute('open')) {
+            details.removeAttribute('open');
+        }
+    };
+
+    bindClickIfExists('h1Btn', () => applyBlock('h1'));
+    bindClickIfExists('h2Btn', () => applyBlock('h2'));
+    bindClickIfExists('h3Btn', () => applyBlock('h3'));
+    bindClickIfExists('preBtn', togglePre);
+
+    // Mobile overflow menu buttons (same actions)
+    bindClickIfExists('h1BtnMobile', (e) => {
+        applyBlock('h1');
+        closeParentDetails(e.currentTarget);
+    });
+    bindClickIfExists('h2BtnMobile', (e) => {
+        applyBlock('h2');
+        closeParentDetails(e.currentTarget);
+    });
+    bindClickIfExists('h3BtnMobile', (e) => {
+        applyBlock('h3');
+        closeParentDetails(e.currentTarget);
+    });
+    bindClickIfExists('preBtnMobile', (e) => {
+        togglePre();
+        closeParentDetails(e.currentTarget);
+    });
+    bindClickIfExists('insertDateBtnMobile', (e) => {
+        insertDate();
+        focusEditorAndSync();
+        closeParentDetails(e.currentTarget);
+    });
+    bindClickIfExists('insertCheckmarkBtnMobile', (e) => {
+        insertCheckmark();
+        focusEditorAndSync();
+        closeParentDetails(e.currentTarget);
     });
     
     document.getElementById('insertDateBtn').addEventListener('click', () => {
@@ -390,6 +425,10 @@ function updateToolbarState() {
     const h2Btn = document.getElementById('h2Btn');
     const h3Btn = document.getElementById('h3Btn');
     const preBtn = document.getElementById('preBtn');
+    const h1BtnMobile = document.getElementById('h1BtnMobile');
+    const h2BtnMobile = document.getElementById('h2BtnMobile');
+    const h3BtnMobile = document.getElementById('h3BtnMobile');
+    const preBtnMobile = document.getElementById('preBtnMobile');
 
     const setPressed = (btn, pressed) => {
         if (!btn) return;
@@ -412,10 +451,19 @@ function updateToolbarState() {
     // Browsers vary: sometimes it’s "h1", sometimes "<h1>"
     block = block.replace(/[<>]/g, '');
 
-    setPressed(h1Btn, block === 'h1');
-    setPressed(h2Btn, block === 'h2');
-    setPressed(h3Btn, block === 'h3');
-    setPressed(preBtn, block === 'pre');
+    const isH1 = block === 'h1';
+    const isH2 = block === 'h2';
+    const isH3 = block === 'h3';
+    const isPre = block === 'pre';
+
+    setPressed(h1Btn, isH1);
+    setPressed(h2Btn, isH2);
+    setPressed(h3Btn, isH3);
+    setPressed(preBtn, isPre);
+    setPressed(h1BtnMobile, isH1);
+    setPressed(h2BtnMobile, isH2);
+    setPressed(h3BtnMobile, isH3);
+    setPressed(preBtnMobile, isPre);
 }
 
 function insertDate() {

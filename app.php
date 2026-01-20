@@ -62,7 +62,22 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                     <button class="toolbar-btn" id="numberedListBtn" title="Numbered List" aria-label="Numbered list">
                         1.
                     </button>
-                    <div class="toolbar-group" aria-label="Headings">
+                    <!-- Mobile: move headings/pre into overflow menu -->
+                    <details class="overflow-menu mobile-only toolbar-overflow">
+                        <summary class="overflow-menu-btn" aria-label="Headings / code" title="Headings / code">⋯</summary>
+                        <div class="overflow-menu-panel">
+                            <button class="overflow-menu-item" id="h1BtnMobile" type="button">H1</button>
+                            <button class="overflow-menu-item" id="h2BtnMobile" type="button">H2</button>
+                            <button class="overflow-menu-item" id="h3BtnMobile" type="button">H3</button>
+                            <button class="overflow-menu-item" id="preBtnMobile" type="button">&lt;&gt;</button>
+                            <hr class="overflow-menu-sep">
+                            <button class="overflow-menu-item" id="htmlModeBtnMobile" type="button">HTML</button>
+                            <button class="overflow-menu-item" id="insertDateBtnMobile" type="button">📅 Date</button>
+                            <button class="overflow-menu-item" id="insertCheckmarkBtnMobile" type="button">✅ Check</button>
+                        </div>
+                    </details>
+
+                    <div class="toolbar-group desktop-only" aria-label="Headings">
                         <button class="toolbar-btn" id="h1Btn" title="Heading 1" aria-label="Heading 1">H1</button>
                         <button class="toolbar-btn" id="h2Btn" title="Heading 2" aria-label="Heading 2">H2</button>
                         <button class="toolbar-btn" id="h3Btn" title="Heading 3" aria-label="Heading 3">H3</button>
