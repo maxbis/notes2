@@ -4,15 +4,29 @@ let autoSaveTimer = null;
 let hasUnsavedChanges = false;
 let savedTitle = '';
 let savedContent = '';
-let originalUpdatedAt = null; // Store original timestamp for conflict detection
+let originalVersion = null; // Store original version for conflict detection
 let pendingSaveAction = null; // Store pending save callback
 let isIndicatorSaveInProgress = false;
 
+// Prevent overlapping saves (auto-save can otherwise self-conflict via optimistic locking)
+let saveRunnerPromise = null;
+let savePending = false;
+let savePendingShowFeedback = false;
+let savePendingForceOverwrite = false;
+let saveIdleWaiters = [];
+
 const API_ENDPOINT = 'api.php';
 let isHtmlMode = false;
+// In HTML mode, we show formatted HTML for readability but keep a canonical raw string
+// for saving/change detection to avoid false "unsaved" states caused by pretty-printing.
+let htmlModeRawHtml = '';
+let htmlModeDirty = false;
 
 function getEditorHtml() {
     if (isHtmlMode) {
+        // IMPORTANT: return the canonical (unformatted) HTML string.
+        // The textarea may contain a pretty-printed display version.
+        if (typeof htmlModeRawHtml === 'string') return htmlModeRawHtml;
         const htmlEl = document.getElementById('noteContentHtml');
         return htmlEl ? htmlEl.value : '';
     }
@@ -20,11 +34,31 @@ function getEditorHtml() {
     return editor ? editor.innerHTML : '';
 }
 
+function formatHtmlForDisplay(html) {
+    const input = String(html ?? '');
+    try {
+        // `vendor/beautify-html.min.js` provides a global `html_beautify` function.
+        if (typeof html_beautify === 'function') {
+            return html_beautify(input, {
+                indent_size: 2,
+                indent_char: ' ',
+                unformatted: ['pre', 'code']
+            });
+        }
+    } catch { /* ignore */ }
+    return input;
+}
+
 function setEditorHtml(html) {
     const editor = document.getElementById('noteContent');
     const htmlEl = document.getElementById('noteContentHtml');
-    if (editor) editor.innerHTML = html ?? '';
-    if (htmlEl) htmlEl.value = html ?? '';
+    htmlModeRawHtml = String(html ?? '');
+    htmlModeDirty = false;
+
+    if (editor) editor.innerHTML = htmlModeRawHtml;
+    if (htmlEl) {
+        htmlEl.value = isHtmlMode ? formatHtmlForDisplay(htmlModeRawHtml) : htmlModeRawHtml;
+    }
 }
 
 function setHtmlMode(enabled) {
@@ -36,14 +70,18 @@ function setHtmlMode(enabled) {
     if (!editor || !htmlEl || !btn) return;
 
     if (isHtmlMode) {
-        htmlEl.value = editor.innerHTML;
+        htmlModeDirty = false;
+        htmlModeRawHtml = editor.innerHTML;
+        htmlEl.value = formatHtmlForDisplay(htmlModeRawHtml);
         htmlEl.hidden = false;
         editor.hidden = true;
         btn.classList.add('active');
         if (btnMobile) btnMobile.classList.add('active');
         htmlEl.focus();
     } else {
-        editor.innerHTML = htmlEl.value;
+        // If the user edited the textarea, `htmlModeRawHtml` is updated on input.
+        // If they did not, keep the original raw HTML (not the formatted display string).
+        editor.innerHTML = htmlModeRawHtml;
         editor.hidden = false;
         htmlEl.hidden = true;
         btn.classList.remove('active');
@@ -54,6 +92,13 @@ function setHtmlMode(enabled) {
 
 function isMobileLayout() {
     return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+}
+
+function getPublicLink(hashId) {
+    if (!hashId) return '';
+    const u = new URL('public.php', window.location.href);
+    u.searchParams.set('id', hashId);
+    return u.toString();
 }
 
 function showNotesSidebarAndFocusSearch() {
@@ -105,6 +150,21 @@ function setupEventListeners() {
             showNotesSidebarAndFocusSearch();
         });
     }
+
+    const bindShare = (id) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.addEventListener('click', async (e) => {
+            // If in an overflow <details>, close it on click
+            try {
+                const details = e.currentTarget && e.currentTarget.closest ? e.currentTarget.closest('details') : null;
+                if (details && details.hasAttribute('open')) details.removeAttribute('open');
+            } catch { /* ignore */ }
+            await copyPublicLinkForCurrentNote();
+        });
+    };
+    bindShare('shareLinkBtn');
+    bindShare('shareLinkBtnMobile');
     
     // Setup formatting toolbar
     setupFormattingToolbar();
@@ -164,7 +224,11 @@ function setupEventListeners() {
     document.getElementById('noteContent').addEventListener('input', trackChanges);
     const noteContentHtml = document.getElementById('noteContentHtml');
     if (noteContentHtml) {
-        noteContentHtml.addEventListener('input', trackChanges);
+        noteContentHtml.addEventListener('input', () => {
+            htmlModeDirty = true;
+            htmlModeRawHtml = noteContentHtml.value;
+            trackChanges();
+        });
     }
 
     // Mobile UX: tapping into the editor should hide the notes list
@@ -200,6 +264,54 @@ function setupEventListeners() {
         }
     });
     
+}
+
+async function copyPublicLinkForCurrentNote() {
+    // Ensure we have a note hash id. If it's a new note, save first.
+    if (!currentNote) {
+        // Only attempt to create a note if there is any meaningful content;
+        // otherwise show a gentle hint.
+        const title = (document.getElementById('noteTitle')?.value || '').trim();
+        const content = (getEditorHtml() || '').trim();
+        const hasMeaningfulContent =
+            title.length > 0 ||
+            (content.length > 0 && content.replace(/<[^>]*>/g, '').trim().length > 0);
+
+        if (!hasMeaningfulContent) {
+            await showModal('Share link', 'Write something first, then share the note.', 'OK', 'Close');
+            return;
+        }
+
+        await saveNote(false);
+        if (!currentNote || !currentNote.hash_id) {
+            await showModal('Share link', 'Could not create the note to generate a link. Please try again.', 'OK', 'Close');
+            return;
+        }
+    } else if (hasUnsavedChanges) {
+        // Save first so the shared view matches what the user sees.
+        await saveNote(false);
+    }
+
+    const url = getPublicLink(currentNote?.hash_id);
+    if (!url) {
+        await showModal('Share link', 'No link could be generated for this note.', 'OK', 'Close');
+        return;
+    }
+
+    try {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            await navigator.clipboard.writeText(url);
+            await showModal('Share link copied', url, 'OK', 'Close');
+            return;
+        }
+    } catch (e) {
+        // fall through to prompt fallback
+        console.warn('Clipboard write failed:', e);
+    }
+
+    // Fallback: prompt lets the user copy manually in older browsers / insecure contexts.
+    // eslint-disable-next-line no-alert
+    window.prompt('Copy this public link:', url);
 }
 
 function setupFormattingToolbar() {
@@ -582,7 +694,8 @@ function saveBeforeUnload() {
             body: JSON.stringify({
                 hash_id: currentNote.hash_id,
                 title: title,
-                content: content
+                content: content,
+                expected_version: originalVersion
             }),
             keepalive: true  // Critical: allows request to complete even after page unloads
         }).then(response => {
@@ -723,8 +836,8 @@ async function selectNote(hashId) {
     // Update unsaved indicator
     updateUnsavedIndicator();
     
-    // Store original timestamp for conflict detection
-    originalUpdatedAt = note.updated_at;
+    // Store original version for conflict detection
+    originalVersion = (note && note.version != null) ? Number(note.version) : null;
     
     const updatedAt = new Date(note.updated_at);
     document.getElementById('noteMeta').textContent = 
@@ -755,7 +868,7 @@ async function createNewNote() {
     savedTitle = '';
     savedContent = '';
     hasUnsavedChanges = false;
-    originalUpdatedAt = null;
+    originalVersion = null;
     clearTimeout(autoSaveTimer);
     
     renderNotesList(document.getElementById('searchInput').value);
@@ -763,9 +876,47 @@ async function createNewNote() {
 }
 
 async function saveNote(showFeedback = true, forceOverwrite = false) {
+    // Queue saves so we never have overlapping PUTs (which can cause self-conflicts).
+    savePending = true;
+    savePendingShowFeedback = savePendingShowFeedback || !!showFeedback;
+    savePendingForceOverwrite = savePendingForceOverwrite || !!forceOverwrite;
+
+    return new Promise((resolve, reject) => {
+        saveIdleWaiters.push({ resolve, reject });
+
+        if (saveRunnerPromise) return;
+
+        saveRunnerPromise = (async () => {
+            try {
+                while (savePending) {
+                    const nextShowFeedback = savePendingShowFeedback;
+                    const nextForceOverwrite = savePendingForceOverwrite;
+
+                    savePending = false;
+                    savePendingShowFeedback = false;
+                    savePendingForceOverwrite = false;
+
+                    await performSave(nextShowFeedback, nextForceOverwrite);
+                }
+
+                const waiters = saveIdleWaiters;
+                saveIdleWaiters = [];
+                waiters.forEach(w => w.resolve());
+            } catch (err) {
+                const waiters = saveIdleWaiters;
+                saveIdleWaiters = [];
+                waiters.forEach(w => w.reject(err));
+            } finally {
+                saveRunnerPromise = null;
+            }
+        })();
+    });
+}
+
+async function performSave(showFeedback = true, forceOverwrite = false) {
     const title = document.getElementById('noteTitle').value.trim() || 'Untitled';
     const content = getEditorHtml();
-    
+
     const timestamp = new Date().toISOString();
     const saveType = currentNote ? 'UPDATE' : 'CREATE';
     console.log(`[SAVE ${saveType}] ${timestamp} - Starting save operation`, {
@@ -774,67 +925,67 @@ async function saveNote(showFeedback = true, forceOverwrite = false) {
         contentLength: content.length,
         showFeedback,
         forceOverwrite,
-        originalUpdatedAt
+        originalVersion
     });
 
     try {
         let response;
         if (currentNote) {
-            // Check for conflicts before saving
-            if (!forceOverwrite && originalUpdatedAt) {
-                console.log(`[SAVE CONFLICT CHECK] Checking for conflicts...`, {
-                    currentTimestamp: originalUpdatedAt
+            let attemptForceOverwrite = !!forceOverwrite;
+
+            while (true) {
+                // Update existing note
+                const updateData = {
+                    hash_id: currentNote.hash_id,
+                    title: title,
+                    content: content,
+                    expected_version: originalVersion,
+                    force_overwrite: !!attemptForceOverwrite
+                };
+                console.log(`[SAVE UPDATE] Sending PUT request`, {
+                    hash_id: currentNote.hash_id,
+                    titleLength: title.length,
+                    contentLength: content.length
                 });
-                // Fetch current version from server to check timestamp
-                const checkResponse = await fetch(`${API_ENDPOINT}?id=${currentNote.hash_id}`);
-                const serverNote = await readJsonResponse(checkResponse, 'conflictCheck');
-                
-                if (serverNote && serverNote.updated_at !== originalUpdatedAt) {
-                    // Conflict detected!
+                response = await fetch(API_ENDPOINT, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                // Server-enforced optimistic lock: 409 means someone saved since our last known version.
+                // With queued saves, this should not happen due to our own overlapping requests anymore.
+                if (response.status === 409 && !attemptForceOverwrite) {
+                    const conflict = await readJsonResponse(response, 'saveNote:conflict409');
+                    const serverUpdatedAt = conflict?.updated_at ? new Date(conflict.updated_at) : new Date();
                     console.warn(`[SAVE CONFLICT DETECTED]`, {
-                        localTimestamp: originalUpdatedAt,
-                        serverTimestamp: serverNote.updated_at,
-                        serverTitle: serverNote.title?.substring(0, 50)
+                        expectedVersion: originalVersion,
+                        serverVersion: conflict?.server_version,
+                        behindBy: conflict?.behind_by
                     });
-                    const serverUpdatedAt = new Date(serverNote.updated_at);
+
                     const conflictResolved = await showConflictDialog(
                         serverUpdatedAt,
-                        serverNote.title,
-                        serverNote.content
+                        conflict?.title,
+                        conflict?.content,
+                        conflict?.behind_by
                     );
-                    
+
                     if (!conflictResolved) {
-                        // User cancelled, refresh the note
                         console.log(`[SAVE CANCELLED] User chose to cancel and refresh due to conflict`);
                         await refreshCurrentNote();
                         return;
                     }
-                    // User chose to overwrite, continue with save
+
                     console.log(`[SAVE OVERWRITE] User chose to overwrite conflicting version`);
-                } else {
-                    console.log(`[SAVE NO CONFLICT] Timestamps match, safe to save`);
+                    attemptForceOverwrite = true;
+                    continue;
                 }
+
+                break;
             }
-            
-            // Update existing note
-            const updateData = {
-                hash_id: currentNote.hash_id,
-                title: title,
-                content: content,
-                original_updated_at: originalUpdatedAt
-            };
-            console.log(`[SAVE UPDATE] Sending PUT request`, {
-                hash_id: currentNote.hash_id,
-                titleLength: title.length,
-                contentLength: content.length
-            });
-            response = await fetch(API_ENDPOINT, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(updateData)
-            });
         } else {
             // Create new note
             const createData = {
@@ -855,7 +1006,7 @@ async function saveNote(showFeedback = true, forceOverwrite = false) {
         }
 
         const savedNote = await readJsonResponse(response, `saveNote:${saveType}`);
-        
+
         if (savedNote.error) {
             console.error(`[SAVE ERROR] Failed to save note:`, savedNote.error, {
                 noteId: currentNote?.hash_id,
@@ -864,7 +1015,7 @@ async function saveNote(showFeedback = true, forceOverwrite = false) {
             alert('Error saving note: ' + savedNote.error);
             return;
         }
-        
+
         console.log(`[SAVE SUCCESS] Note saved successfully`, {
             noteId: savedNote.hash_id,
             savedTimestamp: savedNote.updated_at,
@@ -881,34 +1032,34 @@ async function saveNote(showFeedback = true, forceOverwrite = false) {
         } else {
             notes.unshift(savedNote);
             currentNote = savedNote;
-            originalUpdatedAt = savedNote.updated_at; // Set timestamp for new notes
+            originalVersion = savedNote.version != null ? Number(savedNote.version) : null; // Set version for new notes
         }
 
         // Re-sort by updated_at
         notes.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-        
+
         // Update saved state
         savedTitle = savedNote.title || '';
         savedContent = savedNote.content || '';
         hasUnsavedChanges = false;
         clearTimeout(autoSaveTimer);
-        
+
         // Update unsaved indicator
         updateUnsavedIndicator();
-        
-        // Update original timestamp after successful save
-        originalUpdatedAt = savedNote.updated_at;
-        
+
+        // Update original version after successful save
+        originalVersion = savedNote.version != null ? Number(savedNote.version) : null;
+
         // Update last saved timestamp
         const savedAt = new Date(savedNote.updated_at);
         updateLastSavedTime(savedAt);
-        
+
         console.log(`[SAVE COMPLETE] Save operation finished`, {
             noteId: savedNote.hash_id,
             timestamp: savedAt.toISOString(),
             hasUnsavedChanges: false
         });
-        
+
         // Only re-render notes list if called from auto-save (not from selectNote)
         // When called from selectNote (showFeedback=false), selectNote will handle rendering
         if (!showFeedback) {
@@ -965,7 +1116,7 @@ async function deleteNote() {
         setEditorHtml('');
         document.getElementById('noteMeta').textContent = '';
         document.getElementById('lastSaved').textContent = '';
-        originalUpdatedAt = null;
+        originalVersion = null;
         
         renderNotesList(document.getElementById('searchInput').value);
         
@@ -1074,8 +1225,8 @@ function showModal(title, message, confirmText = 'Confirm', cancelText = 'Cancel
     });
 }
 
-async function showConflictDialog(serverUpdatedAt, serverTitle, serverContent) {
-    const serverTime = serverUpdatedAt.toLocaleString('nl-NL', {
+async function showConflictDialog(serverUpdatedAt, serverTitle, serverContent, behindBy) {
+    const serverTime = (serverUpdatedAt instanceof Date ? serverUpdatedAt : new Date(serverUpdatedAt)).toLocaleString('nl-NL', {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
@@ -1084,7 +1235,11 @@ async function showConflictDialog(serverUpdatedAt, serverTitle, serverContent) {
         year: 'numeric'
     });
     
-    const message = `This note was modified by another session and saved at ${serverTime}.\n\n` +
+    const behindText = (Number.isFinite(behindBy) && behindBy > 0)
+        ? `\n\nYou are ${behindBy} version(s) behind.`
+        : '';
+
+    const message = `This note was modified by another session and saved at ${serverTime}.${behindText}\n\n` +
                    `Your current changes will overwrite those changes.\n\n` +
                    `Do you want to overwrite the server version?`;
     
@@ -1174,7 +1329,7 @@ async function refreshCurrentNote() {
             savedTitle = title;
             savedContent = content;
             hasUnsavedChanges = false;
-            originalUpdatedAt = note.updated_at;
+            originalVersion = note.version != null ? Number(note.version) : null;
             
             // Update unsaved indicator
             updateUnsavedIndicator();

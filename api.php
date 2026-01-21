@@ -198,7 +198,7 @@ switch ($method) {
             echo json_encode($note ? $note : ['error' => 'Note not found']);
         } else {
             // Get all notes
-            $result = $conn->query("SELECT id, hash_id, title, content, created_at, updated_at FROM notes ORDER BY updated_at DESC");
+            $result = $conn->query("SELECT id, hash_id, title, content, created_at, updated_at, version FROM notes ORDER BY updated_at DESC");
             $notes = [];
             while ($row = $result->fetch_assoc()) {
                 $notes[] = $row;
@@ -234,16 +234,88 @@ switch ($method) {
         $title = $data['title'] ?? '';
         $content = $data['content'] ?? '';
         $content = sanitize_note_html($content, $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS);
+
+        $expected_version = isset($data['expected_version']) ? (int)$data['expected_version'] : null;
+        $forceOverwrite = false;
+        if (isset($_GET['force']) && $_GET['force'] === '1') $forceOverwrite = true;
+        if (isset($data['force_overwrite']) && $data['force_overwrite']) $forceOverwrite = true;
         
-        $stmt = $conn->prepare("UPDATE notes SET title = ?, content = ? WHERE hash_id = ?");
-        $stmt->bind_param("sss", $title, $content, $hash_id);
-        
-        if ($stmt->execute()) {
-            $result = $conn->query("SELECT * FROM notes WHERE hash_id = '$hash_id'");
-            echo json_encode($result->fetch_assoc());
-        } else {
-            echo json_encode(['error' => 'Failed to update note']);
+        if (!$forceOverwrite && $expected_version === null) {
+            http_response_code(400);
+            echo json_encode(['error' => 'expected_version is required']);
+            break;
         }
+
+        // Fetch current server version (needed for conflict responses and overwrite-copy logic)
+        $stmtCurrent = $conn->prepare("SELECT * FROM notes WHERE hash_id = ?");
+        $stmtCurrent->bind_param("s", $hash_id);
+        $stmtCurrent->execute();
+        $serverResult = $stmtCurrent->get_result();
+        $serverNote = $serverResult->fetch_assoc();
+        if (!$serverNote) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Note not found']);
+            break;
+        }
+        $serverVersion = isset($serverNote['version']) ? (int)$serverNote['version'] : null;
+
+        if (!$forceOverwrite) {
+            // Optimistic lock update: only update if the version matches expected_version
+            $stmt = $conn->prepare("UPDATE notes SET title = ?, content = ?, version = version + 1 WHERE hash_id = ? AND version = ?");
+            $stmt->bind_param("sssi", $title, $content, $hash_id, $expected_version);
+
+            if (!$stmt->execute()) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to update note']);
+                break;
+            }
+
+            if ($stmt->affected_rows === 0) {
+                http_response_code(409);
+                $behind_by = 0;
+                if ($serverVersion !== null && $expected_version !== null) {
+                    $behind_by = max(0, $serverVersion - $expected_version);
+                }
+                echo json_encode([
+                    'error' => 'conflict',
+                    'server_version' => $serverVersion,
+                    'expected_version' => $expected_version,
+                    'behind_by' => $behind_by,
+                    'updated_at' => $serverNote['updated_at'] ?? null,
+                    'title' => $serverNote['title'] ?? null,
+                    'content' => $serverNote['content'] ?? null,
+                ]);
+                break;
+            }
+        } else {
+            // Force overwrite path: only make a copy if we are behind (server_version > expected_version)
+            if ($expected_version !== null && $serverVersion !== null && $serverVersion > $expected_version) {
+                $copy_hash_id = generateHashId();
+                $copy_title = ($serverNote['title'] ?? '') . ' (version overwritten)';
+                $copy_content = $serverNote['content'] ?? '';
+
+                $stmtCopy = $conn->prepare("INSERT INTO notes (hash_id, title, content, version) VALUES (?, ?, ?, 1)");
+                $stmtCopy->bind_param("sss", $copy_hash_id, $copy_title, $copy_content);
+                $stmtCopy->execute();
+            }
+
+            // Overwrite the original note unconditionally (but still bump version)
+            $stmt = $conn->prepare("UPDATE notes SET title = ?, content = ?, version = version + 1 WHERE hash_id = ?");
+            $stmt->bind_param("sss", $title, $content, $hash_id);
+
+            if (!$stmt->execute()) {
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to update note']);
+                break;
+            }
+        }
+
+        // Return updated note
+        $stmtReload = $conn->prepare("SELECT * FROM notes WHERE hash_id = ?");
+        $stmtReload->bind_param("s", $hash_id);
+        $stmtReload->execute();
+        $result = $stmtReload->get_result();
+        echo json_encode($result->fetch_assoc());
         break;
         
     case 'DELETE':

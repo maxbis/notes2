@@ -105,6 +105,7 @@ require_once __DIR__ . '/../zendure/login/validate.php';
 
                     <!-- Desktop: show Delete as a normal button -->
                     <div class="editor-actions desktop-only">
+                        <button class="btn-secondary" id="shareLinkBtn" type="button" title="Copy public link" aria-label="Copy public link">Share</button>
                         <button class="btn-danger deleteBtn" type="button" title="Delete this note" aria-label="Delete this note">Delete</button>
                     </div>
 
@@ -112,6 +113,8 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                     <details class="overflow-menu mobile-only">
                         <summary class="overflow-menu-btn" aria-label="More actions" title="More actions">⋯</summary>
                         <div class="overflow-menu-panel">
+                            <button class="overflow-menu-item" id="shareLinkBtnMobile" type="button">Share (copy link)</button>
+                            <hr class="overflow-menu-sep">
                             <button class="overflow-menu-item danger deleteBtn" type="button">Delete</button>
                         </div>
                     </details>
@@ -136,6 +139,7 @@ require_once __DIR__ . '/../zendure/login/validate.php';
         </div>
     </div>
 
+    <script src="vendor/beautify-html.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
