@@ -22,7 +22,7 @@ export async function exportNoteToPdf() {
         tempContainer.style.position = 'absolute';
         tempContainer.style.left = '-9999px';
         tempContainer.style.width = '210mm'; // A4 width
-        tempContainer.style.padding = '20mm';
+        tempContainer.style.padding = '5mm 15mm';
         tempContainer.style.backgroundColor = '#ffffff';
         tempContainer.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif';
         tempContainer.style.color = '#1d1d1f';
@@ -32,18 +32,19 @@ export async function exportNoteToPdf() {
         // Create title element
         const titleEl = document.createElement('h1');
         titleEl.textContent = title;
-        titleEl.style.marginBottom = '20px';
+        titleEl.style.marginTop = '8px';
+        titleEl.style.marginBottom = '8px';
         titleEl.style.fontSize = '24px';
         titleEl.style.fontWeight = '600';
         titleEl.style.color = '#1d1d1f';
         titleEl.style.borderBottom = '2px solid #e5e5e7';
-        titleEl.style.paddingBottom = '10px';
+        titleEl.style.paddingBottom = '8px';
         tempContainer.appendChild(titleEl);
         
         // Create content element
         const contentEl = document.createElement('div');
         contentEl.innerHTML = content;
-        contentEl.style.marginTop = '20px';
+        contentEl.style.marginTop = '8px';
         // Preserve basic formatting from the editor
         contentEl.style.wordWrap = 'break-word';
         tempContainer.appendChild(contentEl);
@@ -76,26 +77,26 @@ export async function exportNoteToPdf() {
         const pdfHeight = pdf.internal.pageSize.getHeight();
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
-        const ratio = Math.min((pdfWidth - 40) / imgWidth, (pdfHeight - 40) / imgHeight); // 40mm margins
+        const ratio = Math.min((pdfWidth - 30) / imgWidth, (pdfHeight - 10) / imgHeight); // Minimal margins
         const imgScaledWidth = imgWidth * ratio;
         const imgScaledHeight = imgHeight * ratio;
         
-        // Center the image with margins
+        // Position image at top with minimal margin
         const x = (pdfWidth - imgScaledWidth) / 2;
-        let y = 20; // Top margin
+        let y = 0; // Start at top of page
         
         // If content is taller than one page, split it
         let heightLeft = imgScaledHeight;
         let position = 0;
         
         pdf.addImage(imgData, 'PNG', x, y + position, imgScaledWidth, imgScaledHeight);
-        heightLeft -= (pdfHeight - 40); // Account for margins
+        heightLeft -= pdfHeight;
         
         while (heightLeft > 0) {
             position = heightLeft - imgScaledHeight;
             pdf.addPage();
             pdf.addImage(imgData, 'PNG', x, y + position, imgScaledWidth, imgScaledHeight);
-            heightLeft -= (pdfHeight - 40);
+            heightLeft -= pdfHeight;
         }
         
         // Save the PDF
