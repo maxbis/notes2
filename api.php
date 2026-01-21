@@ -42,6 +42,16 @@ function __notes_json_error(int $statusCode, string $message, array $extra = [])
     exit;
 }
 
+function __notes_db_fail(mysqli $conn, string $context, int $statusCode = 500): void {
+    global $__notes_debug;
+    $extra = ['context' => $context];
+    if ($__notes_debug) {
+        $extra['mysql_errno'] = (int)$conn->errno;
+        $extra['mysql_error'] = (string)$conn->error;
+    }
+    __notes_json_error($statusCode, 'Database error', $extra);
+}
+
 set_exception_handler(function (Throwable $e) {
     global $__notes_debug;
     $extra = [];
@@ -253,12 +263,10 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 try {
     $conn = getDBConnection();
 } catch (Throwable $e) {
-    http_response_code(500);
-    echo json_encode([
-        'error' => 'Database connection failed',
-        'details' => $e->getMessage()
-    ]);
-    exit;
+    global $__notes_debug;
+    $extra = [];
+    if ($__notes_debug) $extra['details'] = $e->getMessage();
+    __notes_json_error(500, 'Database connection failed', $extra);
 }
 
 switch ($method) {
@@ -267,46 +275,78 @@ switch ($method) {
             // Get single note by hash_id
             $hash_id = $_GET['id'];
             $stmt = $conn->prepare("SELECT * FROM notes WHERE hash_id = ?");
+            if (!$stmt) __notes_db_fail($conn, 'prepare: select by hash_id');
             $stmt->bind_param("s", $hash_id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $note = $result->fetch_assoc();
-            echo json_encode($note ? $note : ['error' => 'Note not found']);
+            if (!$stmt->execute()) __notes_db_fail($conn, 'execute: select by hash_id');
+
+            // get_result() requires mysqlnd; fall back to bind_result if unavailable
+            if (method_exists($stmt, 'get_result')) {
+                $result = $stmt->get_result();
+                if ($result === false) __notes_db_fail($conn, 'get_result: select by hash_id');
+                $note = $result->fetch_assoc();
+            } else {
+                $meta = $stmt->result_metadata();
+                if ($meta === false) __notes_db_fail($conn, 'result_metadata: select by hash_id');
+                $row = [];
+                $bind = [];
+                while ($field = $meta->fetch_field()) {
+                    $row[$field->name] = null;
+                    $bind[] = &$row[$field->name];
+                }
+                $meta->free();
+                if ($bind) {
+                    call_user_func_array([$stmt, 'bind_result'], $bind);
+                    $note = $stmt->fetch() ? array_map(static fn($v) => $v, $row) : null;
+                } else {
+                    $note = null;
+                }
+            }
+
+            echo json_encode($note ? $note : ['error' => 'Note not found'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         } else {
             // Get all notes
 
             $result = $conn->query("SELECT id, hash_id, title, content, created_at, updated_at, version FROM notes ORDER BY updated_at DESC");
+            if ($result === false) __notes_db_fail($conn, 'query: select all notes');
             $notes = [];
             while ($row = $result->fetch_assoc()) {
                 $notes[] = $row;
             }
-            echo json_encode($notes);
+            echo json_encode($notes, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         }
         break;
         
     case 'POST':
         // Create new note
         $data = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($data) && json_last_error() !== JSON_ERROR_NONE) {
+            __notes_json_error(400, 'Invalid JSON');
+        }
         $hash_id = generateHashId();
         $title = $data['title'] ?? 'Untitled';
         $content = $data['content'] ?? '';
         $content = sanitize_note_html($content, $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS);
         
         $stmt = $conn->prepare("INSERT INTO notes (hash_id, title, content) VALUES (?, ?, ?)");
+        if (!$stmt) __notes_db_fail($conn, 'prepare: insert note');
         $stmt->bind_param("sss", $hash_id, $title, $content);
         
         if ($stmt->execute()) {
             $note_id = $conn->insert_id;
             $result = $conn->query("SELECT * FROM notes WHERE id = $note_id");
-            echo json_encode($result->fetch_assoc());
+            if ($result === false) __notes_db_fail($conn, 'query: select inserted note');
+            echo json_encode($result->fetch_assoc(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         } else {
-            echo json_encode(['error' => 'Failed to create note']);
+            __notes_db_fail($conn, 'execute: insert note');
         }
         break;
         
     case 'PUT':
         // Update existing note
         $data = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($data) && json_last_error() !== JSON_ERROR_NONE) {
+            __notes_json_error(400, 'Invalid JSON');
+        }
         $hash_id = $data['hash_id'];
         $title = $data['title'] ?? '';
         $content = $data['content'] ?? '';
@@ -325,10 +365,31 @@ switch ($method) {
 
         // Fetch current server version (needed for conflict responses and overwrite-copy logic)
         $stmtCurrent = $conn->prepare("SELECT * FROM notes WHERE hash_id = ?");
+        if (!$stmtCurrent) __notes_db_fail($conn, 'prepare: select current note');
         $stmtCurrent->bind_param("s", $hash_id);
-        $stmtCurrent->execute();
-        $serverResult = $stmtCurrent->get_result();
-        $serverNote = $serverResult->fetch_assoc();
+        if (!$stmtCurrent->execute()) __notes_db_fail($conn, 'execute: select current note');
+
+        if (method_exists($stmtCurrent, 'get_result')) {
+            $serverResult = $stmtCurrent->get_result();
+            if ($serverResult === false) __notes_db_fail($conn, 'get_result: select current note');
+            $serverNote = $serverResult->fetch_assoc();
+        } else {
+            $meta = $stmtCurrent->result_metadata();
+            if ($meta === false) __notes_db_fail($conn, 'result_metadata: select current note');
+            $row = [];
+            $bind = [];
+            while ($field = $meta->fetch_field()) {
+                $row[$field->name] = null;
+                $bind[] = &$row[$field->name];
+            }
+            $meta->free();
+            if ($bind) {
+                call_user_func_array([$stmtCurrent, 'bind_result'], $bind);
+                $serverNote = $stmtCurrent->fetch() ? array_map(static fn($v) => $v, $row) : null;
+            } else {
+                $serverNote = null;
+            }
+        }
         if (!$serverNote) {
             http_response_code(404);
             echo json_encode(['error' => 'Note not found']);
@@ -339,12 +400,11 @@ switch ($method) {
         if (!$forceOverwrite) {
             // Optimistic lock update: only update if the version matches expected_version
             $stmt = $conn->prepare("UPDATE notes SET title = ?, content = ?, version = version + 1 WHERE hash_id = ? AND version = ?");
+            if (!$stmt) __notes_db_fail($conn, 'prepare: optimistic update');
             $stmt->bind_param("sssi", $title, $content, $hash_id, $expected_version);
 
             if (!$stmt->execute()) {
-                http_response_code(500);
-                echo json_encode(['error' => 'Failed to update note']);
-                break;
+                __notes_db_fail($conn, 'execute: optimistic update');
             }
 
             if ($stmt->affected_rows === 0) {
@@ -361,7 +421,7 @@ switch ($method) {
                     'updated_at' => $serverNote['updated_at'] ?? null,
                     'title' => $serverNote['title'] ?? null,
                     'content' => $serverNote['content'] ?? null,
-                ]);
+                ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                 break;
             }
         } else {
@@ -372,41 +432,68 @@ switch ($method) {
                 $copy_content = $serverNote['content'] ?? '';
 
                 $stmtCopy = $conn->prepare("INSERT INTO notes (hash_id, title, content, version) VALUES (?, ?, ?, 1)");
+                if (!$stmtCopy) __notes_db_fail($conn, 'prepare: insert overwrite copy');
                 $stmtCopy->bind_param("sss", $copy_hash_id, $copy_title, $copy_content);
-                $stmtCopy->execute();
+                if (!$stmtCopy->execute()) __notes_db_fail($conn, 'execute: insert overwrite copy');
             }
 
             // Overwrite the original note unconditionally (but still bump version)
             $stmt = $conn->prepare("UPDATE notes SET title = ?, content = ?, version = version + 1 WHERE hash_id = ?");
+            if (!$stmt) __notes_db_fail($conn, 'prepare: force overwrite update');
             $stmt->bind_param("sss", $title, $content, $hash_id);
 
             if (!$stmt->execute()) {
-                http_response_code(500);
-                echo json_encode(['error' => 'Failed to update note']);
-                break;
+                __notes_db_fail($conn, 'execute: force overwrite update');
             }
         }
 
         // Return updated note
         $stmtReload = $conn->prepare("SELECT * FROM notes WHERE hash_id = ?");
+        if (!$stmtReload) __notes_db_fail($conn, 'prepare: reload updated note');
         $stmtReload->bind_param("s", $hash_id);
-        $stmtReload->execute();
-        $result = $stmtReload->get_result();
-        echo json_encode($result->fetch_assoc());
+        if (!$stmtReload->execute()) __notes_db_fail($conn, 'execute: reload updated note');
+
+        if (method_exists($stmtReload, 'get_result')) {
+            $result = $stmtReload->get_result();
+            if ($result === false) __notes_db_fail($conn, 'get_result: reload updated note');
+            $note = $result->fetch_assoc();
+        } else {
+            $meta = $stmtReload->result_metadata();
+            if ($meta === false) __notes_db_fail($conn, 'result_metadata: reload updated note');
+            $row = [];
+            $bind = [];
+            while ($field = $meta->fetch_field()) {
+                $row[$field->name] = null;
+                $bind[] = &$row[$field->name];
+            }
+            $meta->free();
+            if ($bind) {
+                call_user_func_array([$stmtReload, 'bind_result'], $bind);
+                $note = $stmtReload->fetch() ? array_map(static fn($v) => $v, $row) : null;
+            } else {
+                $note = null;
+            }
+        }
+
+        echo json_encode($note, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         break;
         
     case 'DELETE':
         // Delete note
         $data = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($data) && json_last_error() !== JSON_ERROR_NONE) {
+            __notes_json_error(400, 'Invalid JSON');
+        }
         $hash_id = $data['hash_id'];
         
         $stmt = $conn->prepare("DELETE FROM notes WHERE hash_id = ?");
+        if (!$stmt) __notes_db_fail($conn, 'prepare: delete note');
         $stmt->bind_param("s", $hash_id);
         
         if ($stmt->execute()) {
-            echo json_encode(['success' => true]);
+            echo json_encode(['success' => true], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         } else {
-            echo json_encode(['error' => 'Failed to delete note']);
+            __notes_db_fail($conn, 'execute: delete note');
         }
         break;
         
