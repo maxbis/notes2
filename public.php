@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/api/database.php';
 
 $hash_id = isset($_GET['id']) ? trim((string)$_GET['id']) : '';
 

@@ -164,8 +164,12 @@ if ($dbHost === '' || $dbUser === '' || $dbName === '') {
 }
 
 // Step 4: Connect (use existing app helper if present)
+// Load database functions
+if (file_exists(__DIR__ . '/api/database.php')) {
+    require_once __DIR__ . '/api/database.php';
+}
 if (!function_exists('getDBConnection')) {
-    out($cli, 'fail', 'getDBConnection() not found', 'Expected it to be defined by config.php');
+    out($cli, 'fail', 'getDBConnection() not found', 'Expected it to be defined by api/database.php');
     $exit = 1;
     print_footer($cli, $exit);
     if ($cli) exit($exit);

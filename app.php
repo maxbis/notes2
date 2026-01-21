@@ -176,6 +176,6 @@ require_once __DIR__ . '/../zendure/login/validate.php';
     </div>
 
     <script src="vendor/beautify-html.min.js"></script>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>
