@@ -3,6 +3,10 @@
 
 function __notes_json_error(int $statusCode, string $message, array $extra = []): void {
     global $__notes_request_id;
+    // Initialize request_id if not set (fallback for errors before setup)
+    if (!isset($__notes_request_id)) {
+        $__notes_request_id = bin2hex(random_bytes(6));
+    }
     if (function_exists('http_response_code')) http_response_code($statusCode);
     if (!headers_sent()) header('Content-Type: application/json; charset=UTF-8');
 
@@ -23,7 +27,7 @@ function __notes_json_error(int $statusCode, string $message, array $extra = [])
 function __notes_db_fail(mysqli $conn, string $context, int $statusCode = 500): void {
     global $__notes_debug;
     $extra = ['context' => $context];
-    if ($__notes_debug) {
+    if (isset($__notes_debug) && $__notes_debug) {
         $extra['mysql_errno'] = (int)$conn->errno;
         $extra['mysql_error'] = (string)$conn->error;
     }
