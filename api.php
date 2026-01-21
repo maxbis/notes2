@@ -8,9 +8,44 @@ declare(strict_types=1);
 
 ob_start();
 
-// Load error handlers first
-require_once __DIR__ . '/api/error_handler.php';
-__notes_setup_error_handlers();
+// Set basic error handler first (before loading anything)
+register_shutdown_function(function () {
+    $err = error_get_last();
+    if (!$err) return;
+    $fatalTypes = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR];
+    if (!in_array($err['type'] ?? 0, $fatalTypes, true)) return;
+    
+    if (ob_get_level() > 0) @ob_clean();
+    header('Content-Type: application/json; charset=UTF-8');
+    http_response_code(500);
+    echo json_encode([
+        'error' => 'Internal Server Error',
+        'request_id' => bin2hex(random_bytes(6)),
+        'details' => $err['message'] ?? 'Unknown error',
+        'file' => $err['file'] ?? null,
+        'line' => $err['line'] ?? null,
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+});
+
+// Load error handlers
+try {
+    require_once __DIR__ . '/api/error_handler.php';
+    if (function_exists('__notes_setup_error_handlers')) {
+        __notes_setup_error_handlers();
+    }
+} catch (Throwable $e) {
+    if (ob_get_level() > 0) @ob_clean();
+    header('Content-Type: application/json; charset=UTF-8');
+    http_response_code(500);
+    echo json_encode([
+        'error' => 'Failed to load error handlers',
+        'request_id' => bin2hex(random_bytes(6)),
+        'details' => $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 // Load config (absolute path). Any fatal here will be converted to JSON by the shutdown handler above.
 require_once __DIR__ . '/config.php';
