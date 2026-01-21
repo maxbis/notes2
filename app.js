@@ -338,6 +338,11 @@ function setupFormattingToolbar() {
         focusEditorAndSync();
     });
     
+    bindClickIfExists('underlineBtn', () => {
+        document.execCommand('underline', false, null);
+        focusEditorAndSync();
+    });
+    
     document.getElementById('bulletListBtn').addEventListener('click', () => {
         document.execCommand('insertUnorderedList', false, null);
         focusEditorAndSync();
@@ -347,6 +352,78 @@ function setupFormattingToolbar() {
         document.execCommand('insertOrderedList', false, null);
         focusEditorAndSync();
     });
+    
+    bindClickIfExists('horizontalRuleBtn', () => {
+        document.execCommand('insertHorizontalRule', false, null);
+        focusEditorAndSync();
+    });
+    
+    const insertLink = async () => {
+        const selection = window.getSelection();
+        
+        // Check if selection is inside a link (even if collapsed)
+        let existingLink = null;
+        let selectedText = '';
+        let savedRange = null;
+        let existingUrl = '';
+        let existingTitle = '';
+        
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            savedRange = range.cloneRange();
+            
+            // Check if anchor node is inside a link
+            const anchorNode = selection.anchorNode;
+            if (anchorNode) {
+                // Find the closest link element
+                const node = anchorNode.nodeType === Node.TEXT_NODE ? anchorNode.parentElement : anchorNode;
+                existingLink = node.closest ? node.closest('a') : null;
+                
+                if (existingLink) {
+                    // Extract existing link data
+                    existingUrl = existingLink.href || existingLink.getAttribute('href') || '';
+                    existingTitle = existingLink.textContent || existingLink.innerText || '';
+                    selectedText = existingTitle;
+                } else if (!selection.isCollapsed) {
+                    // Text is selected but not inside a link
+                    selectedText = range.toString();
+                }
+            }
+        }
+        
+        // Show dialog with existing link data if available
+        const result = await showLinkDialog(selectedText, existingUrl);
+        
+        if (!result || !result.url || !result.url.trim()) {
+            return; // User cancelled or didn't provide URL
+        }
+        
+        const title = result.title && result.title.trim() ? result.title.trim() : result.url.trim();
+        const url = result.url.trim();
+        
+        // If we're editing an existing link, replace it
+        if (existingLink) {
+            // Select the entire link element (not just contents)
+            const linkRange = document.createRange();
+            linkRange.selectNode(existingLink);
+            selection.removeAllRanges();
+            selection.addRange(linkRange);
+            // Replace with new link
+            document.execCommand('insertHTML', false, `<a href="${escapeHtml(url)}">${escapeHtml(title)}</a>`);
+        } else if (savedRange) {
+            // Restore selection and replace selected text with link
+            selection.removeAllRanges();
+            selection.addRange(savedRange);
+            document.execCommand('insertHTML', false, `<a href="${escapeHtml(url)}">${escapeHtml(title)}</a>`);
+        } else {
+            // Insert new link
+            document.execCommand('insertHTML', false, `<a href="${escapeHtml(url)}">${escapeHtml(title)}</a>`);
+        }
+        
+        focusEditorAndSync();
+    };
+    
+    bindClickIfExists('linkBtn', insertLink);
 
     const applyBlock = (tag) => {
         document.execCommand('formatBlock', false, tag);
@@ -394,6 +471,25 @@ function setupFormattingToolbar() {
     });
     bindClickIfExists('preBtnMobile', (e) => {
         togglePre();
+        closeParentDetails(e.currentTarget);
+    });
+    bindClickIfExists('bulletListBtnMobile', (e) => {
+        document.execCommand('insertUnorderedList', false, null);
+        focusEditorAndSync();
+        closeParentDetails(e.currentTarget);
+    });
+    bindClickIfExists('underlineBtnMobile', (e) => {
+        document.execCommand('underline', false, null);
+        focusEditorAndSync();
+        closeParentDetails(e.currentTarget);
+    });
+    bindClickIfExists('horizontalRuleBtnMobile', (e) => {
+        document.execCommand('insertHorizontalRule', false, null);
+        focusEditorAndSync();
+        closeParentDetails(e.currentTarget);
+    });
+    bindClickIfExists('linkBtnMobile', (e) => {
+        insertLink();
         closeParentDetails(e.currentTarget);
     });
     bindClickIfExists('insertDateBtnMobile', (e) => {
@@ -483,6 +579,39 @@ function setupFormattingToolbar() {
     document.addEventListener('selectionchange', updateToolbarState);
     document.getElementById('noteContent').addEventListener('mouseup', updateToolbarState);
     document.getElementById('noteContent').addEventListener('keyup', updateToolbarState);
+    
+    // Handle Ctrl/Cmd+click on links to open them
+    document.getElementById('noteContent').addEventListener('click', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+            const link = e.target.closest('a');
+            if (link && link.href) {
+                e.preventDefault();
+                window.open(link.href, '_blank', 'noopener,noreferrer');
+            }
+        }
+    });
+    
+    // Track modifier key (Cmd/Ctrl) to change cursor on links
+    const editor = document.querySelector('.editor');
+    const handleModifierKeyDown = (e) => {
+        if (e.ctrlKey || e.metaKey) {
+            editor?.classList.add('modifier-key-pressed');
+        }
+    };
+    const handleModifierKeyUp = (e) => {
+        if (!e.ctrlKey && !e.metaKey) {
+            editor?.classList.remove('modifier-key-pressed');
+        }
+    };
+    
+    // Listen for modifier keys globally (not just in editor)
+    document.addEventListener('keydown', handleModifierKeyDown);
+    document.addEventListener('keyup', handleModifierKeyUp);
+    
+    // Also handle when mouse leaves the window (user releases key outside)
+    window.addEventListener('blur', () => {
+        editor?.classList.remove('modifier-key-pressed');
+    });
 }
 
 function getTextNodeAndOffsetAtCaret(range) {
@@ -531,7 +660,10 @@ function updateToolbarState() {
 
     const boldBtn = document.getElementById('boldBtn');
     const italicBtn = document.getElementById('italicBtn');
+    const underlineBtn = document.getElementById('underlineBtn');
+    const underlineBtnMobile = document.getElementById('underlineBtnMobile');
     const bulletListBtn = document.getElementById('bulletListBtn');
+    const bulletListBtnMobile = document.getElementById('bulletListBtnMobile');
     const numberedListBtn = document.getElementById('numberedListBtn');
     const h1Btn = document.getElementById('h1Btn');
     const h2Btn = document.getElementById('h2Btn');
@@ -551,7 +683,10 @@ function updateToolbarState() {
 
     setPressed(boldBtn, document.queryCommandState('bold'));
     setPressed(italicBtn, document.queryCommandState('italic'));
+    setPressed(underlineBtn, document.queryCommandState('underline'));
+    setPressed(underlineBtnMobile, document.queryCommandState('underline'));
     setPressed(bulletListBtn, document.queryCommandState('insertUnorderedList'));
+    setPressed(bulletListBtnMobile, document.queryCommandState('insertUnorderedList'));
     setPressed(numberedListBtn, document.queryCommandState('insertOrderedList'));
 
     let block = '';
@@ -1222,6 +1357,85 @@ function showModal(title, message, confirmText = 'Confirm', cancelText = 'Cancel
         confirmBtn.addEventListener('click', handleConfirm);
         cancelBtn.addEventListener('click', handleCancel);
         overlay.addEventListener('click', handleOverlayClick);
+    });
+}
+
+function showLinkDialog(selectedText = '', existingUrl = '') {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('linkModalOverlay');
+        const titleInput = document.getElementById('linkModalTitleInput');
+        const urlInput = document.getElementById('linkModalUrlInput');
+        const insertBtn = document.getElementById('linkModalInsertBtn');
+        const cancelBtn = document.getElementById('linkModalCancelBtn');
+        
+        // Pre-fill title with selected text
+        titleInput.value = selectedText;
+        // Pre-fill URL if editing existing link
+        urlInput.value = existingUrl;
+        
+        // Show modal and focus appropriate field
+        overlay.classList.add('active');
+        setTimeout(() => {
+            if (existingUrl) {
+                // If editing, focus title field
+                titleInput.focus();
+                titleInput.select();
+            } else if (urlInput.value === '') {
+                // If new link, focus URL input
+                urlInput.focus();
+            } else {
+                titleInput.focus();
+            }
+        }, 100);
+        
+        const handleInsert = () => {
+            const url = urlInput.value.trim();
+            if (!url) {
+                urlInput.focus();
+                return;
+            }
+            
+            const title = titleInput.value.trim();
+            overlay.classList.remove('active');
+            cleanup();
+            resolve({ title, url });
+        };
+        
+        const handleCancel = () => {
+            overlay.classList.remove('active');
+            cleanup();
+            resolve(null);
+        };
+        
+        const handleOverlayClick = (e) => {
+            if (e.target === overlay) {
+                handleCancel();
+            }
+        };
+        
+        const handleKeyDown = (e) => {
+            if (e.key === 'Enter' && (e.target === titleInput || e.target === urlInput)) {
+                e.preventDefault();
+                handleInsert();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                handleCancel();
+            }
+        };
+        
+        const cleanup = () => {
+            insertBtn.removeEventListener('click', handleInsert);
+            cancelBtn.removeEventListener('click', handleCancel);
+            overlay.removeEventListener('click', handleOverlayClick);
+            titleInput.removeEventListener('keydown', handleKeyDown);
+            urlInput.removeEventListener('keydown', handleKeyDown);
+        };
+        
+        insertBtn.addEventListener('click', handleInsert);
+        cancelBtn.addEventListener('click', handleCancel);
+        overlay.addEventListener('click', handleOverlayClick);
+        titleInput.addEventListener('keydown', handleKeyDown);
+        urlInput.addEventListener('keydown', handleKeyDown);
     });
 }
 

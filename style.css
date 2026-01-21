@@ -363,6 +363,11 @@ header h1 {
 .editor-content a { color: #000ac9; border-bottom: 1px #a0a0a0 dashed; }
 .editor-content li { padding:6px; }
 
+/* Show pointer cursor on links when modifier key (Cmd/Ctrl) is pressed */
+.editor.modifier-key-pressed .editor-content a {
+    cursor: pointer;
+}
+
 #noteContent:focus {
     outline: none;
 }
@@ -592,6 +597,46 @@ button {
 
 .modal-footer .btn-danger:hover {
     background: #d70015;
+}
+
+/* Link Dialog Form Styles */
+.link-dialog-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.link-dialog-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.link-dialog-field label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #1d1d1f;
+}
+
+.link-dialog-field input {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #d2d2d7;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: #1d1d1f;
+    transition: border-color 0.2s;
+    background: #ffffff;
+}
+
+.link-dialog-field input:focus {
+    outline: none;
+    border-color: #007aff;
+}
+
+.link-dialog-field input::placeholder {
+    color: #86868b;
 }
 
 /* Responsive design */

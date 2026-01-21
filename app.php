@@ -62,11 +62,20 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                     <button class="toolbar-btn" id="italicBtn" title="Italic (Ctrl+I)" aria-label="Italic">
                         <em>I</em>
                     </button>
+                    <button class="toolbar-btn" id="underlineBtn" title="Underline (Ctrl+U)" aria-label="Underline">
+                        <u>U</u>
+                    </button>
                     <button class="toolbar-btn" id="bulletListBtn" title="Bullet List" aria-label="Bullet list">
                         •
                     </button>
                     <button class="toolbar-btn" id="numberedListBtn" title="Numbered List" aria-label="Numbered list">
                         1.
+                    </button>
+                    <button class="toolbar-btn" id="horizontalRuleBtn" title="Insert Horizontal Rule" aria-label="Insert horizontal rule">
+                        ─
+                    </button>
+                    <button class="toolbar-btn" id="linkBtn" title="Insert Link" aria-label="Insert link">
+                        🔗
                     </button>
                     <!-- Mobile: move headings/pre into overflow menu -->
                     <details class="overflow-menu mobile-only toolbar-overflow">
@@ -75,9 +84,11 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                             <button class="overflow-menu-item" id="h1BtnMobile" type="button">H1</button>
                             <button class="overflow-menu-item" id="h2BtnMobile" type="button">H2</button>
                             <button class="overflow-menu-item" id="h3BtnMobile" type="button">H3</button>
-                            <button class="overflow-menu-item" id="preBtnMobile" type="button">&lt;&gt;</button>
+                            <button class="overflow-menu-item" id="bulletListBtnMobile" type="button">•</button>
+                            <button class="overflow-menu-item" id="preBtnMobile" type="button">&lt;pre&gt;</button>
+                            <button class="overflow-menu-item" id="underlineBtnMobile" type="button">U̲</button>
+                            <button class="overflow-menu-item" id="horizontalRuleBtnMobile" type="button">HR ---</button>
                             <hr class="overflow-menu-sep">
-                            <button class="overflow-menu-item" id="htmlModeBtnMobile" type="button">HTML</button>
                             <button class="overflow-menu-item" id="insertDateBtnMobile" type="button">📅 Date</button>
                             <button class="overflow-menu-item" id="insertCheckmarkBtnMobile" type="button">✅ Check</button>
                         </div>
@@ -135,6 +146,31 @@ require_once __DIR__ . '/../zendure/login/validate.php';
             <div class="modal-footer">
                 <button class="btn-secondary" id="modalCancelBtn">Cancel</button>
                 <button class="btn-primary" id="modalConfirmBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link Dialog Modal -->
+    <div id="linkModalOverlay" class="modal-overlay">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2 class="modal-title">Insert Link</h2>
+            </div>
+            <div class="modal-body">
+                <div class="link-dialog-form">
+                    <div class="link-dialog-field">
+                        <label for="linkModalTitleInput">Title</label>
+                        <input type="text" id="linkModalTitleInput" placeholder="Link text" autocomplete="off">
+                    </div>
+                    <div class="link-dialog-field">
+                        <label for="linkModalUrlInput">URL</label>
+                        <input type="url" id="linkModalUrlInput" placeholder="https://example.com" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="linkModalCancelBtn">Cancel</button>
+                <button class="btn-primary" id="linkModalInsertBtn">Insert</button>
             </div>
         </div>
     </div>

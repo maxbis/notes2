@@ -32,7 +32,7 @@ function render_error_page($title, $message, $statusCode = 400) {
                 <main class="editor" aria-label="Public note">
                     <div class="editor-header">
                         <div class="title-container">
-                            <input type="text" value="<?php echo $safeTitle; ?>" readonly aria-label="Title" />
+                            <h2><?php echo $safeTitle; ?></h2>
                         </div>
                     </div>
                     <div class="editor-content"><?php echo nl2br($safeMsg); ?></div>
@@ -108,7 +108,7 @@ $safeTitle = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
             <main class="editor" aria-label="Public note (read-only)">
                 <div class="editor-header">
                     <div class="title-container">
-                        <input type="text" value="<?php echo $safeTitle; ?>" readonly aria-label="Title" />
+                        <h2><?php echo $safeTitle; ?></h2>
                     </div>
                 </div>
 
