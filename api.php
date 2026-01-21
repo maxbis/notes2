@@ -198,7 +198,8 @@ switch ($method) {
             echo json_encode($note ? $note : ['error' => 'Note not found']);
         } else {
             // Get all notes
-            $result = $conn->query("SELECT id, hash_id, title, content, created_at, updated_at, version FROM notes ORDER BY updated_at DESC");
+
+git             $result = $conn->query("SELECT id, hash_id, title, content, created_at, updated_at, version FROM notes ORDER BY updated_at DESC");
             $notes = [];
             while ($row = $result->fetch_assoc()) {
                 $notes[] = $row;
