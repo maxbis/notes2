@@ -1,8 +1,17 @@
 <?php
 // GET request handler
+// Note: database.php and error_handler.php are already loaded by api.php,
+// but we require them here for safety in case this file is called directly
 
-require_once __DIR__ . '/../database.php';
-require_once __DIR__ . '/../error_handler.php';
+if (!function_exists('__notes_json_error')) {
+    require_once __DIR__ . '/../error_handler.php';
+}
+if (!function_exists('getDBConnection')) {
+    require_once __DIR__ . '/../database.php';
+}
+if (!function_exists('fetch_assoc_from_stmt')) {
+    require_once __DIR__ . '/../database.php';
+}
 
 function handle_get(mysqli $conn): void {
     if (isset($_GET['id'])) {

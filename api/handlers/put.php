@@ -1,11 +1,23 @@
 <?php
 // PUT request handler - Update existing note
+// Note: database.php, error_handler.php, sanitize.php, config.php (HTML), and utils.php 
+// are already loaded by api.php, but we require them here for safety in case this file is called directly
 
-require_once __DIR__ . '/../database.php';
-require_once __DIR__ . '/../error_handler.php';
-require_once __DIR__ . '/../sanitize.php';
-require_once __DIR__ . '/../config.php'; // HTML sanitization config
-require_once __DIR__ . '/../utils.php';
+if (!function_exists('__notes_json_error')) {
+    require_once __DIR__ . '/../error_handler.php';
+}
+if (!function_exists('getDBConnection')) {
+    require_once __DIR__ . '/../database.php';
+}
+if (!function_exists('sanitize_note_html')) {
+    require_once __DIR__ . '/../sanitize.php';
+}
+if (!isset($ALLOWED_TAGS)) {
+    require_once __DIR__ . '/../config.php'; // HTML sanitization config
+}
+if (!function_exists('generateHashId')) {
+    require_once __DIR__ . '/../utils.php';
+}
 
 function handle_put(mysqli $conn): void {
     global $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS;

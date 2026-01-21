@@ -16,6 +16,10 @@ __notes_setup_error_handlers();
 require_once __DIR__ . '/config.php';
 // Load database functions
 require_once __DIR__ . '/api/database.php';
+// Load HTML sanitization config (needed by handlers)
+require_once __DIR__ . '/api/config.php';
+// Load utility functions (needed by handlers)
+require_once __DIR__ . '/api/utils.php';
 
 if (!headers_sent()) header('Content-Type: application/json; charset=UTF-8');
 

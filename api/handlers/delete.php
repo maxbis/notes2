@@ -1,7 +1,11 @@
 <?php
 // DELETE request handler
+// Note: error_handler.php is already loaded by api.php,
+// but we require it here for safety in case this file is called directly
 
-require_once __DIR__ . '/../error_handler.php';
+if (!function_exists('__notes_json_error')) {
+    require_once __DIR__ . '/../error_handler.php';
+}
 
 function handle_delete(mysqli $conn): void {
     // Delete note
