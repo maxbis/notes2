@@ -199,7 +199,7 @@ switch ($method) {
         } else {
             // Get all notes
 
-git             $result = $conn->query("SELECT id, hash_id, title, content, created_at, updated_at, version FROM notes ORDER BY updated_at DESC");
+            $result = $conn->query("SELECT id, hash_id, title, content, created_at, updated_at, version FROM notes ORDER BY updated_at DESC");
             $notes = [];
             while ($row = $result->fetch_assoc()) {
                 $notes[] = $row;
