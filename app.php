@@ -117,6 +117,7 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                     <!-- Desktop: show Delete as a normal button -->
                     <div class="editor-actions desktop-only">
                         <button class="btn-secondary" id="shareLinkBtn" type="button" title="Copy public link" aria-label="Copy public link">Share</button>
+                        <button class="btn-secondary" id="exportPdfBtn" type="button" title="Export to PDF" aria-label="Export to PDF">PDF</button>
                         <button class="btn-danger deleteBtn" type="button" title="Delete this note" aria-label="Delete this note">Delete</button>
                     </div>
 
@@ -176,6 +177,8 @@ require_once __DIR__ . '/../zendure/login/validate.php';
     </div>
 
     <script src="vendor/beautify-html.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script type="module" src="app.js"></script>
 </body>
 </html>

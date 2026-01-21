@@ -8,6 +8,7 @@ import { saveNote, saveBeforeUnload } from './js/save.js';
 import { loadNotes, renderNotesList, filterNotes, selectNote, createNewNote, deleteNote, refreshCurrentNote, initNotes } from './js/notes.js';
 import { showModal, showLinkDialog, showConflictDialog, showDeleteConfirmDialog } from './js/modals.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './js/indicators.js';
+import { exportNoteToPdf } from './js/pdf-export.js';
 
 // Make selectNote available globally for onclick handlers in rendered HTML
 window.selectNote = selectNote;
@@ -133,6 +134,14 @@ function setupEventListeners() {
     };
     bindShare('shareLinkBtn');
     bindShare('shareLinkBtnMobile');
+    
+    // PDF export button
+    const exportPdfBtn = document.getElementById('exportPdfBtn');
+    if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', async () => {
+            await exportNoteToPdf();
+        });
+    }
     
     // Setup formatting toolbar
     setupFormattingToolbar();
