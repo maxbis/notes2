@@ -39,7 +39,11 @@ function fetch_assoc_from_stmt(mysqli_stmt $stmt): ?array {
         $meta->free();
         if ($bind) {
             call_user_func_array([$stmt, 'bind_result'], $bind);
-            return $stmt->fetch() ? array_map(static fn($v) => $v, $row) : null;
+            if ($stmt->fetch()) {
+                // Copy values to break references (PHP < 7.4 compatibility)
+                return array_map(function($v) { return $v; }, $row);
+            }
+            return null;
         } else {
             return null;
         }
