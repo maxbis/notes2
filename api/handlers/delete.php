@@ -3,7 +3,7 @@
 // Note: error_handler.php is already loaded by api.php,
 // but we require it here for safety in case this file is called directly
 
-if (!function_exists('__notes_json_error')) {
+if (!function_exists('__notes_json_error') || !function_exists('__notes_db_fail')) {
     require_once __DIR__ . '/../error_handler.php';
 }
 

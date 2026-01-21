@@ -3,13 +3,10 @@
 // Note: database.php and error_handler.php are already loaded by api.php,
 // but we require them here for safety in case this file is called directly
 
-if (!function_exists('__notes_json_error')) {
+if (!function_exists('__notes_json_error') || !function_exists('__notes_db_fail')) {
     require_once __DIR__ . '/../error_handler.php';
 }
-if (!function_exists('getDBConnection')) {
-    require_once __DIR__ . '/../database.php';
-}
-if (!function_exists('fetch_assoc_from_stmt')) {
+if (!function_exists('getDBConnection') || !function_exists('fetch_assoc_from_stmt')) {
     require_once __DIR__ . '/../database.php';
 }
 
