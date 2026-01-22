@@ -16,6 +16,9 @@ const state = {
     savePendingForceOverwrite: false,
     saveIdleWaiters: [],
     
+    // Prevent multiple simultaneous unload saves
+    unloadSaveInProgress: false,
+    
     // Editor state
     isHtmlMode: false,
     // In HTML mode, we show formatted HTML for readability but keep a canonical raw string

@@ -224,12 +224,20 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
 }
 
 export function saveBeforeUnload() {
+    // Prevent multiple simultaneous unload saves (can be triggered by visibilitychange, blur, and beforeunload)
+    if (state.unloadSaveInProgress) {
+        console.log(`[SAVE UNLOAD] Already saving, skipping duplicate call`);
+        return;
+    }
+    
     // Save using fetch with keepalive for reliable sending during page unload
     // The keepalive flag ensures the request continues even after the page starts unloading
     const title = document.getElementById('noteTitle').value.trim() || 'Untitled';
     const content = getEditorHtml();
     
     if (state.hasUnsavedChanges && state.currentNote) {
+        state.unloadSaveInProgress = true;
+        
         console.log(`[SAVE UNLOAD] Saving before page unload`, {
             noteId: state.currentNote.hash_id,
             title: title.substring(0, 50),
@@ -239,6 +247,7 @@ export function saveBeforeUnload() {
         
         // Use fetch with keepalive flag - this is the standard way to send data during page unload
         // It's supported in all modern browsers and is more reliable than regular fetch
+        // Use force_overwrite: true to avoid conflicts during unload (user is leaving anyway)
         fetch(API_ENDPOINT, {
             method: 'PUT',
             headers: {
@@ -248,7 +257,8 @@ export function saveBeforeUnload() {
                 hash_id: state.currentNote.hash_id,
                 title: title,
                 content: content,
-                expected_version: state.originalVersion
+                expected_version: state.originalVersion,
+                force_overwrite: true  // Force overwrite to avoid conflicts during unload
             }),
             keepalive: true  // Critical: allows request to complete even after page unloads
         }).then(response => {
@@ -261,12 +271,22 @@ export function saveBeforeUnload() {
                         timestamp: data.updated_at
                     });
                 }
+                // Reset flag after a delay to allow for potential retries if page doesn't unload
+                setTimeout(() => {
+                    state.unloadSaveInProgress = false;
+                }, 2000);
             });
         }).catch(err => {
             // Silently fail - page is unloading anyway
             console.error(`[SAVE UNLOAD EXCEPTION] Error during unload save:`, err);
+            // Reset flag after a delay
+            setTimeout(() => {
+                state.unloadSaveInProgress = false;
+            }, 2000);
         });
     } else if (state.hasUnsavedChanges && !state.currentNote) {
+        state.unloadSaveInProgress = true;
+        
         // New note that hasn't been created on the server yet — try to create it on unload.
         console.log(`[SAVE UNLOAD] Creating new note before page unload`, {
             title: title.substring(0, 50),
@@ -294,9 +314,17 @@ export function saveBeforeUnload() {
                         timestamp: data.updated_at
                     });
                 }
+                // Reset flag after a delay
+                setTimeout(() => {
+                    state.unloadSaveInProgress = false;
+                }, 2000);
             });
         }).catch(err => {
             console.error(`[SAVE UNLOAD EXCEPTION] Error during unload create:`, err);
+            // Reset flag after a delay
+            setTimeout(() => {
+                state.unloadSaveInProgress = false;
+            }, 2000);
         });
     } else {
         console.log(`[SAVE UNLOAD] No save needed`, {
