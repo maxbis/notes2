@@ -15,39 +15,60 @@ export function initSave(deps) {
     renderNotesList = deps.renderNotesList;
 }
 
+/**
+ * Queues a save operation to prevent overlapping saves that could cause self-conflicts.
+ * 
+ * The save queue ensures only one save runs at a time. If a save is already in progress,
+ * this request is queued and will run immediately after the current save completes.
+ * Multiple queued saves are coalesced (only the latest parameters are used).
+ * 
+ * @param {boolean} showFeedback - Whether to show user feedback after save
+ * @param {boolean} forceOverwrite - Whether to force overwrite on version conflicts
+ * @returns {Promise} Resolves when the save queue becomes idle
+ */
 export async function saveNote(showFeedback = true, forceOverwrite = false) {
-    // Queue saves so we never have overlapping PUTs (which can cause self-conflicts).
-    state.savePending = true;
-    state.savePendingShowFeedback = state.savePendingShowFeedback || !!showFeedback;
-    state.savePendingForceOverwrite = state.savePendingForceOverwrite || !!forceOverwrite;
+    // Mark that a save is pending and merge parameters
+    state.saveQueue.pending = true;
+    state.saveQueue.pendingShowFeedback = state.saveQueue.pendingShowFeedback || !!showFeedback;
+    state.saveQueue.pendingForceOverwrite = state.saveQueue.pendingForceOverwrite || !!forceOverwrite;
 
     return new Promise((resolve, reject) => {
-        state.saveIdleWaiters.push({ resolve, reject });
+        // Add this caller to the list of waiters
+        state.saveQueue.idleWaiters.push({ resolve, reject });
 
-        if (state.saveRunnerPromise) return;
+        // If a queue processor is already running, just queue this request
+        if (state.saveQueue.runnerPromise) return;
 
-        state.saveRunnerPromise = (async () => {
+        // Start the queue processor
+        state.saveQueue.runnerPromise = (async () => {
             try {
-                while (state.savePending) {
-                    const nextShowFeedback = state.savePendingShowFeedback;
-                    const nextForceOverwrite = state.savePendingForceOverwrite;
+                // Process all queued saves sequentially
+                while (state.saveQueue.pending) {
+                    // Capture the parameters for this save
+                    const nextShowFeedback = state.saveQueue.pendingShowFeedback;
+                    const nextForceOverwrite = state.saveQueue.pendingForceOverwrite;
 
-                    state.savePending = false;
-                    state.savePendingShowFeedback = false;
-                    state.savePendingForceOverwrite = false;
+                    // Clear the pending flags
+                    state.saveQueue.pending = false;
+                    state.saveQueue.pendingShowFeedback = false;
+                    state.saveQueue.pendingForceOverwrite = false;
 
+                    // Perform the actual save
                     await performSave(nextShowFeedback, nextForceOverwrite);
                 }
 
-                const waiters = state.saveIdleWaiters;
-                state.saveIdleWaiters = [];
+                // All saves complete - resolve all waiting promises
+                const waiters = state.saveQueue.idleWaiters;
+                state.saveQueue.idleWaiters = [];
                 waiters.forEach(w => w.resolve());
             } catch (err) {
-                const waiters = state.saveIdleWaiters;
-                state.saveIdleWaiters = [];
+                // On error, reject all waiting promises
+                const waiters = state.saveQueue.idleWaiters;
+                state.saveQueue.idleWaiters = [];
                 waiters.forEach(w => w.reject(err));
             } finally {
-                state.saveRunnerPromise = null;
+                // Clear the runner promise so a new one can start if needed
+                state.saveQueue.runnerPromise = null;
             }
         })();
     });
@@ -270,6 +291,22 @@ export function saveBeforeUnload() {
                         noteId: data.hash_id,
                         timestamp: data.updated_at
                     });
+                    // Update state to reflect the successful save
+                    // This is critical: if the page doesn't unload (e.g., just tab switch), 
+                    // we need to update the version to avoid conflicts when user returns
+                    state.originalVersion = data.version != null ? Number(data.version) : null;
+                    state.savedTitle = data.title || '';
+                    state.savedContent = data.content || '';
+                    state.hasUnsavedChanges = false;
+                    // Update the note in the notes array
+                    const index = state.notes.findIndex(n => n.hash_id === data.hash_id);
+                    if (index !== -1) {
+                        state.notes[index] = data;
+                    }
+                    // Update UI indicators
+                    updateUnsavedIndicator();
+                    const savedAt = new Date(data.updated_at);
+                    updateLastSavedTime(savedAt);
                 }
                 // Reset flag after a delay to allow for potential retries if page doesn't unload
                 setTimeout(() => {
@@ -313,6 +350,18 @@ export function saveBeforeUnload() {
                         noteId: data.hash_id,
                         timestamp: data.updated_at
                     });
+                    // Update state to reflect the successful creation
+                    state.currentNote = data;
+                    state.originalVersion = data.version != null ? Number(data.version) : null;
+                    state.savedTitle = data.title || '';
+                    state.savedContent = data.content || '';
+                    state.hasUnsavedChanges = false;
+                    // Add to notes array
+                    state.notes.unshift(data);
+                    // Update UI indicators
+                    updateUnsavedIndicator();
+                    const savedAt = new Date(data.updated_at);
+                    updateLastSavedTime(savedAt);
                 }
                 // Reset flag after a delay
                 setTimeout(() => {

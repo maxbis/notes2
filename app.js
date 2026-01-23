@@ -1,5 +1,5 @@
 // Main application entry point
-import state from './js/state.js';
+import state, { AUTO_SAVE_DELAY_MS } from './js/state.js';
 import { isMobileLayout, getPublicLink } from './js/utils.js';
 import { setHtmlMode, getEditorHtml } from './js/editor.js';
 import { setupFormattingToolbar, initToolbar, updateToolbarState } from './js/toolbar.js';
@@ -48,14 +48,14 @@ function trackChanges() {
     // Update unsaved indicator
     updateUnsavedIndicator();
     
-    // Reset and start auto-save timer (4 seconds)
+    // Reset and start auto-save timer
     clearTimeout(state.autoSaveTimer);
     if (state.hasUnsavedChanges) {
         state.autoSaveTimer = setTimeout(() => {
             if (state.hasUnsavedChanges) {
                 saveNote(false);
             }
-        }, 4000);
+        }, AUTO_SAVE_DELAY_MS);
     }
 }
 
