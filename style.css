@@ -361,7 +361,7 @@ header h1 {
 .editor-content h4, h5 { font-size: 1.0rem; margin: 0.6rem 0 0.4rem; line-height: 1.3;color: #236fa1; font-weight:600; }
 .editor-content pre { font-size: 0.8rem; margin: 0.5rem 0 0.35rem; line-height: 1.4;color: #202020; }
 .editor-content a { color: #000ac9; border-bottom: 1px #a0a0a0 dashed; }
-.editor-content li { padding:6px; }
+.editor-content li { padding:3px; }
 .editor-content p { margin: 0.5rem 0; }
 .editor-content hr { margin: 0.5rem 0; }
 .editor-content blockquote { margin: 0.5rem 0; }
