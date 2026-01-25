@@ -38,10 +38,13 @@ export async function loadNotes() {
 export function renderNotesList(searchTerm = '') {
     const notesList = document.getElementById('notesList');
     const filteredNotes = searchTerm 
-        ? state.notes.filter(note => 
-            note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            note.content.toLowerCase().includes(searchTerm.toLowerCase())
-          )
+        ? state.notes.filter(note => {
+            const searchLower = searchTerm.toLowerCase();
+            const titleLower = (note.title || '').toLowerCase();
+            // Strip HTML tags from content before searching
+            const contentText = stripHtmlTags(note.content || '').toLowerCase();
+            return titleLower.includes(searchLower) || contentText.includes(searchLower);
+          })
         : state.notes;
 
     if (filteredNotes.length === 0) {
