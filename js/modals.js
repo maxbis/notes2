@@ -122,6 +122,77 @@ export function showLinkDialog(selectedText = '', existingUrl = '') {
     });
 }
 
+export function showShareDialog(url, title = 'Share link copied') {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('modalOverlay');
+        const titleEl = document.getElementById('modalTitle');
+        const messageEl = document.getElementById('modalMessage');
+        const confirmBtn = document.getElementById('modalConfirmBtn');
+        const cancelBtn = document.getElementById('modalCancelBtn');
+        const footer = confirmBtn?.parentElement;
+
+        const originalConfirmText = confirmBtn.textContent;
+        const originalCancelText = cancelBtn.textContent;
+        const originalConfirmClassName = confirmBtn.className;
+        const originalCancelClassName = cancelBtn.className;
+
+        titleEl.textContent = title;
+        messageEl.textContent = url;
+        cancelBtn.textContent = 'Close';
+        confirmBtn.textContent = '';
+
+        const openBtn = document.createElement('button');
+        openBtn.type = 'button';
+        openBtn.className = 'btn-primary';
+        openBtn.textContent = 'Open';
+
+        confirmBtn.style.display = 'none';
+        if (footer) {
+            footer.insertBefore(openBtn, confirmBtn);
+        }
+
+        overlay.classList.add('active');
+
+        const cleanup = () => {
+            overlay.classList.remove('active');
+            openBtn.removeEventListener('click', handleOpen);
+            cancelBtn.removeEventListener('click', handleCancel);
+            overlay.removeEventListener('click', handleOverlayClick);
+            if (footer && openBtn.parentElement === footer) {
+                footer.removeChild(openBtn);
+            }
+            confirmBtn.textContent = originalConfirmText;
+            cancelBtn.textContent = originalCancelText;
+            confirmBtn.className = originalConfirmClassName;
+            cancelBtn.className = originalCancelClassName;
+            confirmBtn.style.display = '';
+        };
+
+        const handleOpen = () => {
+            cleanup();
+            if (url) {
+                window.open(url, '_blank', 'noopener');
+            }
+            resolve('open');
+        };
+
+        const handleCancel = () => {
+            cleanup();
+            resolve('close');
+        };
+
+        const handleOverlayClick = (e) => {
+            if (e.target === overlay) {
+                handleCancel();
+            }
+        };
+
+        openBtn.addEventListener('click', handleOpen);
+        cancelBtn.addEventListener('click', handleCancel);
+        overlay.addEventListener('click', handleOverlayClick);
+    });
+}
+
 export async function showConflictDialog(serverUpdatedAt, serverTitle, serverContent, behindBy) {
     const serverTime = (serverUpdatedAt instanceof Date ? serverUpdatedAt : new Date(serverUpdatedAt)).toLocaleString('nl-NL', {
         hour: '2-digit',

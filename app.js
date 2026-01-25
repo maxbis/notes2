@@ -6,7 +6,7 @@ import { setupFormattingToolbar, initToolbar, updateToolbarState } from './js/to
 import { insertDate, insertCheckmark } from './js/insert.js';
 import { saveNote, saveBeforeUnload } from './js/save.js';
 import { loadNotes, renderNotesList, filterNotes, selectNote, createNewNote, deleteNote, refreshCurrentNote, initNotes } from './js/notes.js';
-import { showModal, showLinkDialog, showConflictDialog, showDeleteConfirmDialog } from './js/modals.js';
+import { showModal, showLinkDialog, showConflictDialog, showDeleteConfirmDialog, showShareDialog } from './js/modals.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './js/indicators.js';
 import { exportNoteToPdf } from './js/pdf-export.js';
 
@@ -94,7 +94,7 @@ async function copyPublicLinkForCurrentNote() {
     try {
         if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
             await navigator.clipboard.writeText(url);
-            await showModal('Share link copied', url, 'OK', 'Close');
+            await showShareDialog(url, 'Share link copied');
             return;
         }
     } catch (e) {

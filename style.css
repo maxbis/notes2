@@ -362,6 +362,11 @@ header h1 {
 .editor-content pre { font-size: 0.8rem; margin: 0.5rem 0 0.35rem; line-height: 1.4;color: #202020; }
 .editor-content a { color: #000ac9; border-bottom: 1px #a0a0a0 dashed; }
 .editor-content li { padding:6px; }
+.editor-content p { margin: 0.5rem 0; }
+.editor-content hr { margin: 0.5rem 0; }
+.editor-content blockquote { margin: 0.5rem 0; }
+.editor-content code { margin: 0.5rem 0; }
+.editor-content pre { margin: 0.5rem 0;border: 1px solid #e5e5e7;padding: 0.5rem;border-radius: 0.5rem; }
 
 /* Show pointer cursor on links when modifier key (Cmd/Ctrl) is pressed */
 .editor.modifier-key-pressed .editor-content a {
