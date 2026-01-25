@@ -688,8 +688,10 @@ button {
         height: auto;
         max-height: 25vh;
         border-right: none;
-        border-bottom: 1px solid #e5e5e7;
+        border-bottom: 2px solid #d2d2d7; /* Thicker, more visible divider */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Subtle shadow for separation */
         flex-shrink: 0;
+        background: #ffffff; /* Ensure white background */
     }
     
     .search-box {
@@ -717,21 +719,45 @@ button {
         border-radius: 6px;
     }
     
+    .note-item-header {
+        display: grid;
+        grid-template-columns: 7fr 3fr; /* 70% title, 30% date */
+        column-gap: 0.3rem;
+        align-items: baseline;
+        min-width: 0;
+        margin-bottom: 0;
+    }
+    
     .note-item-title {
         font-size: 1.2rem; /* Increased from 0.7rem for better readability */
         margin-bottom: 0;
         line-height: 1.3;
         font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .note-item-date {
+        display: block; /* Show date on mobile */
+        font-size: 0.75rem;
+        color: #86868b; /* Light gray color */
+        font-weight: 400;
+        text-align: right;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    .note-item-preview,
-    .note-item-date {
+    .note-item-preview {
         display: none;
     }
     
     .editor {
         flex: 1;
         min-height: 0;
+        background: #ffffff; /* Ensure white background */
+        box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.03); /* Subtle top shadow for depth */
     }
     
     .editor-header {
