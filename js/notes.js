@@ -49,9 +49,9 @@ export function renderNotesList(searchTerm = '') {
         return;
     }
 
-    // On mobile, limit to 4 notes when not searching
+    // On mobile, limit to 20 notes when not searching
     const isMobile = window.innerWidth <= 768;
-    const notesToShow = isMobile && !searchTerm ? filteredNotes.slice(0, 4) : filteredNotes;
+    const notesToShow = isMobile && !searchTerm ? filteredNotes.slice(0, 20) : filteredNotes;
 
     notesList.innerHTML = notesToShow.map(note => `
         <div class="note-item ${state.currentNote && state.currentNote.hash_id === note.hash_id ? 'active' : ''}" 
