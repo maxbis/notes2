@@ -77,6 +77,7 @@ export async function saveNote(showFeedback = true, forceOverwrite = false) {
 async function performSave(showFeedback = true, forceOverwrite = false) {
     const title = document.getElementById('noteTitle').value.trim() || 'Untitled';
     const content = getEditorHtml();
+    const previousTitle = state.currentNote?.title || state.savedTitle || '';
 
     const timestamp = new Date().toISOString();
     const saveType = state.currentNote ? 'UPDATE' : 'CREATE';
@@ -190,6 +191,7 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
             if (index !== -1) {
                 state.notes[index] = savedNote;
             }
+            state.currentNote = savedNote;
         } else {
             state.notes.unshift(savedNote);
             state.currentNote = savedNote;
@@ -225,8 +227,8 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
         // When called from selectNote (showFeedback=false), selectNote will handle rendering
         if (!showFeedback) {
             // Auto-save: for CREATE we must render so the new note appears in the sidebar.
-            // For UPDATE we keep the old behavior to avoid double-rendering during note switches.
-            if (saveType === 'CREATE') {
+            // For UPDATE, re-render when the title changes (affects list/grouping).
+            if (saveType === 'CREATE' || previousTitle !== savedNote.title) {
                 renderNotesList(document.getElementById('searchInput').value);
             }
         } else {

@@ -9,6 +9,25 @@ import { showDeleteConfirmDialog } from './modals.js';
 // Dependencies that will be injected
 let saveNote = null;
 let hideNotesSidebarForEditing = null;
+const GROUP_STORAGE_KEY = 'notes2.folderState';
+
+function loadGroupState() {
+    try {
+        const stored = localStorage.getItem(GROUP_STORAGE_KEY);
+        const parsed = stored ? JSON.parse(stored) : {};
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (error) {
+        return {};
+    }
+}
+
+function saveGroupState(state) {
+    try {
+        localStorage.setItem(GROUP_STORAGE_KEY, JSON.stringify(state));
+    } catch (error) {
+        // Ignore persistence errors (e.g. storage disabled)
+    }
+}
 
 export function initNotes(deps) {
     saveNote = deps.saveNote;
@@ -56,16 +75,68 @@ export function renderNotesList(searchTerm = '') {
     const isMobile = window.innerWidth <= 768;
     const notesToShow = isMobile && !searchTerm ? filteredNotes.slice(0, 20) : filteredNotes;
 
-    notesList.innerHTML = notesToShow.map(note => `
-        <div class="note-item ${state.currentNote && state.currentNote.hash_id === note.hash_id ? 'active' : ''}" 
-             onclick="window.selectNote('${note.hash_id}')">
-            <div class="note-item-header">
-                <div class="note-item-title">${escapeHtml(note.title || 'Untitled')}</div>
-                <div class="note-item-date">${formatDate(note.updated_at)}</div>
+    const groupState = loadGroupState();
+    const groups = new Map();
+    const defaultGroup = 'Other';
+
+    notesToShow.forEach(note => {
+        const rawTitle = (note.title || 'Untitled').trim();
+        const dotIndex = rawTitle.indexOf('.');
+        const groupName = dotIndex > 0 ? rawTitle.slice(0, dotIndex).trim() || defaultGroup : defaultGroup;
+        const itemTitle = dotIndex > 0 ? rawTitle.slice(dotIndex + 1).trim() || 'Untitled' : rawTitle;
+        const bucket = groups.get(groupName) || [];
+        bucket.push({ note, itemTitle });
+        groups.set(groupName, bucket);
+    });
+
+    notesList.innerHTML = Array.from(groups.entries()).map(([groupName, items]) => {
+        const isCollapsed = groupState[groupName] === true;
+        const itemsHtml = items.map(({ note, itemTitle }) => `
+            <div class="note-item ${state.currentNote && state.currentNote.hash_id === note.hash_id ? 'active' : ''}" 
+                 onclick="window.selectNote('${note.hash_id}')">
+                <div class="note-item-header">
+                    <div class="note-item-title">${escapeHtml(itemTitle || 'Untitled')}</div>
+                    <div class="note-item-date">${formatDate(note.updated_at)}</div>
+                </div>
+                <div class="note-item-preview">${escapeHtml(stripHtmlTags(note.content).substring(0, 100))}</div>
             </div>
-            <div class="note-item-preview">${escapeHtml(stripHtmlTags(note.content).substring(0, 100))}</div>
-        </div>
-    `).join('');
+        `).join('');
+
+        return `
+            <div class="note-group" data-group="${escapeHtml(groupName)}" data-collapsed="${isCollapsed ? 'true' : 'false'}">
+                <button class="note-group-header" type="button" aria-expanded="${!isCollapsed}" data-group="${escapeHtml(groupName)}">
+                    <span class="note-group-caret" aria-hidden="true"></span>
+                    <span class="note-group-title">${escapeHtml(groupName)}</span>
+                </button>
+                <div class="note-group-items" ${isCollapsed ? 'hidden' : ''}>
+                    ${itemsHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    notesList.querySelectorAll('.note-group-header').forEach(button => {
+        button.addEventListener('click', () => {
+            const groupName = button.dataset.group;
+            const groupEl = button.closest('.note-group');
+            const itemsEl = groupEl ? groupEl.querySelector('.note-group-items') : null;
+            const isCollapsed = groupEl && groupEl.dataset.collapsed === 'true';
+            const nextCollapsed = !isCollapsed;
+
+            if (groupEl) {
+                groupEl.dataset.collapsed = nextCollapsed ? 'true' : 'false';
+            }
+            button.setAttribute('aria-expanded', (!nextCollapsed).toString());
+            if (itemsEl) {
+                itemsEl.hidden = nextCollapsed;
+            }
+
+            if (groupName) {
+                groupState[groupName] = nextCollapsed;
+                saveGroupState(groupState);
+            }
+        });
+    });
 }
 
 export function filterNotes(e) {

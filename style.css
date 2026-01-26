@@ -111,6 +111,56 @@ header h1 {
     border-right: 2px solid #e5e5e7;
 }
 
+.note-group {
+    margin-bottom: 0.35rem;
+}
+
+.note-group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.2rem 0.8rem;
+    background: none;
+    border: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #6e6e73;
+    cursor: pointer;
+}
+
+.note-group-header:focus-visible {
+    outline: 2px solid #007aff;
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+.note-group-caret {
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 6px solid #6e6e73;
+    transform: rotate(90deg);
+    transition: transform 0.15s ease;
+}
+
+.note-group[data-collapsed="true"] .note-group-caret {
+    transform: rotate(0deg);
+}
+
+.note-group-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.note-group-items .note-item {
+    margin-left: 0.35rem;
+    padding-left: 1.2rem;
+}
+
 .note-item {
     padding: 0.2rem 0.8rem;
     margin-bottom: 0.30rem;
