@@ -230,6 +230,36 @@ export function setupFormattingToolbar() {
         focusEditorAndSync();
     };
 
+    const clearFormatting = () => {
+        // Remove inline formatting such as bold, italic, underline, links, etc.
+        try {
+            document.execCommand('removeFormat', false, null);
+        } catch {
+            // ignore
+        }
+
+        // Reset block type back to a normal paragraph (removes H1/H2/H3/pre wrappers)
+        try {
+            document.execCommand('formatBlock', false, 'p');
+        } catch {
+            // ignore
+        }
+
+        // If a list is active, toggle it off so list styling is cleared as well.
+        try {
+            if (document.queryCommandState('insertUnorderedList')) {
+                document.execCommand('insertUnorderedList', false, null);
+            }
+            if (document.queryCommandState('insertOrderedList')) {
+                document.execCommand('insertOrderedList', false, null);
+            }
+        } catch {
+            // ignore
+        }
+
+        focusEditorAndSync();
+    };
+
     const togglePre = () => {
         // Toggle: if we're already in <pre>, switch back to normal paragraph
         let currentBlock = '';
@@ -254,6 +284,7 @@ export function setupFormattingToolbar() {
     bindClickIfExists('h1Btn', () => applyBlock('h1'));
     bindClickIfExists('h2Btn', () => applyBlock('h2'));
     bindClickIfExists('h3Btn', () => applyBlock('h3'));
+    bindClickIfExists('clearFormatBtn', () => clearFormatting());
     bindClickIfExists('preBtn', togglePre);
 
     // Mobile overflow menu buttons (same actions)
@@ -267,6 +298,10 @@ export function setupFormattingToolbar() {
     });
     bindClickIfExists('h3BtnMobile', (e) => {
         applyBlock('h3');
+        closeParentDetails(e.currentTarget);
+    });
+    bindClickIfExists('clearFormatBtnMobile', (e) => {
+        clearFormatting();
         closeParentDetails(e.currentTarget);
     });
     bindClickIfExists('preBtnMobile', (e) => {

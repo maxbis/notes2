@@ -84,6 +84,7 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                             <button class="overflow-menu-item" id="h1BtnMobile" type="button">H1</button>
                             <button class="overflow-menu-item" id="h2BtnMobile" type="button">H2</button>
                             <button class="overflow-menu-item" id="h3BtnMobile" type="button">H3</button>
+                            <button class="overflow-menu-item" id="clearFormatBtnMobile" type="button">Clear</button>
                             <button class="overflow-menu-item" id="bulletListBtnMobile" type="button">•</button>
                             <button class="overflow-menu-item" id="preBtnMobile" type="button">&lt;pre&gt;</button>
                             <button class="overflow-menu-item" id="underlineBtnMobile" type="button">U̲</button>
@@ -98,6 +99,7 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                         <button class="toolbar-btn" id="h1Btn" title="Heading 1" aria-label="Heading 1">H1</button>
                         <button class="toolbar-btn" id="h2Btn" title="Heading 2" aria-label="Heading 2">H2</button>
                         <button class="toolbar-btn" id="h3Btn" title="Heading 3" aria-label="Heading 3">H3</button>
+                        <button class="toolbar-btn" id="clearFormatBtn" title="Clear formatting" aria-label="Clear formatting">Tx</button>
                         <button class="toolbar-btn" id="preBtn" title="Preformatted (monospace)" aria-label="Preformatted (monospace)"><></button>
                     </div>
                     <button class="toolbar-btn" id="htmlModeBtn" title="Edit HTML" aria-label="Edit HTML">HTML</button>
