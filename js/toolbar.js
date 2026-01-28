@@ -1,5 +1,6 @@
 // Formatting toolbar setup and state management
 import { escapeHtml } from './utils.js';
+import { isHtmlMode } from './state.js';
 
 // These will be imported from other modules
 let trackChanges = null;
@@ -350,6 +351,50 @@ export function setupFormattingToolbar() {
     
     // Keyboard shortcuts
     document.getElementById('noteContent').addEventListener('keydown', (e) => {
+        // Only apply custom shortcuts in visual mode (not HTML source mode).
+        if (typeof isHtmlMode === 'function' && isHtmlMode()) {
+            return;
+        }
+
+        // Shift+Enter inside lists: insert a line break within the current <li>.
+        if (e.key === 'Enter' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+            const selection = window.getSelection();
+            if (selection && selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                const container = range.startContainer;
+                const element = container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
+                const li = element && typeof element.closest === 'function' ? element.closest('li') : null;
+
+                if (li) {
+                    e.preventDefault();
+
+                    let inserted = false;
+                    try {
+                        inserted = document.execCommand('insertLineBreak', false, null);
+                    } catch {
+                        inserted = false;
+                    }
+
+                    if (!inserted) {
+                        const br = document.createElement('br');
+                        // Replace any selected content with the line break
+                        range.deleteContents();
+                        range.insertNode(br);
+                        // Move caret just after the <br> we inserted
+                        range.setStartAfter(br);
+                        range.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    }
+
+                    // Sync toolbar state and change tracking after the edit.
+                    setTimeout(updateToolbarState, 0);
+                    if (trackChanges) setTimeout(trackChanges, 0);
+                    return;
+                }
+            }
+        }
+
         if (e.ctrlKey || e.metaKey) {
             if (e.key === 'b') {
                 e.preventDefault();
