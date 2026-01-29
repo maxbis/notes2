@@ -92,6 +92,7 @@ $safeTitle = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     <title><?php echo $safeTitle; ?> - Notes</title>
     <link rel="icon" href="icons/favicon.ico">
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
     <style>
         /* Minimal layout without the authenticated editor shell */
         header { display: none; }
@@ -137,6 +138,23 @@ $safeTitle = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
             </main>
         </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        (function () {
+            if (typeof hljs === 'undefined') return;
+            var container = document.querySelector('.editor-content');
+            if (!container) return;
+            container.querySelectorAll('pre').forEach(function (pre) {
+                var first = pre.firstElementChild;
+                if (!first || first.tagName !== 'CODE') {
+                    var code = document.createElement('code');
+                    while (pre.firstChild) code.appendChild(pre.firstChild);
+                    pre.appendChild(code);
+                }
+            });
+            container.querySelectorAll('pre code').forEach(function (el) { hljs.highlightElement(el); });
+        })();
+    </script>
 </body>
 </html>
 

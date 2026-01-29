@@ -28,10 +28,14 @@ export function formatHtmlForDisplay(html) {
     return input;
 }
 
+// Empty editor content: use a single <p> so Enter and block behavior work (contenteditable needs a block).
+const EMPTY_EDITOR_HTML = '<p><br></p>';
+
 export function setEditorHtml(html) {
     const editor = document.getElementById('noteContent');
     const htmlEl = document.getElementById('noteContentHtml');
-    state.htmlModeRawHtml = String(html ?? '');
+    const raw = String(html ?? '').trim();
+    state.htmlModeRawHtml = raw === '' ? EMPTY_EDITOR_HTML : raw;
     state.htmlModeDirty = false;
 
     if (editor) editor.innerHTML = state.htmlModeRawHtml;
