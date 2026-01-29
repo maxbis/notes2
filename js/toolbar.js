@@ -51,6 +51,19 @@ function findLastTextNode(node) {
     return null;
 }
 
+const BLOCK_TAG_NAMES = new Set(['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'PRE', 'LI', 'BLOCKQUOTE', 'TD', 'TH']);
+
+function getBlockElement(container, editorRoot) {
+    let node = container && container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
+    while (node && node !== editorRoot) {
+        if (node.nodeType === Node.ELEMENT_NODE && BLOCK_TAG_NAMES.has(node.tagName)) {
+            return node;
+        }
+        node = node.parentElement;
+    }
+    return node || editorRoot;
+}
+
 export function updateToolbarState() {
     const editor = document.getElementById('noteContent');
     if (!editor) return;
@@ -392,6 +405,40 @@ export function setupFormattingToolbar() {
                     if (trackChanges) setTimeout(trackChanges, 0);
                     return;
                 }
+            }
+        }
+
+        // Plain Enter: force new block to be <p> (browser often creates <div>).
+        if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+            const selection = window.getSelection();
+            const editor = document.getElementById('noteContent');
+            if (selection && selection.rangeCount > 0 && editor) {
+                const range = selection.getRangeAt(0);
+                const container = range.startContainer;
+                const element = container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
+                const insideLi = element && typeof element.closest === 'function' && element.closest('li');
+                if (insideLi) {
+                    // Let browser create new list item.
+                    return;
+                }
+                e.preventDefault();
+                try {
+                    document.execCommand('insertParagraph', false, null);
+                } catch {
+                    return;
+                }
+                // If the new block is a div, replace it with p so we consistently use <p>.
+                const block = getBlockElement(selection.anchorNode, editor);
+                if (block && block !== editor && block.tagName === 'DIV') {
+                    const p = document.createElement('p');
+                    while (block.firstChild) {
+                        p.appendChild(block.firstChild);
+                    }
+                    block.parentNode.replaceChild(p, block);
+                }
+                setTimeout(updateToolbarState, 0);
+                if (trackChanges) setTimeout(trackChanges, 0);
+                return;
             }
         }
 
