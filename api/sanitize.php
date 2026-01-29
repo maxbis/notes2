@@ -1,8 +1,22 @@
 <?php
 // HTML sanitization for note content
 
+// Placeholder used to preserve newlines inside <pre> and <code> across parse/serialize (PHP parser collapses \n).
+const NOTES_PRE_NL_PLACEHOLDER = "\u{E000}";
+
 function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenTags) {
     if (!is_string($html) || $html === '') return '';
+
+    $placeholder = NOTES_PRE_NL_PLACEHOLDER;
+
+    // Pre-process: replace newlines inside <pre> and <code> with placeholder so the parser does not collapse them.
+    // Nested <pre> inside <pre> is not supported; same for <code>. Acceptable for typical note content.
+    $html = preg_replace_callback('/(<pre\b[^>]*>)(.*?)(<\/pre>)/s', function ($m) use ($placeholder) {
+        return $m[1] . str_replace(["\r\n", "\n", "\r"], $placeholder, $m[2]) . $m[3];
+    }, $html);
+    $html = preg_replace_callback('/(<code\b[^>]*>)(.*?)(<\/code>)/s', function ($m) use ($placeholder) {
+        return $m[1] . str_replace(["\r\n", "\n", "\r"], $placeholder, $m[2]) . $m[3];
+    }, $html);
 
     // DOMDocument is picky; keep errors internal.
     $prev = libxml_use_internal_errors(true);
@@ -25,14 +39,14 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
     if (!$root) {
         libxml_clear_errors();
         libxml_use_internal_errors($prev);
-        // Fallback: if parsing failed, treat as plain text.
-        return htmlspecialchars($html, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        // Fallback: if parsing failed, treat as plain text (restore placeholder so we don't leak it).
+        return htmlspecialchars(str_replace($placeholder, "\n", $html), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 
     $allowedSet = array_fill_keys(array_map('strtolower', $allowedTags), true);
     $forbiddenSet = array_fill_keys(array_map('strtolower', $forbiddenTags), true);
 
-    $sanitizeNode = function ($node) use (&$sanitizeNode, $allowedSet, $allowedAttrsByTag, $forbiddenSet) {
+    $sanitizeNode = function ($node) use (&$sanitizeNode, $allowedSet, $allowedAttrsByTag, $forbiddenSet, $dom, $placeholder) {
         if (!$node) return;
 
         // Remove comments
@@ -47,6 +61,20 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
         }
 
         $tag = strtolower($node->nodeName);
+
+        // <br> inside <pre> or <code>: replace with newline placeholder so it survives and is restored as \n later.
+        if ($tag === 'br') {
+            $p = $node->parentNode;
+            while ($p && $p->nodeType === XML_ELEMENT_NODE) {
+                $parentTag = strtolower($p->nodeName);
+                if ($parentTag === 'pre' || $parentTag === 'code') {
+                    $textNode = $dom->createTextNode($placeholder);
+                    $node->parentNode->replaceChild($textNode, $node);
+                    return;
+                }
+                $p = $p->parentNode;
+            }
+        }
 
         // Remove dangerous tags entirely (including their children).
         if (isset($forbiddenSet[$tag])) {
@@ -122,6 +150,9 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
     foreach ($root->childNodes as $child) {
         $out .= $dom->saveHTML($child);
     }
+
+    // Restore newlines inside <pre> and <code> (and br→placeholder we inserted).
+    $out = str_replace($placeholder, "\n", $out);
 
     libxml_clear_errors();
     libxml_use_internal_errors($prev);
