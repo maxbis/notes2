@@ -122,7 +122,22 @@ export function showLinkDialog(selectedText = '', existingUrl = '') {
     });
 }
 
-export function showShareDialog(url, title = 'Share link copied') {
+/**
+ * @param {string} url - Public link URL
+ * @param {string|{ title?: string, publicDefaultHashId?: string|null, currentHashId?: string|null, onSetEasyAccess?: () => Promise<void>|void, onRemoveEasyAccess?: () => Promise<void>|void }} titleOrOptions - Title string or options object
+ */
+export function showShareDialog(url, titleOrOptions = 'Share link copied') {
+    const opts = typeof titleOrOptions === 'object' && titleOrOptions !== null
+        ? titleOrOptions
+        : { title: titleOrOptions };
+    const title = opts.title ?? 'Share link copied';
+    const publicDefaultHashId = opts.publicDefaultHashId ?? null;
+    const currentHashId = opts.currentHashId ?? null;
+    const onSetEasyAccess = opts.onSetEasyAccess ?? null;
+    const onRemoveEasyAccess = opts.onRemoveEasyAccess ?? null;
+    const showEasyAccess = Boolean(currentHashId && (onSetEasyAccess || onRemoveEasyAccess));
+    const isCurrentDefault = Boolean(publicDefaultHashId && currentHashId && publicDefaultHashId === currentHashId);
+
     return new Promise((resolve) => {
         const overlay = document.getElementById('modalOverlay');
         const titleEl = document.getElementById('modalTitle');
@@ -151,6 +166,24 @@ export function showShareDialog(url, title = 'Share link copied') {
             footer.insertBefore(openBtn, confirmBtn);
         }
 
+        const extraButtons = [];
+        if (showEasyAccess && onSetEasyAccess && !isCurrentDefault) {
+            const setEasyBtn = document.createElement('button');
+            setEasyBtn.type = 'button';
+            setEasyBtn.className = 'btn-secondary';
+            setEasyBtn.textContent = 'Copy link + Easy access';
+            extraButtons.push(setEasyBtn);
+            if (footer) footer.insertBefore(setEasyBtn, openBtn);
+        }
+        if (showEasyAccess && onRemoveEasyAccess && isCurrentDefault) {
+            const removeEasyBtn = document.createElement('button');
+            removeEasyBtn.type = 'button';
+            removeEasyBtn.className = 'btn-secondary';
+            removeEasyBtn.textContent = 'Remove easy access';
+            extraButtons.push(removeEasyBtn);
+            if (footer) footer.insertBefore(removeEasyBtn, openBtn);
+        }
+
         overlay.classList.add('active');
 
         const cleanup = () => {
@@ -158,6 +191,10 @@ export function showShareDialog(url, title = 'Share link copied') {
             openBtn.removeEventListener('click', handleOpen);
             cancelBtn.removeEventListener('click', handleCancel);
             overlay.removeEventListener('click', handleOverlayClick);
+            extraButtons.forEach((btn, i) => {
+                btn.removeEventListener('click', extraHandlers[i]);
+                if (footer && btn.parentElement === footer) footer.removeChild(btn);
+            });
             if (footer && openBtn.parentElement === footer) {
                 footer.removeChild(openBtn);
             }
@@ -186,6 +223,31 @@ export function showShareDialog(url, title = 'Share link copied') {
                 handleCancel();
             }
         };
+
+        const handleSetEasyAccess = () => {
+            Promise.resolve(onSetEasyAccess()).then(() => {
+                cleanup();
+                resolve('easy_access_set');
+            }).catch((err) => {
+                console.error('Set easy access failed:', err);
+            });
+        };
+        const handleRemoveEasyAccess = () => {
+            Promise.resolve(onRemoveEasyAccess()).then(() => {
+                cleanup();
+                resolve('easy_access_removed');
+            }).catch((err) => {
+                console.error('Remove easy access failed:', err);
+            });
+        };
+        const extraHandlers = [];
+        if (showEasyAccess && onSetEasyAccess && !isCurrentDefault) {
+            extraHandlers.push(handleSetEasyAccess);
+        }
+        if (showEasyAccess && onRemoveEasyAccess && isCurrentDefault) {
+            extraHandlers.push(handleRemoveEasyAccess);
+        }
+        extraButtons.forEach((btn, i) => btn.addEventListener('click', extraHandlers[i]));
 
         openBtn.addEventListener('click', handleOpen);
         cancelBtn.addEventListener('click', handleCancel);

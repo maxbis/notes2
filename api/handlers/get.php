@@ -9,6 +9,9 @@ if (!function_exists('__notes_json_error') || !function_exists('__notes_db_fail'
 if (!function_exists('getDBConnection') || !function_exists('fetch_assoc_from_stmt')) {
     require_once __DIR__ . '/../database.php';
 }
+if (!function_exists('get_setting')) {
+    require_once __DIR__ . '/../settings_helper.php';
+}
 
 function handle_get(mysqli $conn): void {
     if (isset($_GET['id'])) {
@@ -22,13 +25,18 @@ function handle_get(mysqli $conn): void {
         $note = fetch_assoc_from_stmt($stmt);
         echo json_encode($note ? $note : ['error' => 'Note not found'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     } else {
-        // Get all notes
+        // Get all notes and public "easy access" default
         $result = $conn->query("SELECT id, hash_id, title, content, created_at, updated_at, version FROM notes ORDER BY updated_at DESC");
         if ($result === false) __notes_db_fail($conn, 'query: select all notes');
         $notes = [];
         while ($row = $result->fetch_assoc()) {
             $notes[] = $row;
         }
-        echo json_encode($notes, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $publicDefaultHashId = get_setting($conn, 'public_default_hash_id');
+        $payload = [
+            'notes' => $notes,
+            'public_default_hash_id' => $publicDefaultHashId !== null && $publicDefaultHashId !== '' ? $publicDefaultHashId : null
+        ];
+        echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
 }

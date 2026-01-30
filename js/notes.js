@@ -21,9 +21,9 @@ function loadGroupState() {
     }
 }
 
-function saveGroupState(state) {
+function saveGroupState(groupState) {
     try {
-        localStorage.setItem(GROUP_STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(GROUP_STORAGE_KEY, JSON.stringify(groupState));
     } catch (error) {
         // Ignore persistence errors (e.g. storage disabled)
     }
@@ -44,7 +44,13 @@ export async function loadNotes() {
         if (data?.error) {
             throw new Error(data.error);
         }
-        state.notes = Array.isArray(data) ? data : [];
+        if (Array.isArray(data)) {
+            state.notes = data;
+            state.publicDefaultHashId = null;
+        } else {
+            state.notes = Array.isArray(data.notes) ? data.notes : [];
+            state.publicDefaultHashId = (data.public_default_hash_id != null && data.public_default_hash_id !== '') ? data.public_default_hash_id : null;
+        }
         renderNotesList();
         if (state.notes.length > 0 && !state.currentNote) {
             selectNote(state.notes[0].hash_id);

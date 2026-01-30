@@ -18,14 +18,28 @@ if (!isset($ALLOWED_TAGS)) {
 if (!function_exists('generateHashId')) {
     require_once __DIR__ . '/../utils.php';
 }
+if (!function_exists('set_setting')) {
+    require_once __DIR__ . '/../settings_helper.php';
+}
 
 function handle_put(mysqli $conn): void {
     global $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS;
     
-    // Update existing note
+    // Update existing note or settings (e.g. public_default_hash_id)
     $data = json_decode(file_get_contents('php://input'), true);
     if (!is_array($data) && json_last_error() !== JSON_ERROR_NONE) {
         __notes_json_error(400, 'Invalid JSON');
+    }
+    if (array_key_exists('set_public_default', $data)) {
+        $value = $data['set_public_default'];
+        $hashId = (is_string($value) && $value !== '') ? $value : null;
+        if ($hashId !== null) {
+            set_setting($conn, 'public_default_hash_id', $hashId);
+        } else {
+            set_setting($conn, 'public_default_hash_id', '');
+        }
+        echo json_encode(['ok' => true, 'public_default_hash_id' => $hashId], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        return;
     }
     $hash_id = $data['hash_id'];
     $title = $data['title'] ?? '';
@@ -33,9 +47,7 @@ function handle_put(mysqli $conn): void {
     $content = sanitize_note_html($content, $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS);
 
     $expected_version = isset($data['expected_version']) ? (int)$data['expected_version'] : null;
-    $forceOverwrite = false;
-    if (isset($_GET['force']) && $_GET['force'] === '1') $forceOverwrite = true;
-    if (isset($data['force_overwrite']) && $data['force_overwrite']) $forceOverwrite = true;
+    $forceOverwrite = isset($data['force_overwrite']) && $data['force_overwrite'];
     
     if (!$forceOverwrite && $expected_version === null) {
         http_response_code(400);

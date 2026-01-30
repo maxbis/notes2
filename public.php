@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/api/database.php';
+require_once __DIR__ . '/api/settings_helper.php';
 
 $hash_id = isset($_GET['id']) ? trim((string)$_GET['id']) : '';
 
@@ -51,6 +52,21 @@ function render_error_page($title, $message, $statusCode = 400) {
 }
 
 if ($hash_id === '') {
+    $easyAccessEnabled = defined('PUBLIC_EASY_ACCESS_ENABLED') ? PUBLIC_EASY_ACCESS_ENABLED : true;
+    if ($easyAccessEnabled) {
+        try {
+            $conn = getDBConnection();
+            $defaultHashId = get_setting($conn, 'public_default_hash_id');
+            $conn->close();
+            if ($defaultHashId !== null && $defaultHashId !== '') {
+                $redirect = 'public.php?id=' . rawurlencode($defaultHashId);
+                header('Location: ' . $redirect, true, 302);
+                exit;
+            }
+        } catch (Throwable $e) {
+            // Fall through to error page
+        }
+    }
     render_error_page('Missing note id', 'No note id was provided.', 400);
 }
 
