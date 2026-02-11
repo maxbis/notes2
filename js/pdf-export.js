@@ -41,8 +41,9 @@ export async function exportNoteToPdf() {
         titleEl.style.paddingBottom = '8px';
         tempContainer.appendChild(titleEl);
         
-        // Create content element
+        // Create content element (class so .editor-content styles from style.css apply)
         const contentEl = document.createElement('div');
+        contentEl.className = 'editor-content';
         contentEl.innerHTML = content;
         contentEl.style.marginTop = '8px';
         // Preserve basic formatting from the editor

@@ -5,6 +5,8 @@ export const AUTO_SAVE_DELAY_MS = 4000; // Delay in milliseconds before auto-sav
 const state = {
     currentNote: null,
     notes: [],
+    /** hash_id of the note set as "easy access" (public.php with no id redirects here), or null */
+    publicDefaultHashId: null,
     hasUnsavedChanges: false,
     savedTitle: '',
     savedContent: '',
@@ -40,8 +42,4 @@ export default state;
 // Also export constants and commonly used properties for convenience
 export const API_ENDPOINT = 'api.php';
 
-// Export individual properties for convenience (read-only access)
-export const currentNote = () => state.currentNote;
-export const notes = () => state.notes;
-export const hasUnsavedChanges = () => state.hasUnsavedChanges;
 export const isHtmlMode = () => state.isHtmlMode;

@@ -25,6 +25,13 @@ export function stripHtmlTags(html) {
     return tmp.textContent || tmp.innerText || '';
 }
 
+/** Returns true if the note has meaningful content (title or non-empty text after stripping HTML). */
+export function hasMeaningfulNoteContent(title, content) {
+    const titleTrimmed = (title || '').trim();
+    const textFromContent = stripHtmlTags(content || '').trim();
+    return titleTrimmed.length > 0 || textFromContent.length > 0;
+}
+
 export function formatDate(dateString) {
     const date = new Date(dateString);
     const now = new Date();

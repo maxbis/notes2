@@ -408,7 +408,7 @@ export function setupFormattingToolbar() {
             }
         }
 
-        // Plain Enter: force new block to be <p> (browser often creates <div>).
+        // Plain Enter: inside <pre> insert newline; otherwise force new block to be <p> (browser often creates <div>).
         if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
             const selection = window.getSelection();
             const editor = document.getElementById('noteContent');
@@ -419,6 +419,28 @@ export function setupFormattingToolbar() {
                 const insideLi = element && typeof element.closest === 'function' && element.closest('li');
                 if (insideLi) {
                     // Let browser create new list item.
+                    return;
+                }
+                const insidePre = element && typeof element.closest === 'function' && element.closest('pre');
+                if (insidePre) {
+                    e.preventDefault();
+                    let inserted = false;
+                    try {
+                        inserted = document.execCommand('insertLineBreak', false, null);
+                    } catch {
+                        inserted = false;
+                    }
+                    if (!inserted) {
+                        const br = document.createElement('br');
+                        range.deleteContents();
+                        range.insertNode(br);
+                        range.setStartAfter(br);
+                        range.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    }
+                    setTimeout(updateToolbarState, 0);
+                    if (trackChanges) setTimeout(trackChanges, 0);
                     return;
                 }
                 e.preventDefault();

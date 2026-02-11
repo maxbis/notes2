@@ -1,12 +1,13 @@
 // Main application entry point
 import state, { AUTO_SAVE_DELAY_MS } from './js/state.js';
-import { isMobileLayout, getPublicLink } from './js/utils.js';
+import { isMobileLayout, getPublicLink, hasMeaningfulNoteContent } from './js/utils.js';
 import { setHtmlMode, getEditorHtml } from './js/editor.js';
-import { setupFormattingToolbar, initToolbar, updateToolbarState } from './js/toolbar.js';
+import { setupFormattingToolbar, initToolbar } from './js/toolbar.js';
 import { insertDate, insertCheckmark } from './js/insert.js';
 import { saveNote, saveBeforeUnload } from './js/save.js';
 import { loadNotes, renderNotesList, filterNotes, selectNote, createNewNote, deleteNote, refreshCurrentNote, initNotes, checkFreshness, setupStaleBannerHandlers, startFreshnessInterval, stopFreshnessInterval } from './js/notes.js';
 import { showModal, showLinkDialog, showConflictDialog, showDeleteConfirmDialog, showShareDialog } from './js/modals.js';
+import { setPublicDefault } from './js/api.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './js/indicators.js';
 import { exportNoteToPdf } from './js/pdf-export.js';
 
@@ -36,11 +37,8 @@ function trackChanges() {
     const contentChanged = content !== state.savedContent;
     
     // For new notes, only mark as changed if there's actual content
-    // Check for meaningful content by checking if innerHTML has more than just empty tags/whitespace
     if (!state.currentNote) {
-        const hasContent = title.length > 0 || 
-            (content.trim().length > 0 && content.replace(/<[^>]*>/g, '').trim().length > 0);
-        state.hasUnsavedChanges = hasContent;
+        state.hasUnsavedChanges = hasMeaningfulNoteContent(title, content);
     } else {
         state.hasUnsavedChanges = titleChanged || contentChanged;
     }
@@ -66,11 +64,8 @@ async function copyPublicLinkForCurrentNote() {
         // otherwise show a gentle hint.
         const title = (document.getElementById('noteTitle')?.value || '').trim();
         const content = (getEditorHtml() || '').trim();
-        const hasMeaningfulContent =
-            title.length > 0 ||
-            (content.length > 0 && content.replace(/<[^>]*>/g, '').trim().length > 0);
 
-        if (!hasMeaningfulContent) {
+        if (!hasMeaningfulNoteContent(title, content)) {
             await showModal('Share link', 'Write something first, then share the note.', 'OK', 'Close');
             return;
         }
@@ -94,7 +89,19 @@ async function copyPublicLinkForCurrentNote() {
     try {
         if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
             await navigator.clipboard.writeText(url);
-            await showShareDialog(url, 'Share link copied');
+            await showShareDialog(url, {
+                title: 'Share link copied',
+                publicDefaultHashId: state.publicDefaultHashId,
+                currentHashId: state.currentNote?.hash_id ?? null,
+                onSetEasyAccess: async () => {
+                    await setPublicDefault(state.currentNote?.hash_id ?? null);
+                    state.publicDefaultHashId = state.currentNote?.hash_id ?? null;
+                },
+                onRemoveEasyAccess: async () => {
+                    await setPublicDefault(null);
+                    state.publicDefaultHashId = null;
+                }
+            });
             return;
         }
     } catch (e) {
