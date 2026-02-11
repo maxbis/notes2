@@ -14,7 +14,12 @@ function handle_get(mysqli $conn): void {
     if (isset($_GET['id'])) {
         // Get single note by hash_id
         $hash_id = $_GET['id'];
-        $stmt = $conn->prepare("SELECT * FROM notes WHERE hash_id = ?");
+        $fields = isset($_GET['fields']) ? $_GET['fields'] : '';
+        if ($fields === 'version,updated_at') {
+            $stmt = $conn->prepare("SELECT version, updated_at FROM notes WHERE hash_id = ?");
+        } else {
+            $stmt = $conn->prepare("SELECT * FROM notes WHERE hash_id = ?");
+        }
         if (!$stmt) __notes_db_fail($conn, 'prepare: select by hash_id');
         $stmt->bind_param("s", $hash_id);
         if (!$stmt->execute()) __notes_db_fail($conn, 'execute: select by hash_id');

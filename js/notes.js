@@ -9,7 +9,13 @@ import { showDeleteConfirmDialog } from './modals.js';
 // Dependencies that will be injected
 let saveNote = null;
 let hideNotesSidebarForEditing = null;
+let showModal = null;
 const GROUP_STORAGE_KEY = 'notes2.folderState';
+
+const FRESHNESS_CHECK_THROTTLE_MS = 5000;
+const FRESHNESS_CHECK_INTERVAL_MS = 60000;
+let lastFreshnessCheck = 0;
+let freshnessIntervalId = null;
 
 function loadGroupState() {
     try {
@@ -32,6 +38,89 @@ function saveGroupState(state) {
 export function initNotes(deps) {
     saveNote = deps.saveNote;
     hideNotesSidebarForEditing = deps.hideNotesSidebarForEditing;
+    showModal = deps.showModal;
+}
+
+function showStaleBanner() {
+    const banner = document.getElementById('staleBanner');
+    if (banner) banner.hidden = false;
+}
+
+function hideStaleBanner() {
+    const banner = document.getElementById('staleBanner');
+    if (banner) banner.hidden = true;
+}
+
+export async function checkFreshness() {
+    if (!state.currentNote || !state.currentNote.hash_id) return;
+
+    const now = Date.now();
+    if (now - lastFreshnessCheck < FRESHNESS_CHECK_THROTTLE_MS) return;
+    lastFreshnessCheck = now;
+
+    try {
+        const response = await fetch(
+            `${API_ENDPOINT}?id=${state.currentNote.hash_id}&fields=version,updated_at`
+        );
+        const data = await readJsonResponse(response, 'checkFreshness');
+        if (response.ok && data && !data.error && data.version != null) {
+            const serverVersion = Number(data.version);
+            const localVersion = state.originalVersion != null ? Number(state.originalVersion) : null;
+            if (serverVersion > localVersion) {
+                if (!state.hasUnsavedChanges) {
+                    await refreshCurrentNote();
+                    hideStaleBanner();
+                } else {
+                    showStaleBanner();
+                }
+            } else {
+                hideStaleBanner();
+            }
+        }
+    } catch (error) {
+        console.error('Error checking freshness:', error);
+    }
+}
+
+export function setupStaleBannerHandlers() {
+    const banner = document.getElementById('staleBanner');
+    if (!banner) return;
+
+    const refreshBtn = banner.querySelector('.stale-banner-refresh');
+    const dismissBtn = banner.querySelector('.stale-banner-dismiss');
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+            const confirmed = showModal
+                ? await showModal(
+                    'Discard changes?',
+                    'Refreshing will replace your unsaved changes with the version from the server.',
+                    'Refresh',
+                    'Cancel'
+                )
+                : true;
+            if (confirmed) {
+                hideStaleBanner();
+                await refreshCurrentNote();
+            }
+        });
+    }
+
+    if (dismissBtn) {
+        dismissBtn.addEventListener('click', () => hideStaleBanner());
+    }
+}
+
+export function startFreshnessInterval() {
+    stopFreshnessInterval();
+    freshnessIntervalId = setInterval(checkFreshness, FRESHNESS_CHECK_INTERVAL_MS);
+}
+
+export function stopFreshnessInterval() {
+    if (freshnessIntervalId) {
+        clearInterval(freshnessIntervalId);
+        freshnessIntervalId = null;
+    }
 }
 
 export async function loadNotes() {

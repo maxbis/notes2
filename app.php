@@ -49,6 +49,11 @@ require_once __DIR__ . '/../zendure/login/validate.php';
             </aside>
 
             <main class="editor">
+                <div id="staleBanner" class="stale-banner" hidden>
+                    <span>This note was updated elsewhere.</span>
+                    <button type="button" class="stale-banner-refresh">Refresh</button>
+                    <button type="button" class="stale-banner-dismiss">Dismiss</button>
+                </div>
                 <div class="editor-header">
                     <div class="title-container">
                         <span id="unsavedIndicator" class="unsaved-indicator" title="Unsaved changes"></span>

@@ -5,7 +5,7 @@ import { setHtmlMode, getEditorHtml } from './js/editor.js';
 import { setupFormattingToolbar, initToolbar, updateToolbarState } from './js/toolbar.js';
 import { insertDate, insertCheckmark } from './js/insert.js';
 import { saveNote, saveBeforeUnload } from './js/save.js';
-import { loadNotes, renderNotesList, filterNotes, selectNote, createNewNote, deleteNote, refreshCurrentNote, initNotes } from './js/notes.js';
+import { loadNotes, renderNotesList, filterNotes, selectNote, createNewNote, deleteNote, refreshCurrentNote, initNotes, checkFreshness, setupStaleBannerHandlers, startFreshnessInterval, stopFreshnessInterval } from './js/notes.js';
 import { showModal, showLinkDialog, showConflictDialog, showDeleteConfirmDialog, showShareDialog } from './js/modals.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './js/indicators.js';
 import { exportNoteToPdf } from './js/pdf-export.js';
@@ -218,13 +218,23 @@ function setupEventListeners() {
     document.getElementById('noteTitle').addEventListener('pointerdown', hideNotesSidebarForEditing);
     document.getElementById('noteContent').addEventListener('pointerdown', hideNotesSidebarForEditing);
     
-    // Save on tab switch or page hide
+    // Save on tab switch or page hide; check freshness when tab becomes visible
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden && state.hasUnsavedChanges) {
-            // Save when tab becomes hidden (user switches tab or minimizes)
-            saveBeforeUnload();
+        if (document.hidden) {
+            if (state.hasUnsavedChanges) {
+                saveBeforeUnload();
+            }
+            stopFreshnessInterval();
+        } else {
+            checkFreshness();
+            startFreshnessInterval();
         }
     });
+
+    // Check freshness when window gains focus (e.g. switching back from another app)
+    window.addEventListener('focus', checkFreshness);
+
+    setupStaleBannerHandlers();
     
     // Save on page leave (closing tab/browser, navigating away)
     window.addEventListener('beforeunload', (e) => {
@@ -254,7 +264,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     initNotes({
         saveNote,
-        hideNotesSidebarForEditing
+        hideNotesSidebarForEditing,
+        showModal
     });
     
     // Import save module and initialize it
@@ -271,4 +282,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     setHtmlMode(false);
     // Initialize unsaved indicator state
     updateUnsavedIndicator();
+    // Start freshness check and timer when tab is visible
+    if (!document.hidden) {
+        checkFreshness();
+        startFreshnessInterval();
+    }
 });
