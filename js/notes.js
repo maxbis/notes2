@@ -282,6 +282,11 @@ export async function selectNote(hashId) {
     if (hideNotesSidebarForEditing) hideNotesSidebarForEditing();
 }
 
+export function openLastModifiedNote() {
+    if (!state.notes.length) return;
+    selectNote(state.notes[0].hash_id);
+}
+
 export async function createNewNote() {
     // Save current note if there are unsaved changes
     if (state.hasUnsavedChanges) {

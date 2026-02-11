@@ -34,6 +34,7 @@ require_once __DIR__ . '/../zendure/login/validate.php';
             </h1>
             <div class="header-actions">
                 <button class="btn-secondary mobile-only" id="showNotesBtn" type="button" title="Search / Notes" aria-label="Search / Notes">🔍</button>
+                <button class="btn-secondary" id="openLastModifiedBtn" type="button" title="Open last modified note" aria-label="Open last modified note">Recent</button>
                 <button class="btn-primary" id="newNoteBtn" type="button" title="Create a new note" aria-label="Create a new note">New</button>
             </div>
         </header>

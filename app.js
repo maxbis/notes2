@@ -5,7 +5,7 @@ import { setHtmlMode, getEditorHtml } from './js/editor.js';
 import { setupFormattingToolbar, initToolbar } from './js/toolbar.js';
 import { insertDate, insertCheckmark } from './js/insert.js';
 import { saveNote, saveBeforeUnload } from './js/save.js';
-import { loadNotes, renderNotesList, filterNotes, selectNote, createNewNote, deleteNote, refreshCurrentNote, initNotes, checkFreshness, setupStaleBannerHandlers, startFreshnessInterval, stopFreshnessInterval } from './js/notes.js';
+import { loadNotes, renderNotesList, filterNotes, selectNote, createNewNote, deleteNote, refreshCurrentNote, initNotes, checkFreshness, setupStaleBannerHandlers, startFreshnessInterval, stopFreshnessInterval, openLastModifiedNote } from './js/notes.js';
 import { showModal, showLinkDialog, showConflictDialog, showDeleteConfirmDialog, showShareDialog } from './js/modals.js';
 import { setPublicDefault } from './js/api.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './js/indicators.js';
@@ -116,6 +116,10 @@ async function copyPublicLinkForCurrentNote() {
 
 function setupEventListeners() {
     document.getElementById('newNoteBtn').addEventListener('click', createNewNote);
+    const openLastModifiedBtn = document.getElementById('openLastModifiedBtn');
+    if (openLastModifiedBtn) {
+        openLastModifiedBtn.addEventListener('click', openLastModifiedNote);
+    }
     document.querySelectorAll('.deleteBtn').forEach((btn) => {
         btn.addEventListener('click', deleteNote);
     });
