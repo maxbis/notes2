@@ -29,6 +29,9 @@ const state = {
     // Prevent multiple simultaneous unload saves
     unloadSaveInProgress: false,
     
+    // List view: 'all' = flat list by date, 'groups' = group by title prefix
+    listView: 'groups',
+
     // Editor state
     isHtmlMode: false,
     // In HTML mode, we show formatted HTML for readability but keep a canonical raw string

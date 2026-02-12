@@ -11,6 +11,7 @@ let saveNote = null;
 let hideNotesSidebarForEditing = null;
 let showModal = null;
 const GROUP_STORAGE_KEY = 'notes2.folderState';
+const LIST_VIEW_STORAGE_KEY = 'notes2.listView';
 
 const FRESHNESS_CHECK_THROTTLE_MS = 5000;
 const FRESHNESS_CHECK_INTERVAL_MS = 60000;
@@ -32,6 +33,24 @@ function saveGroupState(groupState) {
         localStorage.setItem(GROUP_STORAGE_KEY, JSON.stringify(groupState));
     } catch (error) {
         // Ignore persistence errors (e.g. storage disabled)
+    }
+}
+
+function loadListView() {
+    try {
+        const stored = localStorage.getItem(LIST_VIEW_STORAGE_KEY);
+        if (stored === 'all' || stored === 'groups') return stored;
+    } catch (error) {
+        // Ignore
+    }
+    return 'groups';
+}
+
+function saveListView(view) {
+    try {
+        localStorage.setItem(LIST_VIEW_STORAGE_KEY, view);
+    } catch (error) {
+        // Ignore
     }
 }
 
@@ -151,11 +170,10 @@ export async function loadNotes() {
 
 export function renderNotesList(searchTerm = '') {
     const notesList = document.getElementById('notesList');
-    const filteredNotes = searchTerm 
+    const filteredNotes = searchTerm
         ? state.notes.filter(note => {
             const searchLower = searchTerm.toLowerCase();
             const titleLower = (note.title || '').toLowerCase();
-            // Strip HTML tags from content before searching
             const contentText = stripHtmlTags(note.content || '').toLowerCase();
             return titleLower.includes(searchLower) || contentText.includes(searchLower);
           })
@@ -166,9 +184,27 @@ export function renderNotesList(searchTerm = '') {
         return;
     }
 
-    // On mobile, limit to 20 notes when not searching
     const isMobile = window.innerWidth <= 768;
     const notesToShow = isMobile && !searchTerm ? filteredNotes.slice(0, 20) : filteredNotes;
+
+    if (state.listView === 'all') {
+        const sorted = notesToShow.slice().sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        const itemsHtml = sorted.map(note => {
+            const title = note.title || 'Untitled';
+            return `
+            <div class="note-item ${state.currentNote && state.currentNote.hash_id === note.hash_id ? 'active' : ''}"
+                 onclick="window.selectNote('${note.hash_id}')">
+                <div class="note-item-header">
+                    <div class="note-item-title">${escapeHtml(title)}</div>
+                    <div class="note-item-date">${formatDate(note.updated_at)}</div>
+                </div>
+                <div class="note-item-preview">${escapeHtml(stripHtmlTags(note.content).substring(0, 100))}</div>
+            </div>
+            `;
+        }).join('');
+        notesList.innerHTML = `<div class="notes-list-flat">${itemsHtml}</div>`;
+        return;
+    }
 
     const groupState = loadGroupState();
     const groups = new Map();
@@ -187,7 +223,7 @@ export function renderNotesList(searchTerm = '') {
     notesList.innerHTML = Array.from(groups.entries()).map(([groupName, items]) => {
         const isCollapsed = groupState[groupName] === true;
         const itemsHtml = items.map(({ note, itemTitle }) => `
-            <div class="note-item ${state.currentNote && state.currentNote.hash_id === note.hash_id ? 'active' : ''}" 
+            <div class="note-item ${state.currentNote && state.currentNote.hash_id === note.hash_id ? 'active' : ''}"
                  onclick="window.selectNote('${note.hash_id}')">
                 <div class="note-item-header">
                     <div class="note-item-title">${escapeHtml(itemTitle || 'Untitled')}</div>
@@ -230,6 +266,32 @@ export function renderNotesList(searchTerm = '') {
                 groupState[groupName] = nextCollapsed;
                 saveGroupState(groupState);
             }
+        });
+    });
+}
+
+export function setupListViewTabs() {
+    const stored = loadListView();
+    if (stored === 'all' || stored === 'groups') {
+        state.listView = stored;
+    }
+
+    const tabs = document.querySelectorAll('.list-view-tab');
+    const searchInput = document.getElementById('searchInput');
+    tabs.forEach(btn => {
+        const view = btn.dataset.view;
+        const isActive = state.listView === view;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        btn.addEventListener('click', () => {
+            if (state.listView === view) return;
+            state.listView = view;
+            saveListView(view);
+            tabs.forEach(b => {
+                b.classList.toggle('active', b.dataset.view === view);
+                b.setAttribute('aria-selected', b.dataset.view === view ? 'true' : 'false');
+            });
+            renderNotesList(searchInput ? searchInput.value : '');
         });
     });
 }

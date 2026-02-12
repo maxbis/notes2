@@ -44,6 +44,10 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                 <div class="search-box">
                     <input type="text" id="searchInput" placeholder="Search notes...">
                 </div>
+                <div class="list-view-tabs" role="tablist" aria-label="List view">
+                    <button type="button" class="list-view-tab" role="tab" data-view="all" aria-selected="false">ALL</button>
+                    <button type="button" class="list-view-tab active" role="tab" data-view="groups" aria-selected="true">Groups</button>
+                </div>
                 <div class="notes-list" id="notesList">
                     <!-- Notes will be loaded here -->
                 </div>
