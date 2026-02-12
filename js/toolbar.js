@@ -475,8 +475,51 @@ export function setupFormattingToolbar() {
                 document.execCommand('italic', false, null);
                 setTimeout(updateToolbarState, 0);
                 if (trackChanges) setTimeout(trackChanges, 0);
+            } else if (e.key === 'u') {
+                e.preventDefault();
+                document.execCommand('underline', false, null);
+                setTimeout(updateToolbarState, 0);
+                if (trackChanges) setTimeout(trackChanges, 0);
             }
         }
+    });
+
+    // Paste: plain text by default; Shift+Paste = paste with formatting
+    document.getElementById('noteContent').addEventListener('paste', (e) => {
+        if (typeof isHtmlMode === 'function' && isHtmlMode()) return;
+        if (e.shiftKey) return; // allow default paste with formatting
+
+        const text = (e.clipboardData && e.clipboardData.getData('text/plain')) || '';
+        if (text === '') return;
+
+        e.preventDefault();
+        try {
+            const inserted = document.execCommand('insertText', false, text);
+            if (!inserted) {
+                const selection = window.getSelection();
+                if (selection && selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    range.deleteContents();
+                    range.insertNode(document.createTextNode(text));
+                    range.collapse(false);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
+            }
+        } catch {
+            // fallback: insert as text node at selection
+            const selection = window.getSelection();
+            if (selection && selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(document.createTextNode(text));
+                range.collapse(false);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        }
+        setTimeout(updateToolbarState, 0);
+        if (trackChanges) trackChanges();
     });
 
     // Inline shortcuts:
