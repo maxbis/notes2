@@ -10,6 +10,7 @@ import { showModal, showLinkDialog, showConflictDialog, showDeleteConfirmDialog,
 import { setPublicDefault } from './js/api.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './js/indicators.js';
 import { exportNoteToPdf } from './js/pdf-export.js';
+import { initMarkdownImport, setupMarkdownImport } from './js/markdown-import.js';
 
 // Make selectNote available globally for onclick handlers in rendered HTML
 window.selectNote = selectNote;
@@ -278,6 +279,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         hideNotesSidebarForEditing,
         showModal
     });
+
+    initMarkdownImport({
+        saveNote,
+        showModal
+    });
     
     // Import save module and initialize it
     const { initSave } = await import('./js/save.js');
@@ -290,6 +296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupListViewTabs();
     loadNotes();
     setupEventListeners();
+    setupMarkdownImport();
     // Ensure we start in WYSIWYG mode (HTML textarea hidden)
     setHtmlMode(false);
     // Initialize unsaved indicator state

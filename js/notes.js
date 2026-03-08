@@ -1,5 +1,5 @@
 // CRUD operations for notes
-import state, { API_ENDPOINT } from './state.js';
+import state, { API_ENDPOINT, AUTO_SAVE_DELAY_MS } from './state.js';
 import { readJsonResponse } from './api.js';
 import { setEditorHtml } from './editor.js';
 import { escapeHtml, stripHtmlTags, formatDate, isMobileLayout } from './utils.js';
@@ -15,6 +15,7 @@ const LIST_VIEW_STORAGE_KEY = 'notes2.listView';
 
 const FRESHNESS_CHECK_THROTTLE_MS = 5000;
 const FRESHNESS_CHECK_INTERVAL_MS = 60000;
+const DEFAULT_NEW_NOTE_CONTENT = 'empty note';
 let lastFreshnessCheck = 0;
 let freshnessIntervalId = null;
 
@@ -357,19 +358,37 @@ export async function createNewNote() {
     
     state.currentNote = null;
     document.getElementById('noteTitle').value = '';
-    setEditorHtml('');
+    setEditorHtml(DEFAULT_NEW_NOTE_CONTENT);
     document.getElementById('noteMeta').textContent = '';
     document.getElementById('lastSaved').textContent = '';
     
     // Reset saved state
     state.savedTitle = '';
     state.savedContent = '';
-    state.hasUnsavedChanges = false;
+    state.hasUnsavedChanges = true;
     state.originalVersion = null;
     clearTimeout(state.autoSaveTimer);
+
+    updateUnsavedIndicator();
+    state.autoSaveTimer = setTimeout(() => {
+        if (state.hasUnsavedChanges) {
+            saveNote(false);
+        }
+    }, AUTO_SAVE_DELAY_MS);
     
     renderNotesList(document.getElementById('searchInput').value);
-    document.getElementById('noteTitle').focus();
+    const noteContent = document.getElementById('noteContent');
+    if (noteContent) {
+        noteContent.focus();
+        const selection = window.getSelection();
+        if (selection) {
+            const range = document.createRange();
+            range.selectNodeContents(noteContent);
+            range.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+    }
 }
 
 export async function deleteNote() {

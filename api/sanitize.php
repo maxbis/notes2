@@ -45,8 +45,14 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
 
     $allowedSet = array_fill_keys(array_map('strtolower', $allowedTags), true);
     $forbiddenSet = array_fill_keys(array_map('strtolower', $forbiddenTags), true);
+    $isSafeHref = static function ($value) {
+        $href = trim((string)$value);
+        if ($href === '') return false;
+        if ($href[0] === '#' || $href[0] === '/') return true;
+        return preg_match('/^(https?:|mailto:|tel:)/i', $href) === 1;
+    };
 
-    $sanitizeNode = function ($node) use (&$sanitizeNode, $allowedSet, $allowedAttrsByTag, $forbiddenSet, $dom, $placeholder) {
+    $sanitizeNode = function ($node) use (&$sanitizeNode, $allowedSet, $allowedAttrsByTag, $forbiddenSet, $dom, $placeholder, $isSafeHref) {
         if (!$node) return;
 
         // Remove comments
@@ -115,6 +121,11 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
                 }
 
                 if (!isset($allowedAttrs[$name])) {
+                    $toRemove[] = $attr->nodeName;
+                    continue;
+                }
+
+                if ($tag === 'a' && $name === 'href' && !$isSafeHref($attr->nodeValue)) {
                     $toRemove[] = $attr->nodeName;
                     continue;
                 }

@@ -35,7 +35,9 @@ require_once __DIR__ . '/../zendure/login/validate.php';
             <div class="header-actions">
                 <button class="btn-secondary mobile-only" id="showNotesBtn" type="button" title="Search / Notes" aria-label="Search / Notes">🔍</button>
                 <button class="btn-secondary" id="openLastModifiedBtn" type="button" title="Open last modified note" aria-label="Open last modified note">Recent</button>
+                <button class="btn-secondary" id="importMarkdownBtn" type="button" title="Import a Markdown file" aria-label="Import a Markdown file">Import MD</button>
                 <button class="btn-primary" id="newNoteBtn" type="button" title="Create a new note" aria-label="Create a new note">New</button>
+                <input type="file" id="importMarkdownInput" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
             </div>
         </header>
 
@@ -189,6 +191,7 @@ require_once __DIR__ . '/../zendure/login/validate.php';
     </div>
 
     <script src="vendor/beautify-html.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script type="module" src="app.js"></script>
