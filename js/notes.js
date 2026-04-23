@@ -15,7 +15,8 @@ const LIST_VIEW_STORAGE_KEY = 'notes2.listView';
 
 const FRESHNESS_CHECK_THROTTLE_MS = 5000;
 const FRESHNESS_CHECK_INTERVAL_MS = 60000;
-const DEFAULT_NEW_NOTE_CONTENT = 'empty note';
+// Must be block HTML: bare text in a contenteditable breaks Enter (insertParagraph); see editor.js EMPTY_EDITOR_HTML.
+const DEFAULT_NEW_NOTE_CONTENT = '<p>empty note</p>';
 let lastFreshnessCheck = 0;
 let freshnessIntervalId = null;
 
