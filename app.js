@@ -29,6 +29,32 @@ function hideNotesSidebarForEditing() {
     document.body.classList.add('mobile-sidebar-hidden');
 }
 
+async function reloadPage() {
+    const reloadBtn = document.getElementById('reloadPageBtn');
+    if (reloadBtn?.disabled) return;
+
+    if (reloadBtn) {
+        reloadBtn.disabled = true;
+    }
+
+    try {
+        if (!state.hasUnsavedChanges) {
+            window.location.reload();
+            return;
+        }
+
+        clearTimeout(state.autoSaveTimer);
+        const didSave = await saveNote(false);
+        if (didSave) {
+            window.location.reload();
+        }
+    } finally {
+        if (reloadBtn) {
+            reloadBtn.disabled = false;
+        }
+    }
+}
+
 function trackChanges() {
     const title = document.getElementById('noteTitle').value.trim() || '';
     const content = getEditorHtml();
@@ -120,6 +146,10 @@ function setupEventListeners() {
     const openLastModifiedBtn = document.getElementById('openLastModifiedBtn');
     if (openLastModifiedBtn) {
         openLastModifiedBtn.addEventListener('click', openLastModifiedNote);
+    }
+    const reloadPageBtn = document.getElementById('reloadPageBtn');
+    if (reloadPageBtn) {
+        reloadPageBtn.addEventListener('click', reloadPage);
     }
     document.querySelectorAll('.deleteBtn').forEach((btn) => {
         btn.addEventListener('click', deleteNote);

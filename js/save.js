@@ -42,6 +42,7 @@ export async function saveNote(showFeedback = true, forceOverwrite = false) {
         // Start the queue processor
         state.saveQueue.runnerPromise = (async () => {
             try {
+                let lastResult = true;
                 // Process all queued saves sequentially
                 while (state.saveQueue.pending) {
                     // Capture the parameters for this save
@@ -54,13 +55,13 @@ export async function saveNote(showFeedback = true, forceOverwrite = false) {
                     state.saveQueue.pendingForceOverwrite = false;
 
                     // Perform the actual save
-                    await performSave(nextShowFeedback, nextForceOverwrite);
+                    lastResult = await performSave(nextShowFeedback, nextForceOverwrite);
                 }
 
                 // All saves complete - resolve all waiting promises
                 const waiters = state.saveQueue.idleWaiters;
                 state.saveQueue.idleWaiters = [];
-                waiters.forEach(w => w.resolve());
+                waiters.forEach(w => w.resolve(lastResult));
             } catch (err) {
                 // On error, reject all waiting promises
                 const waiters = state.saveQueue.idleWaiters;
@@ -138,7 +139,7 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
                     if (!conflictResolved) {
                         console.log(`[SAVE CANCELLED] User chose to cancel and refresh due to conflict`);
                         await refreshCurrentNote();
-                        return;
+                        return false;
                     }
 
                     console.log(`[SAVE OVERWRITE] User chose to overwrite conflicting version`);
@@ -175,7 +176,7 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
                 responseStatus: response.status
             });
             alert('Error saving note: ' + savedNote.error);
-            return;
+            return false;
         }
 
         console.log(`[SAVE SUCCESS] Note saved successfully`, {
@@ -236,6 +237,8 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
             // But keeping it for safety in case showFeedback is true elsewhere
             renderNotesList(document.getElementById('searchInput').value);
         }
+
+        return true;
     } catch (error) {
         console.error(`[SAVE EXCEPTION] Error occurred during save:`, error, {
             noteId: state.currentNote?.hash_id,
@@ -243,6 +246,7 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
             timestamp: new Date().toISOString()
         });
         alert('Error saving note. Please try again.');
+        return false;
     }
 }
 

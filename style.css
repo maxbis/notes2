@@ -58,6 +58,10 @@ header h1 {
     align-items: center;
 }
 
+.reload-page-btn-icon {
+    display: none;
+}
+
 .mobile-only {
     display: none;
 }
@@ -824,6 +828,22 @@ button {
     .btn-primary {
         padding: 0.6rem 0.8rem;
         font-size: 0.8rem;
+    }
+
+    .reload-page-btn {
+        min-width: 40px;
+        padding-left: 0.65rem;
+        padding-right: 0.65rem;
+    }
+
+    .reload-page-btn-label {
+        display: none;
+    }
+
+    .reload-page-btn-icon {
+        display: inline;
+        font-size: 1rem;
+        line-height: 1;
     }
     
     .main-content {
