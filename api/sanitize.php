@@ -130,6 +130,19 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
                     continue;
                 }
 
+                if ($tag === 'code' && $name === 'class') {
+                    $classes = preg_split('/\s+/', trim((string)$attr->nodeValue)) ?: [];
+                    $classes = array_values(array_filter($classes, static function ($className) {
+                        return preg_match('/^language-[a-z0-9_-]+$/i', $className) === 1;
+                    }));
+                    if (!$classes) {
+                        $toRemove[] = $attr->nodeName;
+                    } else {
+                        $node->setAttribute($attr->nodeName, implode(' ', $classes));
+                    }
+                    continue;
+                }
+
                 // Normalize numeric attributes
                 if ($name === 'colspan' || $name === 'rowspan') {
                     $val = preg_replace('/[^0-9]/', '', (string)$attr->nodeValue);

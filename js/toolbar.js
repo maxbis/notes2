@@ -1,6 +1,7 @@
 // Formatting toolbar setup and state management
 import { escapeHtml } from './utils.js';
 import { isHtmlMode } from './state.js';
+import { handleSmartPaste } from './smart-paste.js';
 
 // These will be imported from other modules
 let trackChanges = null;
@@ -52,6 +53,7 @@ function findLastTextNode(node) {
 }
 
 const BLOCK_TAG_NAMES = new Set(['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'PRE', 'LI', 'BLOCKQUOTE', 'TD', 'TH']);
+const EMPTY_EDITOR_HTML = '<p><br></p>';
 
 function getBlockElement(container, editorRoot) {
     let node = container && container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
@@ -62,6 +64,25 @@ function getBlockElement(container, editorRoot) {
         node = node.parentElement;
     }
     return node || editorRoot;
+}
+
+function resetEditorFormattingIfEmpty(editor) {
+    if (!editor) return false;
+
+    const text = (editor.textContent || '').replace(/\u200B/g, '').trim();
+    if (text !== '') return false;
+
+    editor.innerHTML = EMPTY_EDITOR_HTML;
+
+    const selection = window.getSelection();
+    const range = document.createRange();
+    const target = editor.querySelector('p') || editor;
+    range.selectNodeContents(target);
+    range.collapse(true);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    return true;
 }
 
 export function updateToolbarState() {
@@ -95,6 +116,27 @@ export function updateToolbarState() {
         // Helps screen readers; also matches the "toggle" mental model.
         btn.setAttribute('aria-pressed', pressed ? 'true' : 'false');
     };
+
+    const isEditorEmpty = (editor.textContent || '').replace(/\u200B/g, '').trim() === '';
+
+    if (isEditorEmpty) {
+        setPressed(boldBtn, false);
+        setPressed(italicBtn, false);
+        setPressed(underlineBtn, false);
+        setPressed(underlineBtnMobile, false);
+        setPressed(bulletListBtn, false);
+        setPressed(bulletListBtnMobile, false);
+        setPressed(numberedListBtn, false);
+        setPressed(h1Btn, false);
+        setPressed(h2Btn, false);
+        setPressed(h3Btn, false);
+        setPressed(preBtn, false);
+        setPressed(h1BtnMobile, false);
+        setPressed(h2BtnMobile, false);
+        setPressed(h3BtnMobile, false);
+        setPressed(preBtnMobile, false);
+        return;
+    }
 
     setPressed(boldBtn, document.queryCommandState('bold'));
     setPressed(italicBtn, document.queryCommandState('italic'));
@@ -485,39 +527,10 @@ export function setupFormattingToolbar() {
     });
 
     // Paste: plain text by default; Shift+Paste = paste with formatting
-    document.getElementById('noteContent').addEventListener('paste', (e) => {
+    document.getElementById('noteContent').addEventListener('paste', async (e) => {
         if (typeof isHtmlMode === 'function' && isHtmlMode()) return;
-        if (e.shiftKey) return; // allow default paste with formatting
-
-        const text = (e.clipboardData && e.clipboardData.getData('text/plain')) || '';
-        if (text === '') return;
-
-        e.preventDefault();
-        try {
-            const inserted = document.execCommand('insertText', false, text);
-            if (!inserted) {
-                const selection = window.getSelection();
-                if (selection && selection.rangeCount > 0) {
-                    const range = selection.getRangeAt(0);
-                    range.deleteContents();
-                    range.insertNode(document.createTextNode(text));
-                    range.collapse(false);
-                    selection.removeAllRanges();
-                    selection.addRange(range);
-                }
-            }
-        } catch {
-            // fallback: insert as text node at selection
-            const selection = window.getSelection();
-            if (selection && selection.rangeCount > 0) {
-                const range = selection.getRangeAt(0);
-                range.deleteContents();
-                range.insertNode(document.createTextNode(text));
-                range.collapse(false);
-                selection.removeAllRanges();
-                selection.addRange(range);
-            }
-        }
+        const handled = await handleSmartPaste(e);
+        if (!handled) return;
         setTimeout(updateToolbarState, 0);
         if (trackChanges) trackChanges();
     });
@@ -567,7 +580,11 @@ export function setupFormattingToolbar() {
     });
     
     // Update toolbar button states based on selection
-    document.getElementById('noteContent').addEventListener('input', updateToolbarState);
+    document.getElementById('noteContent').addEventListener('input', () => {
+        const editorEl = document.getElementById('noteContent');
+        resetEditorFormattingIfEmpty(editorEl);
+        updateToolbarState();
+    });
     document.addEventListener('selectionchange', updateToolbarState);
     document.getElementById('noteContent').addEventListener('mouseup', updateToolbarState);
     document.getElementById('noteContent').addEventListener('keyup', updateToolbarState);

@@ -14,14 +14,54 @@ function getMarked() {
     return markedApi;
 }
 
+export function looksLikeMarkdown(text) {
+    const input = String(text || '');
+    const trimmed = input.trim();
+    if (!trimmed || trimmed.length < 3) return false;
+
+    const mdPatterns = [
+        /^#{1,6}\s+\S/m,
+        /^\s*[-*+]\s+\S/m,
+        /^\s*\d+\.\s+\S/m,
+        /^\s*>\s+\S/m,
+        /```[\s\S]*```/m,
+        /\[[^\]]+\]\([^)]+\)/m,
+        /(?:^|\s)(\*\*|__)[^\n]+?\1/,
+        /(?:^|\s)(\*|_)[^\n]+?\1/
+    ];
+
+    const matchCount = mdPatterns.reduce((count, pattern) => count + (pattern.test(trimmed) ? 1 : 0), 0);
+    return matchCount >= 1;
+}
+
 function baseNameFromFile(fileName) {
     const cleaned = String(fileName || '').trim();
     if (!cleaned) return 'Untitled';
     return cleaned.replace(/\.[^.]+$/, '').trim() || 'Untitled';
 }
 
-function hasMeaningfulHtmlContent(html) {
+export function hasMeaningfulHtmlContent(html) {
     return stripHtmlTags(html || '').trim().length > 0;
+}
+
+export function convertMarkdownToHtml(markdown) {
+    const sourceText = String(markdown || '');
+    if (!sourceText.trim()) {
+        throw new Error('The selected Markdown file is empty.');
+    }
+
+    const markedApi = getMarked();
+    markedApi.setOptions({
+        gfm: true,
+        breaks: false
+    });
+
+    const html = markedApi.parse(sourceText);
+    if (typeof html !== 'string' || (!html.trim() && !hasMeaningfulHtmlContent(html))) {
+        throw new Error('Could not convert the Markdown file.');
+    }
+
+    return html;
 }
 
 async function createImportedNote(title, content) {
@@ -49,21 +89,8 @@ async function importMarkdownFile(file) {
     }
 
     const sourceText = await file.text();
-    if (!sourceText.trim()) {
-        throw new Error('The selected Markdown file is empty.');
-    }
-
-    const markedApi = getMarked();
-    markedApi.setOptions({
-        gfm: true,
-        breaks: false
-    });
-
-    const html = markedApi.parse(sourceText);
+    const html = convertMarkdownToHtml(sourceText);
     const title = baseNameFromFile(file.name);
-    if (typeof html !== 'string' || (!html.trim() && !hasMeaningfulHtmlContent(html))) {
-        throw new Error('Could not convert the Markdown file.');
-    }
 
     const savedNote = await createImportedNote(title, html);
     await loadNotes();

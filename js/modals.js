@@ -333,3 +333,75 @@ export async function showDeleteConfirmDialog() {
         overlay.addEventListener('click', handleOverlayClick);
     });
 }
+
+export function showPasteChoiceDialog() {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('modalOverlay');
+        const titleEl = document.getElementById('modalTitle');
+        const messageEl = document.getElementById('modalMessage');
+        const confirmBtn = document.getElementById('modalConfirmBtn');
+        const cancelBtn = document.getElementById('modalCancelBtn');
+        const footer = confirmBtn?.parentElement;
+
+        const originalConfirmText = confirmBtn.textContent;
+        const originalCancelText = cancelBtn.textContent;
+        const originalConfirmClassName = confirmBtn.className;
+        const originalCancelClassName = cancelBtn.className;
+
+        titleEl.textContent = 'Paste Markdown';
+        messageEl.textContent = 'Markdown was detected in the pasted text. Do you want to convert it to formatted HTML or paste it as plain text?';
+        confirmBtn.textContent = 'Convert Markdown';
+        cancelBtn.textContent = 'Cancel';
+
+        const plainTextBtn = document.createElement('button');
+        plainTextBtn.type = 'button';
+        plainTextBtn.className = 'btn-secondary';
+        plainTextBtn.textContent = 'Paste Plain Text';
+        if (footer) {
+            footer.insertBefore(plainTextBtn, confirmBtn);
+        }
+
+        overlay.classList.add('active');
+
+        const cleanup = () => {
+            overlay.classList.remove('active');
+            confirmBtn.textContent = originalConfirmText;
+            cancelBtn.textContent = originalCancelText;
+            confirmBtn.className = originalConfirmClassName;
+            cancelBtn.className = originalCancelClassName;
+            confirmBtn.removeEventListener('click', handleMarkdown);
+            plainTextBtn.removeEventListener('click', handlePlainText);
+            cancelBtn.removeEventListener('click', handleCancel);
+            overlay.removeEventListener('click', handleOverlayClick);
+            if (footer && plainTextBtn.parentElement === footer) {
+                footer.removeChild(plainTextBtn);
+            }
+        };
+
+        const handleMarkdown = () => {
+            cleanup();
+            resolve('markdown');
+        };
+
+        const handlePlainText = () => {
+            cleanup();
+            resolve('plain_text');
+        };
+
+        const handleCancel = () => {
+            cleanup();
+            resolve('cancel');
+        };
+
+        const handleOverlayClick = (e) => {
+            if (e.target === overlay) {
+                handleCancel();
+            }
+        };
+
+        confirmBtn.addEventListener('click', handleMarkdown);
+        plainTextBtn.addEventListener('click', handlePlainText);
+        cancelBtn.addEventListener('click', handleCancel);
+        overlay.addEventListener('click', handleOverlayClick);
+    });
+}

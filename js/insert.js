@@ -1,61 +1,55 @@
 // Insert functions for date and checkmark
 
-export function insertDate() {
+function insertTextAtCursor(text) {
     const editor = document.getElementById('noteContent');
     const selection = window.getSelection();
-    
-    // Get current date in European format (Dutch)
-    const now = new Date();
-    const dateString = now.toLocaleDateString('nl-NL', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
-    
-    // Insert the date at the current cursor position
-    if (selection.rangeCount > 0) {
+
+    if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
         range.deleteContents();
-        const textNode = document.createTextNode(dateString);
+        const textNode = document.createTextNode(text);
         range.insertNode(textNode);
-        
-        // Move cursor to the end of inserted text
         range.setStartAfter(textNode);
         range.setEndAfter(textNode);
         selection.removeAllRanges();
         selection.addRange(range);
     } else {
-        // If no selection, append at the end
-        editor.focus();
-        const textNode = document.createTextNode(dateString);
-        editor.appendChild(textNode);
+        let target = editor.lastElementChild;
+        if (!target || !/^(P|DIV|H1|H2|H3|H4|PRE|BLOCKQUOTE|LI)$/i.test(target.tagName)) {
+            target = document.createElement('p');
+            target.appendChild(document.createElement('br'));
+            editor.appendChild(target);
+        }
+
+        const needsPlaceholderCleanup = target.innerHTML === '<br>';
+        if (needsPlaceholderCleanup) {
+            target.textContent = '';
+        }
+
+        const textNode = document.createTextNode(text);
+        target.appendChild(textNode);
+
+        const range = document.createRange();
+        range.setStartAfter(textNode);
+        range.setEndAfter(textNode);
+        selection.removeAllRanges();
+        selection.addRange(range);
     }
-    
+
     editor.focus();
 }
 
+export function insertDate() {
+    const now = new Date();
+    const dateString = now.toLocaleDateString('nl-NL', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    insertTextAtCursor(dateString);
+}
+
 export function insertCheckmark() {
-    const editor = document.getElementById('noteContent');
-    const selection = window.getSelection();
-    
-    // Insert checkmark at the current cursor position
-    if (selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        range.deleteContents();
-        const textNode = document.createTextNode('✅ ');
-        range.insertNode(textNode);
-        
-        // Move cursor to the end of inserted text
-        range.setStartAfter(textNode);
-        range.setEndAfter(textNode);
-        selection.removeAllRanges();
-        selection.addRange(range);
-    } else {
-        // If no selection, append at the end
-        editor.focus();
-        const textNode = document.createTextNode('✅ ');
-        editor.appendChild(textNode);
-    }
-    
-    editor.focus();
+    insertTextAtCursor('✅ ');
 }
