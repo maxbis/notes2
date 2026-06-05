@@ -1,6 +1,6 @@
 // Main application entry point
 import state, { AUTO_SAVE_DELAY_MS } from './js/state.js';
-import { isMobileLayout, getPublicLink, hasMeaningfulNoteContent } from './js/utils.js';
+import { isMobileLayout, getPublicLink, getEditorLink, hasMeaningfulNoteContent } from './js/utils.js';
 import { setHtmlMode, getEditorHtml } from './js/editor.js';
 import { setupFormattingToolbar, initToolbar } from './js/toolbar.js';
 import { insertDate, insertCheckmark } from './js/insert.js';
@@ -142,6 +142,44 @@ async function copyPublicLinkForCurrentNote() {
     window.prompt('Copy this public link:', url);
 }
 
+async function copyEditorLinkForCurrentNote() {
+    if (!state.currentNote) {
+        const title = (document.getElementById('noteTitle')?.value || '').trim();
+        const content = (getEditorHtml() || '').trim();
+
+        if (!hasMeaningfulNoteContent(title, content)) {
+            await showModal('Edit link', 'Write something first, then create an editable link.', 'OK', 'Close');
+            return;
+        }
+
+        await saveNote(false);
+        if (!state.currentNote || !state.currentNote.hash_id) {
+            await showModal('Edit link', 'Could not create the note to generate an editable link. Please try again.', 'OK', 'Close');
+            return;
+        }
+    } else if (state.hasUnsavedChanges) {
+        await saveNote(false);
+    }
+
+    const url = getEditorLink(state.currentNote?.hash_id);
+    if (!url) {
+        await showModal('Edit link', 'No editable link could be generated for this note.', 'OK', 'Close');
+        return;
+    }
+
+    try {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            await navigator.clipboard.writeText(url);
+            await showShareDialog(url, { title: 'Editable link copied' });
+            return;
+        }
+    } catch (e) {
+        console.warn('Clipboard write failed:', e);
+    }
+
+    window.prompt('Copy this editable link:', url);
+}
+
 function setupEventListeners() {
     document.getElementById('newNoteBtn').addEventListener('click', createNewNote);
     const openLastModifiedBtn = document.getElementById('openLastModifiedBtn');
@@ -177,6 +215,20 @@ function setupEventListeners() {
     };
     bindShare('shareLinkBtn');
     bindShare('shareLinkBtnMobile');
+
+    const bindEditLink = (id) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.addEventListener('click', async (e) => {
+            try {
+                const details = e.currentTarget && e.currentTarget.closest ? e.currentTarget.closest('details') : null;
+                if (details && details.hasAttribute('open')) details.removeAttribute('open');
+            } catch { /* ignore */ }
+            await copyEditorLinkForCurrentNote();
+        });
+    };
+    bindEditLink('editLinkBtn');
+    bindEditLink('editLinkBtnMobile');
     
     // PDF export button
     const exportPdfBtn = document.getElementById('exportPdfBtn');
@@ -261,11 +313,14 @@ function setupEventListeners() {
     document.getElementById('noteTitle').addEventListener('pointerdown', hideNotesSidebarForEditing);
     document.getElementById('noteContent').addEventListener('pointerdown', hideNotesSidebarForEditing);
     
-    // Save on tab switch or page hide; check freshness when tab becomes visible
-    document.addEventListener('visibilitychange', () => {
+    // Save on tab switch or page hide through the normal queued save path.
+    // This reduces overlap with unload-specific saves while still flushing dirty edits
+    // when the user moves to another tab or app.
+    document.addEventListener('visibilitychange', async () => {
         if (document.hidden) {
             if (state.hasUnsavedChanges) {
-                saveBeforeUnload();
+                clearTimeout(state.autoSaveTimer);
+                await saveNote(false);
             }
             stopFreshnessInterval();
         } else {
@@ -283,13 +338,6 @@ function setupEventListeners() {
     window.addEventListener('beforeunload', (e) => {
         if (state.hasUnsavedChanges) {
             // Save synchronously before leaving
-            saveBeforeUnload();
-        }
-    });
-    
-    // Also save when window loses focus (user clicks away)
-    window.addEventListener('blur', () => {
-        if (state.hasUnsavedChanges) {
             saveBeforeUnload();
         }
     });

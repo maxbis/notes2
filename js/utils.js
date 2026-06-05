@@ -11,6 +11,13 @@ export function getPublicLink(hashId) {
     return u.toString();
 }
 
+export function getEditorLink(hashId) {
+    if (!hashId) return '';
+    const u = new URL('app.php', window.location.href);
+    u.searchParams.set('note', hashId);
+    return u.toString();
+}
+
 export function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;

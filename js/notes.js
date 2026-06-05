@@ -20,6 +20,28 @@ const DEFAULT_NEW_NOTE_CONTENT = '<p>empty note</p>';
 let lastFreshnessCheck = 0;
 let freshnessIntervalId = null;
 
+function getRequestedNoteHashId() {
+    try {
+        return new URLSearchParams(window.location.search).get('note') || '';
+    } catch {
+        return '';
+    }
+}
+
+function syncCurrentNoteToUrl(hashId) {
+    try {
+        const url = new URL(window.location.href);
+        if (hashId) {
+            url.searchParams.set('note', hashId);
+        } else {
+            url.searchParams.delete('note');
+        }
+        window.history.replaceState({}, '', url.toString());
+    } catch {
+        // Ignore history/url sync issues.
+    }
+}
+
 function loadGroupState() {
     try {
         const stored = localStorage.getItem(GROUP_STORAGE_KEY);
@@ -163,7 +185,9 @@ export async function loadNotes() {
         }
         renderNotesList();
         if (state.notes.length > 0 && !state.currentNote) {
-            selectNote(state.notes[0].hash_id);
+            const requestedHashId = getRequestedNoteHashId();
+            const requestedNoteExists = requestedHashId && state.notes.some(n => n.hash_id === requestedHashId);
+            selectNote(requestedNoteExists ? requestedHashId : state.notes[0].hash_id);
         }
     } catch (error) {
         console.error('Error loading notes:', error);
@@ -340,6 +364,8 @@ export async function selectNote(hashId) {
     // Update last saved timestamp
     updateLastSavedTime(updatedAt);
 
+    syncCurrentNoteToUrl(targetHashId);
+
     renderNotesList(document.getElementById('searchInput').value);
 
     // Mobile UX: once a note is opened, hide the list to maximize editor space
@@ -369,6 +395,7 @@ export async function createNewNote() {
     state.hasUnsavedChanges = true;
     state.originalVersion = null;
     clearTimeout(state.autoSaveTimer);
+    syncCurrentNoteToUrl('');
 
     updateUnsavedIndicator();
     state.autoSaveTimer = setTimeout(() => {
@@ -426,6 +453,7 @@ export async function deleteNote() {
         document.getElementById('noteMeta').textContent = '';
         document.getElementById('lastSaved').textContent = '';
         state.originalVersion = null;
+        syncCurrentNoteToUrl('');
         
         renderNotesList(document.getElementById('searchInput').value);
         

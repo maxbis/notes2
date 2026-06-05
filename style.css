@@ -16,6 +16,12 @@ body {
     line-height: 1.6;
 }
 
+:root {
+    --paper-base: #fcfbf7;
+    --paper-shadow: rgba(166, 147, 116, 0.03);
+    --paper-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='paper-noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0.47 0 1 0 0 0.40 0 0 1 0 0.28 0 0 0 1 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 0 0.02 0.06 0.1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23paper-noise)' opacity='0.75'/%3E%3C/svg%3E");
+}
+
 .container {
     max-width: 1400px;
     margin: 0 auto;
@@ -269,7 +275,11 @@ header h1 {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #ffffff;
+    background-color: var(--paper-base);
+    background-image:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.55), var(--paper-shadow)),
+        var(--paper-noise);
+    background-size: 100% 100%, 240px 240px;
 }
 
 .stale-banner {
@@ -445,6 +455,7 @@ header h1 {
     outline: none;
     cursor: text;
     caret-color: #007aff;
+    background: transparent;
 }
 
 .editor-content-html {
@@ -462,7 +473,7 @@ header h1 {
     outline: none;
     resize: none;
     width: 100%;
-    background: #ffffff;
+    background: transparent;
     caret-color: #007aff;
 }
 
@@ -928,7 +939,6 @@ button {
     .editor {
         flex: 1;
         min-height: 0;
-        background: #ffffff; /* Ensure white background */
         box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.03); /* Subtle top shadow for depth */
     }
     
