@@ -203,6 +203,9 @@ export async function loadNotes() {
 export function renderNotesList(searchTerm = '') {
     const notesList = document.getElementById('notesList');
     const searchLower = (searchTerm || '').toLowerCase();
+    if (notesList) {
+        notesList.classList.toggle('search-active', searchLower !== '');
+    }
     const filteredNotes = state.notes.filter(note => {
         if (!noteMatchesActiveTags(note)) return false;
         if (!searchLower) return true;

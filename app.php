@@ -115,10 +115,8 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                             <button class="overflow-menu-item" id="h2BtnMobile" type="button">H2</button>
                             <button class="overflow-menu-item" id="h3BtnMobile" type="button">H3</button>
                             <button class="overflow-menu-item" id="clearFormatBtnMobile" type="button">Clear</button>
-                            <button class="overflow-menu-item" id="bulletListBtnMobile" type="button">•</button>
-                            <button class="overflow-menu-item" id="preBtnMobile" type="button">&lt;pre&gt;</button>
-                            <button class="overflow-menu-item" id="underlineBtnMobile" type="button">U̲</button>
-                            <button class="overflow-menu-item" id="horizontalRuleBtnMobile" type="button">HR ---</button>
+                            <button class="overflow-menu-item" id="preBtnMobile" type="button">Code block</button>
+                            <button class="overflow-menu-item" id="horizontalRuleBtnMobile" type="button">Divider</button>
                             <hr class="overflow-menu-sep">
                             <button class="overflow-menu-item" id="insertDateBtnMobile" type="button">📅 Date</button>
                             <button class="overflow-menu-item" id="insertCheckmarkBtnMobile" type="button">✅ Check</button>
