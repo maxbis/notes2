@@ -1349,7 +1349,7 @@ button {
     }
     
     .editor-footer {
-        padding: 0.38rem 0.9rem;
+        padding: 0.38rem 1.05rem;
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
@@ -1369,7 +1369,7 @@ button {
         font-size: 0.68rem;
         color: #86868b;
         white-space: nowrap;
-        padding-left: 0.08rem;
+        padding-left: 0.14rem;
     }
     .editor-actions {
         gap: 0.25rem;
@@ -1379,7 +1379,7 @@ button {
     .overflow-menu {
         position: relative;
         margin-left: auto;
-        margin-right: 0.08rem;
+        margin-right: 0.14rem;
     }
     .overflow-menu-btn {
         list-style: none;
