@@ -32,11 +32,22 @@ export function stripHtmlTags(html) {
     return tmp.textContent || tmp.innerText || '';
 }
 
+function normalizeNoteTextContent(content) {
+    return stripHtmlTags(content || '')
+        .replace(/\u00a0/g, ' ')
+        .replace(/\u200b/g, '')
+        .trim()
+        .toLowerCase();
+}
+
 /** Returns true if the note has meaningful content (title or non-empty text after stripping HTML). */
 export function hasMeaningfulNoteContent(title, content) {
     const titleTrimmed = (title || '').trim();
-    const textFromContent = stripHtmlTags(content || '').trim();
-    return titleTrimmed.length > 0 || textFromContent.length > 0;
+    const textFromContent = normalizeNoteTextContent(content);
+    if (titleTrimmed.length > 0) return true;
+    if (textFromContent.length === 0) return false;
+    // The new-note placeholder should never count as real content.
+    return textFromContent !== 'empty note';
 }
 
 export function formatDate(dateString) {

@@ -43,6 +43,7 @@ Describe how note saves work during normal editing, context switches, and page e
 4. Page exit still has a last-resort unload fallback.
    - On `beforeunload`, the app still calls `saveBeforeUnload()`.
    - This path exists only as a best-effort fallback for true page leave/close timing.
+   - It does not force-overwrite version conflicts during unload.
 
 5. Window `blur` no longer triggers saves.
    - Losing focus alone is too noisy and caused extra concurrent save paths.
@@ -64,6 +65,7 @@ Describe how note saves work during normal editing, context switches, and page e
 
 - When a new note has not been created yet:
   - the normal path should create it through the standard queued save flow
+  - placeholder-only notes are ignored until the user enters meaningful content
   - unload behavior remains a best-effort fallback, not the primary creation mechanism
 
 ## Related Files

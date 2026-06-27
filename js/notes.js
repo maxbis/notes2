@@ -1,5 +1,5 @@
 // CRUD operations for notes
-import state, { API_ENDPOINT, AUTO_SAVE_DELAY_MS } from './state.js';
+import state, { API_ENDPOINT } from './state.js';
 import { readJsonResponse } from './api.js';
 import { setEditorHtml } from './editor.js';
 import { escapeHtml, stripHtmlTags, formatDate, isMobileLayout } from './utils.js';
@@ -392,18 +392,13 @@ export async function createNewNote() {
     // Reset saved state
     state.savedTitle = '';
     state.savedContent = '';
-    state.hasUnsavedChanges = true;
+    state.hasUnsavedChanges = false;
     state.originalVersion = null;
     clearTimeout(state.autoSaveTimer);
     syncCurrentNoteToUrl('');
 
     updateUnsavedIndicator();
-    state.autoSaveTimer = setTimeout(() => {
-        if (state.hasUnsavedChanges) {
-            saveNote(false);
-        }
-    }, AUTO_SAVE_DELAY_MS);
-    
+
     renderNotesList(document.getElementById('searchInput').value);
     const noteContent = document.getElementById('noteContent');
     if (noteContent) {

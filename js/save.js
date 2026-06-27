@@ -3,6 +3,7 @@ import state, { API_ENDPOINT } from './state.js';
 import { readJsonResponse } from './api.js';
 import { getEditorHtml } from './editor.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './indicators.js';
+import { hasMeaningfulNoteContent } from './utils.js';
 
 // Dependencies that will be injected
 let showConflictDialog = null;
@@ -76,7 +77,8 @@ export async function saveNote(showFeedback = true, forceOverwrite = false) {
 }
 
 async function performSave(showFeedback = true, forceOverwrite = false) {
-    const title = document.getElementById('noteTitle').value.trim() || 'Untitled';
+    const rawTitle = document.getElementById('noteTitle').value.trim();
+    const title = rawTitle || 'Untitled';
     const content = getEditorHtml();
     const previousTitle = state.currentNote?.title || state.savedTitle || '';
 
@@ -150,6 +152,13 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
                 break;
             }
         } else {
+            if (!hasMeaningfulNoteContent(rawTitle, content)) {
+                console.log('[SAVE CREATE] Skipping create for empty placeholder note');
+                state.hasUnsavedChanges = false;
+                clearTimeout(state.autoSaveTimer);
+                updateUnsavedIndicator();
+                return false;
+            }
             // Create new note
             const createData = {
                 title: title,
@@ -259,7 +268,8 @@ export function saveBeforeUnload() {
     
     // Save using fetch with keepalive for reliable sending during page unload
     // The keepalive flag ensures the request continues even after the page starts unloading
-    const title = document.getElementById('noteTitle').value.trim() || 'Untitled';
+    const rawTitle = document.getElementById('noteTitle').value.trim();
+    const title = rawTitle || 'Untitled';
     const content = getEditorHtml();
     
     if (state.hasUnsavedChanges && state.currentNote) {
@@ -272,9 +282,9 @@ export function saveBeforeUnload() {
             timestamp: new Date().toISOString()
         });
         
-        // Use fetch with keepalive flag - this is the standard way to send data during page unload
-        // It's supported in all modern browsers and is more reliable than regular fetch
-        // Use force_overwrite: true to avoid conflicts during unload (user is leaving anyway)
+        // Use fetch with keepalive flag - this is the standard way to send data during page unload.
+        // It's supported in all modern browsers and is more reliable than regular fetch.
+        // Do not force-overwrite conflicts here; a stale background tab should never create silent copies.
         fetch(API_ENDPOINT, {
             method: 'PUT',
             headers: {
@@ -285,7 +295,7 @@ export function saveBeforeUnload() {
                 title: title,
                 content: content,
                 expected_version: state.originalVersion,
-                force_overwrite: true  // Force overwrite to avoid conflicts during unload
+                force_overwrite: false
             }),
             keepalive: true  // Critical: allows request to complete even after page unloads
         }).then(response => {
@@ -328,6 +338,10 @@ export function saveBeforeUnload() {
             }, 2000);
         });
     } else if (state.hasUnsavedChanges && !state.currentNote) {
+        if (!hasMeaningfulNoteContent(rawTitle, content)) {
+            console.log('[SAVE UNLOAD] Skipping create for empty placeholder note');
+            return;
+        }
         state.unloadSaveInProgress = true;
         
         // New note that hasn't been created on the server yet — try to create it on unload.
