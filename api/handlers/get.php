@@ -15,9 +15,13 @@ if (!function_exists('get_setting')) {
 if (!function_exists('ensure_note_tags_table')) {
     require_once __DIR__ . '/../tags_helper.php';
 }
+if (!function_exists('ensure_note_pinning_column')) {
+    require_once __DIR__ . '/../pin_helper.php';
+}
 
 function handle_get(mysqli $conn): void {
     ensure_note_tags_table($conn);
+    ensure_note_pinning_column($conn);
 
     if (isset($_GET['id'])) {
         // Get single note by hash_id
@@ -36,7 +40,7 @@ function handle_get(mysqli $conn): void {
         echo json_encode($note ? $note : ['error' => 'Note not found'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     } else {
         // Get all notes and public "easy access" default
-        $result = $conn->query("SELECT id, hash_id, title, content, created_at, updated_at, version FROM notes ORDER BY updated_at DESC");
+        $result = $conn->query("SELECT id, hash_id, title, content, is_pinned, created_at, updated_at, version FROM notes ORDER BY updated_at DESC");
         if ($result === false) __notes_db_fail($conn, 'query: select all notes');
         $notes = [];
         while ($row = $result->fetch_assoc()) {

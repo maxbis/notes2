@@ -11,6 +11,19 @@ let showConflictDialog = null;
 let refreshCurrentNote = null;
 let renderNotesList = null;
 
+function updatePinButtonsForSavedNote(note = null) {
+    const isPinned = Number(note?.is_pinned) === 1;
+    const label = isPinned ? 'Unpin' : 'Pin';
+    ['pinNoteBtn', 'pinNoteBtnMobile'].forEach((id) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.disabled = !note;
+        btn.textContent = label;
+        btn.setAttribute('aria-label', note ? `${label} this note` : 'No note selected');
+        btn.setAttribute('title', note ? `${label} this note` : 'No note selected');
+    });
+}
+
 export function initSave(deps) {
     showConflictDialog = deps.showConflictDialog;
     refreshCurrentNote = deps.refreshCurrentNote;
@@ -107,6 +120,7 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
                     title: title,
                     content: content,
                     tags: tags,
+                    is_pinned: Number(state.currentNote?.is_pinned) === 1 ? 1 : 0,
                     expected_version: state.originalVersion,
                     force_overwrite: !!attemptForceOverwrite
                 };
@@ -166,7 +180,8 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
             const createData = {
                 title: title,
                 content: content,
-                tags: tags
+                tags: tags,
+                is_pinned: 0
             };
             console.log(`[SAVE CREATE] Sending POST request`, {
                 titleLength: title.length,
@@ -212,8 +227,13 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
             state.originalVersion = savedNote.version != null ? Number(savedNote.version) : null; // Set version for new notes
         }
 
-        // Re-sort by updated_at
-        state.notes.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        // Re-sort with pinned notes first.
+        state.notes.sort((a, b) => {
+            const pinnedDiff = (Number(b?.is_pinned) === 1 ? 1 : 0) - (Number(a?.is_pinned) === 1 ? 1 : 0);
+            if (pinnedDiff !== 0) return pinnedDiff;
+            return new Date(b.updated_at) - new Date(a.updated_at);
+        });
+        updatePinButtonsForSavedNote(state.currentNote);
         renderSidebarTagFilters();
 
         // Update saved state
@@ -303,6 +323,7 @@ export function saveBeforeUnload() {
                 title: title,
                 content: content,
                 tags: tags,
+                is_pinned: Number(state.currentNote?.is_pinned) === 1 ? 1 : 0,
                 expected_version: state.originalVersion,
                 force_overwrite: false
             }),
@@ -370,7 +391,8 @@ export function saveBeforeUnload() {
             body: JSON.stringify({
                 title: title || 'Untitled',
                 content: content,
-                tags: tags
+                tags: tags,
+                is_pinned: 0
             }),
             keepalive: true
         }).then(response => {

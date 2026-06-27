@@ -21,10 +21,14 @@ if (!function_exists('generateHashId')) {
 if (!function_exists('ensure_note_tags_table')) {
     require_once __DIR__ . '/../tags_helper.php';
 }
+if (!function_exists('ensure_note_pinning_column')) {
+    require_once __DIR__ . '/../pin_helper.php';
+}
 
 function handle_post(mysqli $conn): void {
     global $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS;
     ensure_note_tags_table($conn);
+    ensure_note_pinning_column($conn);
     
     // Create new note
     $data = json_decode(file_get_contents('php://input'), true);
@@ -35,11 +39,12 @@ function handle_post(mysqli $conn): void {
     $title = $data['title'] ?? 'Untitled';
     $content = $data['content'] ?? '';
     $tags = normalize_note_tags($data['tags'] ?? []);
+    $isPinned = normalize_note_pinned($data['is_pinned'] ?? 0);
     $content = sanitize_note_html($content, $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS);
     
-    $stmt = $conn->prepare("INSERT INTO notes (hash_id, title, content) VALUES (?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO notes (hash_id, title, content, is_pinned) VALUES (?, ?, ?, ?)");
     if (!$stmt) __notes_db_fail($conn, 'prepare: insert note');
-    $stmt->bind_param("sss", $hash_id, $title, $content);
+    $stmt->bind_param("sssi", $hash_id, $title, $content, $isPinned);
     
     if ($stmt->execute()) {
         $note_id = $conn->insert_id;

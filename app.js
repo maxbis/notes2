@@ -6,7 +6,7 @@ import { setupFormattingToolbar, initToolbar } from './js/toolbar.js';
 import { insertDate, insertCheckmark } from './js/insert.js';
 import { initSmartPaste } from './js/smart-paste.js';
 import { saveNote, saveBeforeUnload } from './js/save.js';
-import { loadNotes, renderNotesList, filterNotes, selectNote, createNewNote, deleteNote, refreshCurrentNote, initNotes, checkFreshness, setupStaleBannerHandlers, startFreshnessInterval, stopFreshnessInterval, openLastModifiedNote, setupListViewTabs } from './js/notes.js';
+import { loadNotes, renderNotesList, filterNotes, selectNote, createNewNote, deleteNote, refreshCurrentNote, initNotes, checkFreshness, setupStaleBannerHandlers, startFreshnessInterval, stopFreshnessInterval, openLastModifiedNote, setupListViewTabs, togglePinnedForCurrentNote } from './js/notes.js';
 import { showModal, showLinkDialog, showConflictDialog, showDeleteConfirmDialog, showShareDialog, showPasteChoiceDialog } from './js/modals.js';
 import { setPublicDefault } from './js/api.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './js/indicators.js';
@@ -256,6 +256,20 @@ function setupEventListeners() {
     };
     bindEditLink('editLinkBtn');
     bindEditLink('editLinkBtnMobile');
+
+    const bindPin = (id) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.addEventListener('click', async (e) => {
+            try {
+                const details = e.currentTarget && e.currentTarget.closest ? e.currentTarget.closest('details') : null;
+                if (details && details.hasAttribute('open')) details.removeAttribute('open');
+            } catch { /* ignore */ }
+            await togglePinnedForCurrentNote();
+        });
+    };
+    bindPin('pinNoteBtn');
+    bindPin('pinNoteBtnMobile');
     
     // PDF export button
     const exportPdfBtn = document.getElementById('exportPdfBtn');

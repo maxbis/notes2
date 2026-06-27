@@ -24,10 +24,14 @@ if (!function_exists('set_setting')) {
 if (!function_exists('ensure_note_tags_table')) {
     require_once __DIR__ . '/../tags_helper.php';
 }
+if (!function_exists('ensure_note_pinning_column')) {
+    require_once __DIR__ . '/../pin_helper.php';
+}
 
 function handle_put(mysqli $conn): void {
     global $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS;
     ensure_note_tags_table($conn);
+    ensure_note_pinning_column($conn);
     
     // Update existing note or settings (e.g. public_default_hash_id)
     $data = json_decode(file_get_contents('php://input'), true);
@@ -43,6 +47,33 @@ function handle_put(mysqli $conn): void {
             set_setting($conn, 'public_default_hash_id', '');
         }
         echo json_encode(['ok' => true, 'public_default_hash_id' => $hashId], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        return;
+    }
+    if (array_key_exists('set_pinned', $data) && is_array($data['set_pinned'] ?? null)) {
+        $payload = $data['set_pinned'];
+        $hashId = isset($payload['hash_id']) ? (string)$payload['hash_id'] : '';
+        if ($hashId === '') {
+            __notes_json_error(400, 'hash_id is required');
+        }
+        $isPinned = normalize_note_pinned($payload['is_pinned'] ?? 0);
+
+        $stmtPin = $conn->prepare("UPDATE notes SET is_pinned = ?, version = version + 1 WHERE hash_id = ?");
+        if (!$stmtPin) __notes_db_fail($conn, 'prepare: update is_pinned');
+        $stmtPin->bind_param("is", $isPinned, $hashId);
+        if (!$stmtPin->execute()) __notes_db_fail($conn, 'execute: update is_pinned');
+        if ($stmtPin->affected_rows === 0) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Note not found']);
+            return;
+        }
+
+        $stmtPinnedNote = $conn->prepare("SELECT * FROM notes WHERE hash_id = ?");
+        if (!$stmtPinnedNote) __notes_db_fail($conn, 'prepare: reload pinned note');
+        $stmtPinnedNote->bind_param("s", $hashId);
+        if (!$stmtPinnedNote->execute()) __notes_db_fail($conn, 'execute: reload pinned note');
+
+        $note = attach_tags_to_note($conn, fetch_assoc_from_stmt($stmtPinnedNote));
+        echo json_encode($note, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         return;
     }
     $hash_id = $data['hash_id'];
@@ -72,13 +103,14 @@ function handle_put(mysqli $conn): void {
         echo json_encode(['error' => 'Note not found']);
         return;
     }
+    $isPinned = normalize_note_pinned($data['is_pinned'] ?? ($serverNote['is_pinned'] ?? 0));
     $serverVersion = isset($serverNote['version']) ? (int)$serverNote['version'] : null;
 
     if (!$forceOverwrite) {
         // Optimistic lock update: only update if the version matches expected_version
-        $stmt = $conn->prepare("UPDATE notes SET title = ?, content = ?, version = version + 1 WHERE hash_id = ? AND version = ?");
+        $stmt = $conn->prepare("UPDATE notes SET title = ?, content = ?, is_pinned = ?, version = version + 1 WHERE hash_id = ? AND version = ?");
         if (!$stmt) __notes_db_fail($conn, 'prepare: optimistic update');
-        $stmt->bind_param("sssi", $title, $content, $hash_id, $expected_version);
+        $stmt->bind_param("ssisi", $title, $content, $isPinned, $hash_id, $expected_version);
 
         if (!$stmt->execute()) {
             __notes_db_fail($conn, 'execute: optimistic update');
@@ -118,9 +150,9 @@ function handle_put(mysqli $conn): void {
         }
 
         // Overwrite the original note unconditionally (but still bump version)
-        $stmt = $conn->prepare("UPDATE notes SET title = ?, content = ?, version = version + 1 WHERE hash_id = ?");
+        $stmt = $conn->prepare("UPDATE notes SET title = ?, content = ?, is_pinned = ?, version = version + 1 WHERE hash_id = ?");
         if (!$stmt) __notes_db_fail($conn, 'prepare: force overwrite update');
-        $stmt->bind_param("sss", $title, $content, $hash_id);
+        $stmt->bind_param("ssis", $title, $content, $isPinned, $hash_id);
 
         if (!$stmt->execute()) {
             __notes_db_fail($conn, 'execute: force overwrite update');

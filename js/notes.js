@@ -1,6 +1,6 @@
 // CRUD operations for notes
 import state, { API_ENDPOINT } from './state.js';
-import { readJsonResponse } from './api.js';
+import { readJsonResponse, setPinned } from './api.js';
 import { setEditorHtml } from './editor.js';
 import { escapeHtml, stripHtmlTags, formatDate, isMobileLayout } from './utils.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './indicators.js';
@@ -20,6 +20,31 @@ const FRESHNESS_CHECK_INTERVAL_MS = 60000;
 const DEFAULT_NEW_NOTE_CONTENT = '<p>empty note</p>';
 let lastFreshnessCheck = 0;
 let freshnessIntervalId = null;
+
+function normalizePinnedFlag(note) {
+    return Number(note?.is_pinned) === 1 ? 1 : 0;
+}
+
+function sortNotesByPinnedAndUpdated(notes) {
+    return [...notes].sort((left, right) => {
+        const pinnedDiff = normalizePinnedFlag(right) - normalizePinnedFlag(left);
+        if (pinnedDiff !== 0) return pinnedDiff;
+        return new Date(right.updated_at) - new Date(left.updated_at);
+    });
+}
+
+function updatePinButtons(note = null) {
+    const isPinned = normalizePinnedFlag(note) === 1;
+    const label = isPinned ? 'Unpin' : 'Pin';
+    ['pinNoteBtn', 'pinNoteBtnMobile'].forEach((id) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.disabled = !note;
+        btn.textContent = label;
+        btn.setAttribute('aria-label', note ? `${label} this note` : 'No note selected');
+        btn.setAttribute('title', note ? `${label} this note` : 'No note selected');
+    });
+}
 
 function getRequestedNoteHashId() {
     try {
@@ -186,8 +211,11 @@ export async function loadNotes() {
         }
         state.notes = state.notes.map(note => ({
             ...note,
-            tags: Array.isArray(note.tags) ? note.tags : []
+            tags: Array.isArray(note.tags) ? note.tags : [],
+            is_pinned: normalizePinnedFlag(note)
         }));
+        state.notes = sortNotesByPinnedAndUpdated(state.notes);
+        updatePinButtons(state.currentNote);
         renderSidebarTagFilters();
         renderNotesList();
         if (state.notes.length > 0 && !state.currentNote) {
@@ -228,14 +256,14 @@ export function renderNotesList(searchTerm = '') {
     const notesToShow = isMobile && !searchTerm ? filteredNotes.slice(0, 20) : filteredNotes;
 
     if (state.listView === 'all') {
-        const sorted = notesToShow.slice().sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        const sorted = sortNotesByPinnedAndUpdated(notesToShow);
         const itemsHtml = sorted.map(note => {
             const title = note.title || 'Untitled';
             return `
             <div class="note-item ${state.currentNote && state.currentNote.hash_id === note.hash_id ? 'active' : ''}"
                  onclick="window.selectNote('${note.hash_id}')">
                 <div class="note-item-header">
-                    <div class="note-item-title">${escapeHtml(title)}</div>
+                    <div class="note-item-title">${normalizePinnedFlag(note) ? '<span class="note-item-pin" aria-hidden="true">📌</span>' : ''}${escapeHtml(title)}</div>
                     <div class="note-item-date">${formatDate(note.updated_at)}</div>
                 </div>
                 <div class="note-item-preview">${escapeHtml(stripHtmlTags(note.content).substring(0, 100))}</div>
@@ -266,7 +294,7 @@ export function renderNotesList(searchTerm = '') {
             <div class="note-item ${state.currentNote && state.currentNote.hash_id === note.hash_id ? 'active' : ''}"
                  onclick="window.selectNote('${note.hash_id}')">
                 <div class="note-item-header">
-                    <div class="note-item-title">${escapeHtml(itemTitle || 'Untitled')}</div>
+                    <div class="note-item-title">${normalizePinnedFlag(note) ? '<span class="note-item-pin" aria-hidden="true">📌</span>' : ''}${escapeHtml(itemTitle || 'Untitled')}</div>
                     <div class="note-item-date">${formatDate(note.updated_at)}</div>
                 </div>
                 <div class="note-item-preview">${escapeHtml(stripHtmlTags(note.content).substring(0, 100))}</div>
@@ -373,6 +401,7 @@ export async function selectNote(hashId) {
     
     // Store original version for conflict detection
     state.originalVersion = (note && note.version != null) ? Number(note.version) : null;
+    updatePinButtons(note);
     
     const updatedAt = new Date(note.updated_at);
     document.getElementById('noteMeta').textContent = 
@@ -391,7 +420,49 @@ export async function selectNote(hashId) {
 
 export function openLastModifiedNote() {
     if (!state.notes.length) return;
-    selectNote(state.notes[0].hash_id);
+    const mostRecent = state.notes.slice().sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
+    if (mostRecent) selectNote(mostRecent.hash_id);
+}
+
+export async function togglePinnedForCurrentNote() {
+    if (!state.currentNote?.hash_id) return;
+
+    if (state.hasUnsavedChanges) {
+        await saveNote(false);
+        if (!state.currentNote?.hash_id) return;
+    }
+
+    const nextPinned = normalizePinnedFlag(state.currentNote) === 1 ? 0 : 1;
+
+    try {
+        const updatedNote = await setPinned(state.currentNote.hash_id, nextPinned);
+        const normalizedNote = {
+            ...updatedNote,
+            tags: Array.isArray(updatedNote.tags) ? updatedNote.tags : [],
+            is_pinned: normalizePinnedFlag(updatedNote)
+        };
+        const index = state.notes.findIndex(n => n.hash_id === normalizedNote.hash_id);
+        if (index !== -1) {
+            state.notes[index] = normalizedNote;
+        }
+        state.notes = sortNotesByPinnedAndUpdated(state.notes);
+        state.currentNote = normalizedNote;
+        updatePinButtons(normalizedNote);
+        state.savedTitle = normalizedNote.title || '';
+        state.savedContent = normalizedNote.content || '';
+        setSavedTags(normalizedNote.tags || []);
+        setCurrentTags(normalizedNote.tags || []);
+        state.originalVersion = normalizedNote.version != null ? Number(normalizedNote.version) : null;
+
+        const updatedAt = new Date(normalizedNote.updated_at);
+        document.getElementById('noteMeta').textContent = `Last updated: ${updatedAt.toLocaleString()}`;
+        updateLastSavedTime(updatedAt);
+        renderSidebarTagFilters();
+        renderNotesList(document.getElementById('searchInput').value);
+    } catch (error) {
+        console.error('Error toggling pin state:', error);
+        alert('Error updating pin state. Please try again.');
+    }
 }
 
 export async function createNewNote() {
@@ -413,6 +484,7 @@ export async function createNewNote() {
     setSavedTags([]);
     state.hasUnsavedChanges = false;
     state.originalVersion = null;
+    updatePinButtons(null);
     clearTimeout(state.autoSaveTimer);
     syncCurrentNoteToUrl('');
 
@@ -462,6 +534,7 @@ export async function deleteNote() {
         // Remove from local array
         state.notes = state.notes.filter(n => n.hash_id !== state.currentNote.hash_id);
         state.currentNote = null;
+        updatePinButtons(null);
         document.getElementById('noteTitle').value = '';
         setEditorHtml('');
         setCurrentTags([]);
@@ -492,31 +565,38 @@ export async function refreshCurrentNote() {
         const note = await readJsonResponse(response, 'refreshCurrentNote');
         
         if (note && !note.error) {
+            const normalizedNote = {
+                ...note,
+                tags: Array.isArray(note.tags) ? note.tags : [],
+                is_pinned: normalizePinnedFlag(note)
+            };
             // Update the note in the notes array
             const index = state.notes.findIndex(n => n.hash_id === state.currentNote.hash_id);
             if (index !== -1) {
-                state.notes[index] = note;
+                state.notes[index] = normalizedNote;
             }
+            state.notes = sortNotesByPinnedAndUpdated(state.notes);
             
             // Reload the note
-            state.currentNote = note;
-            const title = note.title || '';
-            const content = note.content || '';
+            state.currentNote = normalizedNote;
+            updatePinButtons(normalizedNote);
+            const title = normalizedNote.title || '';
+            const content = normalizedNote.content || '';
             
             document.getElementById('noteTitle').value = title;
             setEditorHtml(content);
-            setCurrentTags(note.tags || []);
+            setCurrentTags(normalizedNote.tags || []);
             
             state.savedTitle = title;
             state.savedContent = content;
-            setSavedTags(note.tags || []);
+            setSavedTags(normalizedNote.tags || []);
             state.hasUnsavedChanges = false;
-            state.originalVersion = note.version != null ? Number(note.version) : null;
+            state.originalVersion = normalizedNote.version != null ? Number(normalizedNote.version) : null;
             
             // Update unsaved indicator
             updateUnsavedIndicator();
             
-            const updatedAt = new Date(note.updated_at);
+            const updatedAt = new Date(normalizedNote.updated_at);
             document.getElementById('noteMeta').textContent = 
                 `Last updated: ${updatedAt.toLocaleString()}`;
             updateLastSavedTime(updatedAt);

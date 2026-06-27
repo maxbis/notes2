@@ -423,6 +423,13 @@ header h1 {
     text-overflow: ellipsis;
 }
 
+.note-item-pin {
+    display: inline-block;
+    margin-right: 0.28rem;
+    font-size: 0.82em;
+    opacity: 0.78;
+}
+
 .note-item-preview {
     font-size: 0.82rem;
     color: #86868b;

@@ -148,6 +148,7 @@ require_once __DIR__ . '/../zendure/login/validate.php';
 
                     <!-- Desktop: show Delete as a normal button -->
                     <div class="editor-actions desktop-only">
+                        <button class="btn-secondary" id="pinNoteBtn" type="button" title="Pin or unpin this note" aria-label="Pin or unpin this note">Pin</button>
                         <button class="btn-secondary" id="shareLinkBtn" type="button" title="Copy public link" aria-label="Copy public link">Share</button>
                         <button class="btn-secondary" id="editLinkBtn" type="button" title="Copy editable link" aria-label="Copy editable link">Edit link</button>
                         <button class="btn-secondary" id="exportPdfBtn" type="button" title="Export to PDF" aria-label="Export to PDF">PDF</button>
@@ -158,6 +159,7 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                     <details class="overflow-menu mobile-only">
                         <summary class="overflow-menu-btn" aria-label="More actions" title="More actions">⋯</summary>
                         <div class="overflow-menu-panel">
+                            <button class="overflow-menu-item" id="pinNoteBtnMobile" type="button">Pin</button>
                             <button class="overflow-menu-item" id="shareLinkBtnMobile" type="button">Share (copy link)</button>
                             <button class="overflow-menu-item" id="editLinkBtnMobile" type="button">Edit link</button>
                             <hr class="overflow-menu-sep">

@@ -18,6 +18,24 @@ export async function setPublicDefault(hashId) {
     return data;
 }
 
+export async function setPinned(hashId, isPinned) {
+    const response = await fetch(API_ENDPOINT, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            set_pinned: {
+                hash_id: hashId,
+                is_pinned: isPinned
+            }
+        })
+    });
+    const data = await readJsonResponse(response, 'setPinned');
+    if (!response.ok) {
+        throw new Error(data?.error || `HTTP ${response.status}`);
+    }
+    return data;
+}
+
 export async function readJsonResponse(response, context = 'request') {
     const text = await response.text();
     try {
