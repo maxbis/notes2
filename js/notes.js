@@ -1,6 +1,7 @@
 // CRUD operations for notes
 import state, { API_ENDPOINT } from './state.js';
-import { readJsonResponse, setPinned } from './api.js';
+import { readJsonResponse } from './api.js';
+import { setPinned } from './pin-api.js';
 import { setEditorHtml } from './editor.js';
 import { escapeHtml, stripHtmlTags, formatDate, isMobileLayout } from './utils.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './indicators.js';
