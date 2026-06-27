@@ -49,7 +49,9 @@ require_once __DIR__ . '/../zendure/login/validate.php';
             <aside class="sidebar">
                 <div class="search-box">
                     <input type="text" id="searchInput" placeholder="Search notes...">
+                    <button type="button" id="clearSearchBtn" class="search-clear-btn" aria-label="Clear search" title="Clear search" hidden>&times;</button>
                 </div>
+                <div class="tag-filters" id="tagFilters" hidden></div>
                 <div class="list-view-tabs" role="tablist" aria-label="List view">
                     <button type="button" class="list-view-tab" role="tab" data-view="all" aria-selected="false">ALL</button>
                     <button type="button" class="list-view-tab active" role="tab" data-view="groups" aria-selected="true">Groups</button>
@@ -69,6 +71,12 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                     <div class="title-container">
                         <span id="unsavedIndicator" class="unsaved-indicator" title="Unsaved changes"></span>
                         <input type="text" id="noteTitle" placeholder="Title...">
+                    </div>
+                    <div class="tag-editor" id="tagEditor">
+                        <div class="tag-editor-input">
+                            <div class="tag-chips" id="tagChips"></div>
+                            <input type="text" id="tagInput" class="tag-input" placeholder="Add tag...">
+                        </div>
                     </div>
                 </div>
                 <div class="toolbar">

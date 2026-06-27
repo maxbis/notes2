@@ -5,6 +5,7 @@ import { setEditorHtml } from './editor.js';
 import { escapeHtml, stripHtmlTags, formatDate, isMobileLayout } from './utils.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './indicators.js';
 import { showDeleteConfirmDialog } from './modals.js';
+import { noteMatchesActiveTags, renderSidebarTagFilters, setCurrentTags, setSavedTags } from './tags.js';
 
 // Dependencies that will be injected
 let saveNote = null;
@@ -183,6 +184,11 @@ export async function loadNotes() {
             state.notes = Array.isArray(data.notes) ? data.notes : [];
             state.publicDefaultHashId = (data.public_default_hash_id != null && data.public_default_hash_id !== '') ? data.public_default_hash_id : null;
         }
+        state.notes = state.notes.map(note => ({
+            ...note,
+            tags: Array.isArray(note.tags) ? note.tags : []
+        }));
+        renderSidebarTagFilters();
         renderNotesList();
         if (state.notes.length > 0 && !state.currentNote) {
             const requestedHashId = getRequestedNoteHashId();
@@ -196,14 +202,19 @@ export async function loadNotes() {
 
 export function renderNotesList(searchTerm = '') {
     const notesList = document.getElementById('notesList');
-    const filteredNotes = searchTerm
-        ? state.notes.filter(note => {
-            const searchLower = searchTerm.toLowerCase();
-            const titleLower = (note.title || '').toLowerCase();
-            const contentText = stripHtmlTags(note.content || '').toLowerCase();
-            return titleLower.includes(searchLower) || contentText.includes(searchLower);
-          })
-        : state.notes;
+    const searchLower = (searchTerm || '').toLowerCase();
+    const filteredNotes = state.notes.filter(note => {
+        if (!noteMatchesActiveTags(note)) return false;
+        if (!searchLower) return true;
+        const titleLower = (note.title || '').toLowerCase();
+        const contentText = stripHtmlTags(note.content || '').toLowerCase();
+        const tagsText = Array.isArray(note.tags)
+            ? note.tags.map(tag => String(tag || '').toLowerCase()).join(' ')
+            : '';
+        return titleLower.includes(searchLower)
+            || contentText.includes(searchLower)
+            || tagsText.includes(searchLower);
+    });
 
     if (filteredNotes.length === 0) {
         notesList.innerHTML = '<div class="empty-state"><p>No notes found</p></div>';
@@ -323,6 +334,7 @@ export function setupListViewTabs() {
 }
 
 export function filterNotes(e) {
+    renderSidebarTagFilters();
     renderNotesList(e.target.value);
 }
 
@@ -344,10 +356,12 @@ export async function selectNote(hashId) {
     
     document.getElementById('noteTitle').value = title;
     setEditorHtml(content);
+    setCurrentTags(note.tags || []);
     
     // Update saved state
     state.savedTitle = title;
     state.savedContent = content;
+    setSavedTags(note.tags || []);
     state.hasUnsavedChanges = false;
     clearTimeout(state.autoSaveTimer);
     
@@ -386,12 +400,14 @@ export async function createNewNote() {
     state.currentNote = null;
     document.getElementById('noteTitle').value = '';
     setEditorHtml(DEFAULT_NEW_NOTE_CONTENT);
+    setCurrentTags([]);
     document.getElementById('noteMeta').textContent = '';
     document.getElementById('lastSaved').textContent = '';
     
     // Reset saved state
     state.savedTitle = '';
     state.savedContent = '';
+    setSavedTags([]);
     state.hasUnsavedChanges = false;
     state.originalVersion = null;
     clearTimeout(state.autoSaveTimer);
@@ -445,11 +461,14 @@ export async function deleteNote() {
         state.currentNote = null;
         document.getElementById('noteTitle').value = '';
         setEditorHtml('');
+        setCurrentTags([]);
         document.getElementById('noteMeta').textContent = '';
         document.getElementById('lastSaved').textContent = '';
+        setSavedTags([]);
         state.originalVersion = null;
         syncCurrentNoteToUrl('');
         
+        renderSidebarTagFilters();
         renderNotesList(document.getElementById('searchInput').value);
         
         // Select first note if available
@@ -483,9 +502,11 @@ export async function refreshCurrentNote() {
             
             document.getElementById('noteTitle').value = title;
             setEditorHtml(content);
+            setCurrentTags(note.tags || []);
             
             state.savedTitle = title;
             state.savedContent = content;
+            setSavedTags(note.tags || []);
             state.hasUnsavedChanges = false;
             state.originalVersion = note.version != null ? Number(note.version) : null;
             
@@ -497,6 +518,7 @@ export async function refreshCurrentNote() {
                 `Last updated: ${updatedAt.toLocaleString()}`;
             updateLastSavedTime(updatedAt);
             
+            renderSidebarTagFilters();
             renderNotesList(document.getElementById('searchInput').value);
         }
     } catch (error) {

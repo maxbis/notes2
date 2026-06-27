@@ -21,9 +21,13 @@ if (!function_exists('generateHashId')) {
 if (!function_exists('set_setting')) {
     require_once __DIR__ . '/../settings_helper.php';
 }
+if (!function_exists('ensure_note_tags_table')) {
+    require_once __DIR__ . '/../tags_helper.php';
+}
 
 function handle_put(mysqli $conn): void {
     global $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS;
+    ensure_note_tags_table($conn);
     
     // Update existing note or settings (e.g. public_default_hash_id)
     $data = json_decode(file_get_contents('php://input'), true);
@@ -44,6 +48,7 @@ function handle_put(mysqli $conn): void {
     $hash_id = $data['hash_id'];
     $title = $data['title'] ?? '';
     $content = $data['content'] ?? '';
+    $tags = normalize_note_tags($data['tags'] ?? []);
     $content = sanitize_note_html($content, $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS);
 
     $expected_version = isset($data['expected_version']) ? (int)$data['expected_version'] : null;
@@ -99,6 +104,8 @@ function handle_put(mysqli $conn): void {
     } else {
         // Force overwrite path: only make a copy if we are behind (server_version > expected_version)
         if ($expected_version !== null && $serverVersion !== null && $serverVersion > $expected_version) {
+            $serverNoteId = isset($serverNote['id']) ? (int)$serverNote['id'] : 0;
+            $serverTags = $serverNoteId > 0 ? load_note_tags_for_note_id($conn, $serverNoteId) : [];
             $copy_hash_id = generateHashId();
             $copy_title = ($serverNote['title'] ?? '') . ' (version overwritten)';
             $copy_content = $serverNote['content'] ?? '';
@@ -107,6 +114,7 @@ function handle_put(mysqli $conn): void {
             if (!$stmtCopy) __notes_db_fail($conn, 'prepare: insert overwrite copy');
             $stmtCopy->bind_param("sss", $copy_hash_id, $copy_title, $copy_content);
             if (!$stmtCopy->execute()) __notes_db_fail($conn, 'execute: insert overwrite copy');
+            replace_note_tags($conn, (int)$conn->insert_id, $serverTags);
         }
 
         // Overwrite the original note unconditionally (but still bump version)
@@ -119,12 +127,17 @@ function handle_put(mysqli $conn): void {
         }
     }
 
+    $noteId = isset($serverNote['id']) ? (int)$serverNote['id'] : 0;
+    if ($noteId > 0) {
+        replace_note_tags($conn, $noteId, $tags);
+    }
+
     // Return updated note
     $stmtReload = $conn->prepare("SELECT * FROM notes WHERE hash_id = ?");
     if (!$stmtReload) __notes_db_fail($conn, 'prepare: reload updated note');
     $stmtReload->bind_param("s", $hash_id);
     if (!$stmtReload->execute()) __notes_db_fail($conn, 'execute: reload updated note');
 
-    $note = fetch_assoc_from_stmt($stmtReload);
+    $note = attach_tags_to_note($conn, fetch_assoc_from_stmt($stmtReload));
     echo json_encode($note, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 }

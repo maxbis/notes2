@@ -18,9 +18,13 @@ if (!isset($ALLOWED_TAGS)) {
 if (!function_exists('generateHashId')) {
     require_once __DIR__ . '/../utils.php';
 }
+if (!function_exists('ensure_note_tags_table')) {
+    require_once __DIR__ . '/../tags_helper.php';
+}
 
 function handle_post(mysqli $conn): void {
     global $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS;
+    ensure_note_tags_table($conn);
     
     // Create new note
     $data = json_decode(file_get_contents('php://input'), true);
@@ -30,6 +34,7 @@ function handle_post(mysqli $conn): void {
     $hash_id = generateHashId();
     $title = $data['title'] ?? 'Untitled';
     $content = $data['content'] ?? '';
+    $tags = normalize_note_tags($data['tags'] ?? []);
     $content = sanitize_note_html($content, $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS);
     
     $stmt = $conn->prepare("INSERT INTO notes (hash_id, title, content) VALUES (?, ?, ?)");
@@ -38,9 +43,10 @@ function handle_post(mysqli $conn): void {
     
     if ($stmt->execute()) {
         $note_id = $conn->insert_id;
+        replace_note_tags($conn, (int)$note_id, $tags);
         $result = $conn->query("SELECT * FROM notes WHERE id = $note_id");
         if ($result === false) __notes_db_fail($conn, 'query: select inserted note');
-        echo json_encode($result->fetch_assoc(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        echo json_encode(attach_tags_to_note($conn, $result->fetch_assoc()), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     } else {
         __notes_db_fail($conn, 'execute: insert note');
     }

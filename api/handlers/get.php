@@ -12,8 +12,13 @@ if (!function_exists('getDBConnection') || !function_exists('fetch_assoc_from_st
 if (!function_exists('get_setting')) {
     require_once __DIR__ . '/../settings_helper.php';
 }
+if (!function_exists('ensure_note_tags_table')) {
+    require_once __DIR__ . '/../tags_helper.php';
+}
 
 function handle_get(mysqli $conn): void {
+    ensure_note_tags_table($conn);
+
     if (isset($_GET['id'])) {
         // Get single note by hash_id
         $hash_id = $_GET['id'];
@@ -27,7 +32,7 @@ function handle_get(mysqli $conn): void {
         $stmt->bind_param("s", $hash_id);
         if (!$stmt->execute()) __notes_db_fail($conn, 'execute: select by hash_id');
 
-        $note = fetch_assoc_from_stmt($stmt);
+        $note = attach_tags_to_note($conn, fetch_assoc_from_stmt($stmt));
         echo json_encode($note ? $note : ['error' => 'Note not found'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     } else {
         // Get all notes and public "easy access" default
@@ -39,7 +44,7 @@ function handle_get(mysqli $conn): void {
         }
         $publicDefaultHashId = get_setting($conn, 'public_default_hash_id');
         $payload = [
-            'notes' => $notes,
+            'notes' => attach_tags_to_notes($conn, $notes),
             'public_default_hash_id' => $publicDefaultHashId !== null && $publicDefaultHashId !== '' ? $publicDefaultHashId : null
         ];
         echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);

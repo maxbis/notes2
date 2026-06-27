@@ -4,6 +4,7 @@ import { readJsonResponse } from './api.js';
 import { getEditorHtml } from './editor.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './indicators.js';
 import { hasMeaningfulNoteContent } from './utils.js';
+import { getCurrentTags, renderSidebarTagFilters, setCurrentTags, setSavedTags } from './tags.js';
 
 // Dependencies that will be injected
 let showConflictDialog = null;
@@ -80,6 +81,7 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
     const rawTitle = document.getElementById('noteTitle').value.trim();
     const title = rawTitle || 'Untitled';
     const content = getEditorHtml();
+    const tags = getCurrentTags();
     const previousTitle = state.currentNote?.title || state.savedTitle || '';
 
     const timestamp = new Date().toISOString();
@@ -104,6 +106,7 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
                     hash_id: state.currentNote.hash_id,
                     title: title,
                     content: content,
+                    tags: tags,
                     expected_version: state.originalVersion,
                     force_overwrite: !!attemptForceOverwrite
                 };
@@ -152,7 +155,7 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
                 break;
             }
         } else {
-            if (!hasMeaningfulNoteContent(rawTitle, content)) {
+            if (!hasMeaningfulNoteContent(rawTitle, content, tags)) {
                 console.log('[SAVE CREATE] Skipping create for empty placeholder note');
                 state.hasUnsavedChanges = false;
                 clearTimeout(state.autoSaveTimer);
@@ -162,7 +165,8 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
             // Create new note
             const createData = {
                 title: title,
-                content: content
+                content: content,
+                tags: tags
             };
             console.log(`[SAVE CREATE] Sending POST request`, {
                 titleLength: title.length,
@@ -210,10 +214,13 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
 
         // Re-sort by updated_at
         state.notes.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        renderSidebarTagFilters();
 
         // Update saved state
         state.savedTitle = savedNote.title || '';
         state.savedContent = savedNote.content || '';
+        setSavedTags(savedNote.tags || []);
+        setCurrentTags(savedNote.tags || []);
         state.hasUnsavedChanges = false;
         clearTimeout(state.autoSaveTimer);
 
@@ -271,6 +278,7 @@ export function saveBeforeUnload() {
     const rawTitle = document.getElementById('noteTitle').value.trim();
     const title = rawTitle || 'Untitled';
     const content = getEditorHtml();
+    const tags = getCurrentTags();
     
     if (state.hasUnsavedChanges && state.currentNote) {
         state.unloadSaveInProgress = true;
@@ -294,6 +302,7 @@ export function saveBeforeUnload() {
                 hash_id: state.currentNote.hash_id,
                 title: title,
                 content: content,
+                tags: tags,
                 expected_version: state.originalVersion,
                 force_overwrite: false
             }),
@@ -313,6 +322,8 @@ export function saveBeforeUnload() {
                     state.originalVersion = data.version != null ? Number(data.version) : null;
                     state.savedTitle = data.title || '';
                     state.savedContent = data.content || '';
+                    setSavedTags(data.tags || []);
+                    setCurrentTags(data.tags || []);
                     state.hasUnsavedChanges = false;
                     // Update the note in the notes array
                     const index = state.notes.findIndex(n => n.hash_id === data.hash_id);
@@ -338,7 +349,7 @@ export function saveBeforeUnload() {
             }, 2000);
         });
     } else if (state.hasUnsavedChanges && !state.currentNote) {
-        if (!hasMeaningfulNoteContent(rawTitle, content)) {
+        if (!hasMeaningfulNoteContent(rawTitle, content, tags)) {
             console.log('[SAVE UNLOAD] Skipping create for empty placeholder note');
             return;
         }
@@ -358,7 +369,8 @@ export function saveBeforeUnload() {
             },
             body: JSON.stringify({
                 title: title || 'Untitled',
-                content: content
+                content: content,
+                tags: tags
             }),
             keepalive: true
         }).then(response => {
@@ -375,6 +387,8 @@ export function saveBeforeUnload() {
                     state.originalVersion = data.version != null ? Number(data.version) : null;
                     state.savedTitle = data.title || '';
                     state.savedContent = data.content || '';
+                    setSavedTags(data.tags || []);
+                    setCurrentTags(data.tags || []);
                     state.hasUnsavedChanges = false;
                     // Add to notes array
                     state.notes.unshift(data);

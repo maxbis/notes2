@@ -97,12 +97,13 @@ header h1 {
     border-bottom: 1px solid #e5e5e7;
     display: flex;
     align-items: center;
+    position: relative;
     border-right: 2px solid #e5e5e7;
 }
 
 .search-box input {
     width: 100%;
-    padding: 0.55rem 0.75rem;
+    padding: 0.55rem 2.4rem 0.55rem 0.75rem;
     border: 1px solid #d2d2d7;
     border-radius: 8px;
     font-size: 0.9rem;
@@ -112,6 +113,35 @@ header h1 {
 .search-box input:focus {
     outline: none;
     border-color: #007aff;
+}
+
+.search-clear-btn {
+    position: absolute;
+    right: 1.15rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.7rem;
+    height: 1.7rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #8e8e93;
+    font-size: 1.15rem;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-clear-btn:hover {
+    background: #f2f2f7;
+    color: #3a3a3c;
+}
+
+.search-clear-btn:focus-visible {
+    outline: 2px solid #007aff;
+    outline-offset: 1px;
 }
 
 .list-view-tabs {
@@ -149,6 +179,121 @@ header h1 {
 .list-view-tab:focus-visible {
     outline: 2px solid #007aff;
     outline-offset: 2px;
+}
+
+.tag-filters {
+    padding: 0.5rem 0.7rem 0.65rem;
+    border-bottom: 1px solid #e5e5e7;
+    border-right: 2px solid #e5e5e7;
+    background: #fafafa;
+}
+
+.tag-filter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+}
+
+.tag-filter-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #6e6e73;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.tag-filter-clear {
+    border: none;
+    background: none;
+    color: #007aff;
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0;
+}
+
+.tag-filter-more {
+    margin-top: 0.5rem;
+    border: none;
+    background: none;
+    color: #007aff;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+}
+
+.tag-filter-chips,
+.tag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.tag-filter-chips.compact {
+    gap: 0.28rem;
+}
+
+.tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 1px solid #d2d2d7;
+    border-radius: 999px;
+    background: #fff;
+    color: #1d1d1f;
+    padding: 0.28rem 0.55rem;
+    font-size: 0.82rem;
+    line-height: 1;
+}
+
+.tag-chip.sidebar,
+.tag-chip.removable {
+    cursor: pointer;
+}
+
+.tag-chip.sidebar {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 100%;
+    padding: 0.18rem 0.42rem;
+    font-size: 0.72rem;
+    line-height: 1.1;
+    white-space: nowrap;
+    flex-direction: row;
+    justify-content: flex-start;
+    transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+}
+
+.tag-chip.sidebar:hover {
+    background: #f6f9ff;
+    border-color: #b8cdf5;
+    transform: translateY(-1px);
+}
+
+.tag-chip.sidebar.active {
+    border-color: #007aff;
+    background: #e8f4fd;
+    color: #005ecb;
+}
+
+.tag-chip-label,
+.tag-chip-count {
+    display: inline;
+    white-space: nowrap;
+}
+
+.tag-chip-count {
+    color: #6e6e73;
+    font-size: 0.68rem;
+}
+
+.tag-chip-remove {
+    color: #6e6e73;
+    font-size: 0.95rem;
 }
 
 .notes-list-flat .note-item {
@@ -320,16 +465,58 @@ header h1 {
     padding: 0.7rem;
     border-bottom: 1px solid #e5e5e7;
     display: flex;
-    justify-content: space-between;
+    flex-direction: row;
     align-items: center;
-    gap: 1rem;
+    gap: 0.6rem;
 }
 
 .title-container {
-    flex: 1;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.tag-editor {
+    display: flex;
+    flex: 0 1 420px;
+    min-width: 220px;
+}
+
+.tag-editor-input {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 40px;
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #d2d2d7;
+    border-radius: 10px;
+    background: #fafafa;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+}
+
+.tag-input {
+    flex: 0 0 140px;
+    min-width: 140px;
+    border: none;
+    background: transparent;
+    font-size: 0.92rem;
+    color: #1d1d1f;
+    padding: 0.15rem 0;
+}
+
+.tag-editor-input .tag-chips {
+    flex-wrap: nowrap;
+    flex: 0 0 auto;
+}
+
+.tag-input:focus {
+    outline: none;
 }
 
 .unsaved-indicator {
@@ -883,8 +1070,12 @@ button {
     }
     
     .search-box input {
-        padding: 0.55rem 0.75rem;
+        padding: 0.55rem 2.4rem 0.55rem 0.75rem;
         font-size: 16px; /* Prevents zoom on iOS when focusing input */
+    }
+
+    .search-clear-btn {
+        right: 1.2rem;
     }
     
     .notes-list {
@@ -944,13 +1135,19 @@ button {
     
     .editor-header {
         padding: 0.75rem 1rem;
-        flex-wrap: nowrap;
+        flex-direction: column;
+        align-items: stretch;
         gap: 0.5rem;
     }
     
     .title-container {
         gap: 0.375rem;
         flex: 1;
+        min-width: 0;
+    }
+
+    .tag-editor {
+        flex: 1 1 auto;
         min-width: 0;
     }
     
@@ -970,6 +1167,19 @@ button {
     .editor-actions {
         flex-shrink: 0;
         justify-content: flex-end;
+    }
+
+    .tag-filters {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .tag-editor-input {
+        min-height: 40px;
+        padding: 0.4rem 0.5rem;
+    }
+
+    .tag-chip {
+        font-size: 0.78rem;
     }
     
     .editor-actions button {

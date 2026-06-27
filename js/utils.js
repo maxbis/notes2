@@ -40,11 +40,12 @@ function normalizeNoteTextContent(content) {
         .toLowerCase();
 }
 
-/** Returns true if the note has meaningful content (title or non-empty text after stripping HTML). */
-export function hasMeaningfulNoteContent(title, content) {
+/** Returns true if the note has meaningful content (title, tags, or non-empty text after stripping HTML). */
+export function hasMeaningfulNoteContent(title, content, tags = []) {
     const titleTrimmed = (title || '').trim();
     const textFromContent = normalizeNoteTextContent(content);
     if (titleTrimmed.length > 0) return true;
+    if (Array.isArray(tags) && tags.some(tag => String(tag ?? '').trim() !== '')) return true;
     if (textFromContent.length === 0) return false;
     // The new-note placeholder should never count as real content.
     return textFromContent !== 'empty note';

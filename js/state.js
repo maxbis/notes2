@@ -10,6 +10,10 @@ const state = {
     hasUnsavedChanges: false,
     savedTitle: '',
     savedContent: '',
+    savedTags: [],
+    currentTags: [],
+    activeTagFilters: [],
+    showAllSidebarTags: false,
     originalVersion: null, // Store original version for conflict detection
     isIndicatorSaveInProgress: false,
     

@@ -12,6 +12,7 @@ import { setPublicDefault } from './js/api.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './js/indicators.js';
 import { exportNoteToPdf } from './js/pdf-export.js';
 import { initMarkdownImport, setupMarkdownImport } from './js/markdown-import.js';
+import { getCurrentTags, initTagInput, tagsEqual } from './js/tags.js';
 
 // Make selectNote available globally for onclick handlers in rendered HTML
 window.selectNote = selectNote;
@@ -28,6 +29,13 @@ function showNotesSidebarAndFocusSearch() {
 function hideNotesSidebarForEditing() {
     if (!isMobileLayout()) return;
     document.body.classList.add('mobile-sidebar-hidden');
+}
+
+function updateSearchClearButtonVisibility() {
+    const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    if (!searchInput || !clearSearchBtn) return;
+    clearSearchBtn.hidden = searchInput.value === '';
 }
 
 async function reloadPage() {
@@ -59,16 +67,18 @@ async function reloadPage() {
 function trackChanges() {
     const title = document.getElementById('noteTitle').value.trim() || '';
     const content = getEditorHtml();
+    const tags = getCurrentTags();
     
     // Check if there are actual changes
     const titleChanged = title !== state.savedTitle;
     const contentChanged = content !== state.savedContent;
+    const tagsChanged = !tagsEqual(tags, state.savedTags);
     
     // For new notes, only mark as changed if there's actual content
     if (!state.currentNote) {
-        state.hasUnsavedChanges = hasMeaningfulNoteContent(title, content);
+        state.hasUnsavedChanges = hasMeaningfulNoteContent(title, content, tags);
     } else {
-        state.hasUnsavedChanges = titleChanged || contentChanged;
+        state.hasUnsavedChanges = titleChanged || contentChanged || tagsChanged;
     }
     
     // Update unsaved indicator
@@ -92,8 +102,9 @@ async function copyPublicLinkForCurrentNote() {
         // otherwise show a gentle hint.
         const title = (document.getElementById('noteTitle')?.value || '').trim();
         const content = (getEditorHtml() || '').trim();
+        const tags = getCurrentTags();
 
-        if (!hasMeaningfulNoteContent(title, content)) {
+        if (!hasMeaningfulNoteContent(title, content, tags)) {
             await showModal('Share link', 'Write something first, then share the note.', 'OK', 'Close');
             return;
         }
@@ -146,8 +157,9 @@ async function copyEditorLinkForCurrentNote() {
     if (!state.currentNote) {
         const title = (document.getElementById('noteTitle')?.value || '').trim();
         const content = (getEditorHtml() || '').trim();
+        const tags = getCurrentTags();
 
-        if (!hasMeaningfulNoteContent(title, content)) {
+        if (!hasMeaningfulNoteContent(title, content, tags)) {
             await showModal('Edit link', 'Write something first, then create an editable link.', 'OK', 'Close');
             return;
         }
@@ -193,7 +205,22 @@ function setupEventListeners() {
     document.querySelectorAll('.deleteBtn').forEach((btn) => {
         btn.addEventListener('click', deleteNote);
     });
-    document.getElementById('searchInput').addEventListener('input', filterNotes);
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', (event) => {
+            updateSearchClearButtonVisibility();
+            filterNotes(event);
+        });
+    }
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    if (clearSearchBtn && searchInput) {
+        clearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            updateSearchClearButtonVisibility();
+            renderNotesList('');
+            searchInput.focus();
+        });
+    }
     const showNotesBtn = document.getElementById('showNotesBtn');
     if (showNotesBtn) {
         showNotesBtn.addEventListener('click', () => {
@@ -240,6 +267,7 @@ function setupEventListeners() {
     
     // Setup formatting toolbar
     setupFormattingToolbar();
+    updateSearchClearButtonVisibility();
     const htmlModeBtn = document.getElementById('htmlModeBtn');
     if (htmlModeBtn) {
         htmlModeBtn.addEventListener('click', () => setHtmlMode(!state.isHtmlMode));
@@ -294,6 +322,7 @@ function setupEventListeners() {
     // Track changes on content change
     document.getElementById('noteTitle').addEventListener('input', trackChanges);
     document.getElementById('noteContent').addEventListener('input', trackChanges);
+    initTagInput(trackChanges);
     const noteContentHtml = document.getElementById('noteContentHtml');
     if (noteContentHtml) {
         noteContentHtml.addEventListener('input', () => {
