@@ -12,17 +12,14 @@ if (!function_exists('getDBConnection') || !function_exists('fetch_assoc_from_st
 if (!function_exists('get_setting')) {
     require_once __DIR__ . '/../settings_helper.php';
 }
-if (!function_exists('ensure_note_tags_table')) {
+if (!function_exists('attach_tags_to_note')) {
     require_once __DIR__ . '/../tags_helper.php';
 }
-if (!function_exists('ensure_note_pinning_column')) {
+if (!function_exists('normalize_note_pinned')) {
     require_once __DIR__ . '/../pin_helper.php';
 }
 
 function handle_get(mysqli $conn): void {
-    ensure_note_tags_table($conn);
-    ensure_note_pinning_column($conn);
-
     if (isset($_GET['id'])) {
         // Get single note by hash_id
         $hash_id = $_GET['id'];

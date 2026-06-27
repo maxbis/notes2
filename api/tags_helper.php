@@ -1,28 +1,5 @@
 <?php
 
-function ensure_note_tags_table(mysqli $conn): void {
-    static $ensured = false;
-    if ($ensured) return;
-
-    $sql = <<<SQL
-CREATE TABLE IF NOT EXISTS note_tags (
-    note_id INT NOT NULL,
-    tag VARCHAR(64) NOT NULL,
-    PRIMARY KEY (note_id, tag),
-    KEY idx_note_tags_tag (tag),
-    CONSTRAINT fk_note_tags_note_id
-        FOREIGN KEY (note_id) REFERENCES notes(id)
-        ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL;
-
-    if ($conn->query($sql) === false) {
-        __notes_db_fail($conn, 'query: create note_tags');
-    }
-
-    $ensured = true;
-}
-
 function normalize_note_tag(string $tag): string {
     $tag = preg_replace('/\s+/u', ' ', trim($tag)) ?? '';
     if ($tag === '') return '';
@@ -52,8 +29,6 @@ function normalize_note_tags($tags): array {
 }
 
 function load_note_tags_for_note_id(mysqli $conn, int $noteId): array {
-    ensure_note_tags_table($conn);
-
     $stmt = $conn->prepare("SELECT tag FROM note_tags WHERE note_id = ? ORDER BY tag ASC");
     if (!$stmt) __notes_db_fail($conn, 'prepare: select note tags');
     $stmt->bind_param("i", $noteId);
@@ -78,8 +53,6 @@ function load_note_tags_for_note_id(mysqli $conn, int $noteId): array {
 }
 
 function load_note_tags_map(mysqli $conn, array $noteIds): array {
-    ensure_note_tags_table($conn);
-
     $noteIds = array_values(array_filter(array_map('intval', $noteIds), static fn($id) => $id > 0));
     if (!$noteIds) return [];
 
@@ -121,8 +94,6 @@ function load_note_tags_map(mysqli $conn, array $noteIds): array {
 }
 
 function replace_note_tags(mysqli $conn, int $noteId, array $tags): void {
-    ensure_note_tags_table($conn);
-
     $stmtDelete = $conn->prepare("DELETE FROM note_tags WHERE note_id = ?");
     if (!$stmtDelete) __notes_db_fail($conn, 'prepare: delete note tags');
     $stmtDelete->bind_param("i", $noteId);

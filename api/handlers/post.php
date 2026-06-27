@@ -18,17 +18,15 @@ if (!isset($ALLOWED_TAGS)) {
 if (!function_exists('generateHashId')) {
     require_once __DIR__ . '/../utils.php';
 }
-if (!function_exists('ensure_note_tags_table')) {
+if (!function_exists('replace_note_tags')) {
     require_once __DIR__ . '/../tags_helper.php';
 }
-if (!function_exists('ensure_note_pinning_column')) {
+if (!function_exists('normalize_note_pinned')) {
     require_once __DIR__ . '/../pin_helper.php';
 }
 
 function handle_post(mysqli $conn): void {
     global $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS;
-    ensure_note_tags_table($conn);
-    ensure_note_pinning_column($conn);
     
     // Create new note
     $data = json_decode(file_get_contents('php://input'), true);

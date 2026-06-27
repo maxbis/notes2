@@ -21,17 +21,15 @@ if (!function_exists('generateHashId')) {
 if (!function_exists('set_setting')) {
     require_once __DIR__ . '/../settings_helper.php';
 }
-if (!function_exists('ensure_note_tags_table')) {
+if (!function_exists('replace_note_tags')) {
     require_once __DIR__ . '/../tags_helper.php';
 }
-if (!function_exists('ensure_note_pinning_column')) {
+if (!function_exists('normalize_note_pinned')) {
     require_once __DIR__ . '/../pin_helper.php';
 }
 
 function handle_put(mysqli $conn): void {
     global $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS;
-    ensure_note_tags_table($conn);
-    ensure_note_pinning_column($conn);
     
     // Update existing note or settings (e.g. public_default_hash_id)
     $data = json_decode(file_get_contents('php://input'), true);
