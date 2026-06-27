@@ -180,7 +180,10 @@ export function renderSidebarTagFilters() {
     container.innerHTML = `
         <div class="tag-filter-header">
             <span class="tag-filter-title">Tags</span>
-            ${clearButton}
+            <div class="tag-filter-actions">
+                ${moreButton}
+                ${clearButton}
+            </div>
         </div>
         <div class="tag-filter-chips compact">
             ${visibleTags.map(({ tag, count }) => `
@@ -190,7 +193,6 @@ export function renderSidebarTagFilters() {
                 </button>
             `).join('')}
         </div>
-        ${moreButton}
     `;
 
     container.querySelectorAll('.tag-chip.sidebar').forEach(button => {
