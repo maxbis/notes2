@@ -1330,14 +1330,26 @@ button {
     }
     
     .editor-content {
+        max-width: none;
+        width: auto;
+        margin-left: 0;
+        margin-right: 0;
         padding: 0.6rem 0.75rem 0.85rem;
         font-size: 16px; /* Prevents zoom on iOS when focusing input */
         flex: 1;
         min-height: 0;
     }
+
+    .editor-content-html {
+        max-width: none;
+        width: auto;
+        margin-left: 0;
+        margin-right: 0;
+        padding: 0.6rem 0.75rem 0.85rem;
+    }
     
     .editor-footer {
-        padding: 0.38rem 0.7rem;
+        padding: 0.38rem 0.9rem;
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
@@ -1357,6 +1369,7 @@ button {
         font-size: 0.68rem;
         color: #86868b;
         white-space: nowrap;
+        padding-left: 0.08rem;
     }
     .editor-actions {
         gap: 0.25rem;
@@ -1366,6 +1379,7 @@ button {
     .overflow-menu {
         position: relative;
         margin-left: auto;
+        margin-right: 0.08rem;
     }
     .overflow-menu-btn {
         list-style: none;
@@ -1394,6 +1408,11 @@ button {
         z-index: 50;
     }
 
+    .editor-footer .overflow-menu-panel {
+        min-width: 152px;
+        max-width: none;
+    }
+
     /* Toolbar overflow should open downward (not upward like footer). */
     .toolbar .overflow-menu-panel {
         bottom: auto;
@@ -1412,6 +1431,10 @@ button {
         font-weight: 500;
         line-height: 1.2;
         opacity: 1;
+    }
+
+    .editor-footer .overflow-menu-item {
+        white-space: nowrap;
     }
     .overflow-menu-item.active {
         background: #e8f4fd;
