@@ -38,6 +38,28 @@ function updateSearchClearButtonVisibility() {
     clearSearchBtn.hidden = searchInput.value === '';
 }
 
+function closeOpenOverflowMenus(exceptMenu = null) {
+    document.querySelectorAll('.overflow-menu[open]').forEach((menu) => {
+        if (exceptMenu && menu === exceptMenu) return;
+        menu.removeAttribute('open');
+    });
+}
+
+function setupOverflowMenuDismissal() {
+    document.querySelectorAll('.overflow-menu').forEach((menu) => {
+        menu.addEventListener('toggle', () => {
+            if (!menu.hasAttribute('open')) return;
+            closeOpenOverflowMenus(menu);
+        });
+    });
+
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target instanceof Element && target.closest('.overflow-menu')) return;
+        closeOpenOverflowMenus();
+    });
+}
+
 async function reloadPage() {
     const reloadBtn = document.getElementById('reloadPageBtn');
     if (reloadBtn?.disabled) return;
@@ -193,6 +215,7 @@ async function copyEditorLinkForCurrentNote() {
 }
 
 function setupEventListeners() {
+    setupOverflowMenuDismissal();
     document.getElementById('newNoteBtn').addEventListener('click', createNewNote);
     const openLastModifiedBtn = document.getElementById('openLastModifiedBtn');
     if (openLastModifiedBtn) {
