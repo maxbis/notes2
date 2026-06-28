@@ -104,8 +104,10 @@ header h1 {
     overflow: hidden;
 }
 
-.sidebar {
+aside.sidebar {
     width: 240px;
+    min-width: 240px;
+    flex: 0 0 240px;
     background: var(--sidebar-surface);
     border-right: 1px solid var(--shell-border);
     display: flex;
@@ -274,7 +276,7 @@ header h1 {
 }
 
 .tag-filter-chips.compact {
-    gap: 0.28rem;
+    display: block;
 }
 
 .tag-chip {
@@ -288,6 +290,8 @@ header h1 {
     padding: 0.28rem 0.55rem;
     font-size: 0.82rem;
     line-height: 1;
+    opacity: 1;
+    appearance: none;
 }
 
 .tag-chip.sidebar,
@@ -296,8 +300,9 @@ header h1 {
 }
 
 .tag-chip.sidebar {
-    flex: 0 0 auto;
-    width: auto;
+    display: inline-flex;
+    flex: none;
+    width: fit-content;
     max-width: 100%;
     padding: 0.18rem 0.42rem;
     font-size: 0.72rem;
@@ -305,6 +310,10 @@ header h1 {
     white-space: nowrap;
     flex-direction: row;
     justify-content: flex-start;
+    align-self: flex-start;
+    border: 1px solid #d2d2d7;
+    background: #fff;
+    margin: 0 0.28rem 0.28rem 0;
     transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
 
@@ -465,6 +474,7 @@ header h1 {
 
 .editor {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     background-color: var(--paper-base);
@@ -1144,11 +1154,11 @@ button {
     }
 
     /* Mobile: hide notes list while editing to maximize editor space */
-    body.mobile-sidebar-hidden .sidebar {
+    body.mobile-sidebar-hidden aside.sidebar {
         display: none;
     }
     
-    .sidebar {
+    aside.sidebar {
         width: 100%;
         height: auto;
         max-height: 40vh;
