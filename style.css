@@ -704,6 +704,8 @@ aside.sidebar {
 .editor-body {
     flex: 1;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .editor-main {
@@ -730,11 +732,35 @@ aside.sidebar {
     font-family: inherit;
     color: #1d1d1f; 
     line-height: 1.6;
-    overflow-y: auto;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
     outline: none;
     cursor: text;
     caret-color: #007aff;
     background: transparent;
+}
+
+.editor-content::-webkit-scrollbar,
+.editor-content-html::-webkit-scrollbar {
+    width: 10px;
+}
+
+.editor-content::-webkit-scrollbar-track,
+.editor-content-html::-webkit-scrollbar-track {
+    background: rgba(245, 245, 247, 0.9);
+    border-radius: 8px;
+}
+
+.editor-content::-webkit-scrollbar-thumb,
+.editor-content-html::-webkit-scrollbar-thumb {
+    background: #d2d2d7;
+    border-radius: 8px;
+    border: 2px solid rgba(245, 245, 247, 0.9);
+}
+
+.editor-content::-webkit-scrollbar-thumb:hover,
+.editor-content-html::-webkit-scrollbar-thumb:hover {
+    background: #86868b;
 }
 
 .editor-content-html {
@@ -748,7 +774,8 @@ aside.sidebar {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     color: #1d1d1f;
     line-height: 1.5;
-    overflow-y: auto;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
     outline: none;
     resize: none;
     width: 100%;
@@ -1402,6 +1429,7 @@ button {
 
     .editor-body {
         display: flex;
+        flex-direction: row;
         align-items: stretch;
     }
 
@@ -1568,7 +1596,8 @@ button {
     }
 
     .editor-body {
-        display: block;
+        display: flex;
+        flex-direction: column;
     }
 
     /* Mobile: hide notes list while editing to maximize editor space */
