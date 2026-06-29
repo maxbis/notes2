@@ -204,7 +204,12 @@ require_once __DIR__ . '/../zendure/login/validate.php';
 
                             <section class="inspector-section">
                                 <div class="inspector-section-heading">Tags</div>
-                                <div class="inspector-chip-list" id="noteInspectorTags"></div>
+                                <div class="tag-editor tag-editor-inspector" id="tagEditorInspector">
+                                    <div class="tag-chips tag-chips-inspector" id="tagChipsInspector"></div>
+                                    <div class="tag-input-shell">
+                                        <input type="text" id="tagInputInspector" class="tag-input" placeholder="Add tag...">
+                                    </div>
+                                </div>
                             </section>
 
                             <section class="inspector-section">

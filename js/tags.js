@@ -117,23 +117,28 @@ function rankSidebarTags(tags, active) {
 }
 
 export function renderTagEditor() {
-    const chipsEl = document.getElementById('tagChips');
-    const inputEl = document.getElementById('tagInput');
-    if (!chipsEl || !inputEl) return;
+    const editors = [
+        { chipsEl: document.getElementById('tagChips'), inputEl: document.getElementById('tagInput') },
+        { chipsEl: document.getElementById('tagChipsInspector'), inputEl: document.getElementById('tagInputInspector') }
+    ].filter(({ chipsEl, inputEl }) => chipsEl && inputEl);
+    if (!editors.length) return;
 
-    chipsEl.innerHTML = state.currentTags.map(tag => `
+    const markup = state.currentTags.map(tag => `
         <button type="button" class="tag-chip removable" data-tag="${escapeHtml(tag)}" aria-label="Remove tag ${escapeHtml(tag)}">
             <span class="tag-chip-label">${escapeHtml(tag)}</span>
             <span class="tag-chip-remove" aria-hidden="true">×</span>
         </button>
     `).join('');
 
-    chipsEl.querySelectorAll('.tag-chip.removable').forEach(button => {
-        button.addEventListener('click', () => {
-            if (removeTag(button.dataset.tag || '')) {
-                if (typeof tagChangeHandler === 'function') tagChangeHandler();
-                inputEl.focus();
-            }
+    editors.forEach(({ chipsEl, inputEl }) => {
+        chipsEl.innerHTML = markup;
+        chipsEl.querySelectorAll('.tag-chip.removable').forEach(button => {
+            button.addEventListener('click', () => {
+                if (removeTag(button.dataset.tag || '')) {
+                    if (typeof tagChangeHandler === 'function') tagChangeHandler();
+                    inputEl.focus();
+                }
+            });
         });
     });
 }
@@ -220,33 +225,36 @@ export function renderSidebarTagFilters() {
 }
 
 export function initTagInput(onChange) {
-    const inputEl = document.getElementById('tagInput');
-    if (!inputEl) return;
     tagChangeHandler = onChange;
+    const inputs = [document.getElementById('tagInput'), document.getElementById('tagInputInspector')]
+        .filter(Boolean);
+    if (!inputs.length) return;
 
-    const commitPendingValue = () => {
-        const value = inputEl.value;
-        inputEl.value = '';
-        const changed = addTag(value);
-        if (changed) onChange();
-    };
+    inputs.forEach((inputEl) => {
+        const commitPendingValue = () => {
+            const value = inputEl.value;
+            inputEl.value = '';
+            const changed = addTag(value);
+            if (changed) onChange();
+        };
 
-    inputEl.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ',') {
-            event.preventDefault();
-            commitPendingValue();
-            return;
-        }
-        if (event.key === 'Backspace' && inputEl.value === '' && state.currentTags.length > 0) {
-            event.preventDefault();
-            const lastTag = state.currentTags[state.currentTags.length - 1];
-            if (removeTag(lastTag)) onChange();
-        }
-    });
+        inputEl.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ',') {
+                event.preventDefault();
+                commitPendingValue();
+                return;
+            }
+            if (event.key === 'Backspace' && inputEl.value === '' && state.currentTags.length > 0) {
+                event.preventDefault();
+                const lastTag = state.currentTags[state.currentTags.length - 1];
+                if (removeTag(lastTag)) onChange();
+            }
+        });
 
-    inputEl.addEventListener('blur', () => {
-        if (inputEl.value.trim() !== '') {
-            commitPendingValue();
-        }
+        inputEl.addEventListener('blur', () => {
+            if (inputEl.value.trim() !== '') {
+                commitPendingValue();
+            }
+        });
     });
 }
