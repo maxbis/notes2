@@ -7,6 +7,7 @@ import { escapeHtml, stripHtmlTags, formatDate, isMobileLayout } from './utils.j
 import { updateUnsavedIndicator, updateLastSavedTime } from './indicators.js';
 import { showDeleteConfirmDialog } from './modals.js';
 import { noteMatchesActiveTags, renderSidebarTagFilters, setCurrentTags, setSavedTags } from './tags.js';
+import { renderInspector } from './inspector.js';
 
 // Dependencies that will be injected
 let saveNote = null;
@@ -37,7 +38,7 @@ function sortNotesByPinnedAndUpdated(notes) {
 function updatePinButtons(note = null) {
     const isPinned = normalizePinnedFlag(note) === 1;
     const label = isPinned ? 'Unpin' : 'Pin';
-    ['pinNoteBtn', 'pinNoteBtnMobile'].forEach((id) => {
+    ['pinNoteBtn', 'pinNoteBtnMobile', 'pinNoteBtnInspector'].forEach((id) => {
         const btn = document.getElementById(id);
         if (!btn) return;
         btn.disabled = !note;
@@ -410,6 +411,7 @@ export async function selectNote(hashId) {
     
     // Update last saved timestamp
     updateLastSavedTime(updatedAt);
+    renderInspector();
 
     syncCurrentNoteToUrl(targetHashId);
 
@@ -458,6 +460,7 @@ export async function togglePinnedForCurrentNote() {
         const updatedAt = new Date(normalizedNote.updated_at);
         document.getElementById('noteMeta').textContent = `Last updated: ${updatedAt.toLocaleString()}`;
         updateLastSavedTime(updatedAt);
+        renderInspector();
         renderSidebarTagFilters();
         renderNotesList(document.getElementById('searchInput').value);
     } catch (error) {
@@ -490,6 +493,7 @@ export async function createNewNote() {
     syncCurrentNoteToUrl('');
 
     updateUnsavedIndicator();
+    renderInspector();
 
     renderNotesList(document.getElementById('searchInput').value);
     const noteContent = document.getElementById('noteContent');
@@ -544,6 +548,7 @@ export async function deleteNote() {
         setSavedTags([]);
         state.originalVersion = null;
         syncCurrentNoteToUrl('');
+        renderInspector();
         
         renderSidebarTagFilters();
         renderNotesList(document.getElementById('searchInput').value);
@@ -601,6 +606,7 @@ export async function refreshCurrentNote() {
             document.getElementById('noteMeta').textContent = 
                 `Last updated: ${updatedAt.toLocaleString()}`;
             updateLastSavedTime(updatedAt);
+            renderInspector();
             
             renderSidebarTagFilters();
             renderNotesList(document.getElementById('searchInput').value);

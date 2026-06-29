@@ -13,6 +13,7 @@ import { updateUnsavedIndicator, updateLastSavedTime } from './js/indicators.js'
 import { exportNoteToPdf } from './js/pdf-export.js';
 import { initMarkdownImport, setupMarkdownImport } from './js/markdown-import.js';
 import { getCurrentTags, initTagInput, tagsEqual } from './js/tags.js';
+import { renderInspector } from './js/inspector.js';
 
 // Make selectNote available globally for onclick handlers in rendered HTML
 window.selectNote = selectNote;
@@ -105,6 +106,7 @@ function trackChanges() {
     
     // Update unsaved indicator
     updateUnsavedIndicator();
+    renderInspector();
     
     // Reset and start auto-save timer
     clearTimeout(state.autoSaveTimer);
@@ -265,6 +267,7 @@ function setupEventListeners() {
     };
     bindShare('shareLinkBtn');
     bindShare('shareLinkBtnMobile');
+    bindShare('shareLinkBtnInspector');
 
     const bindEditLink = (id) => {
         const btn = document.getElementById(id);
@@ -279,6 +282,7 @@ function setupEventListeners() {
     };
     bindEditLink('editLinkBtn');
     bindEditLink('editLinkBtnMobile');
+    bindEditLink('editLinkBtnInspector');
 
     const bindPin = (id) => {
         const btn = document.getElementById(id);
@@ -293,14 +297,16 @@ function setupEventListeners() {
     };
     bindPin('pinNoteBtn');
     bindPin('pinNoteBtnMobile');
+    bindPin('pinNoteBtnInspector');
     
     // PDF export button
-    const exportPdfBtn = document.getElementById('exportPdfBtn');
-    if (exportPdfBtn) {
+    ['exportPdfBtn', 'exportPdfBtnInspector'].forEach((id) => {
+        const exportPdfBtn = document.getElementById(id);
+        if (!exportPdfBtn) return;
         exportPdfBtn.addEventListener('click', async () => {
             await exportNoteToPdf();
         });
-    }
+    });
     
     // Setup formatting toolbar
     setupFormattingToolbar();
@@ -329,11 +335,13 @@ function setupEventListeners() {
             const previouslyFocused = document.activeElement;
             state.isIndicatorSaveInProgress = true;
             clearTimeout(state.autoSaveTimer);
+            renderInspector();
 
             try {
                 await saveNote(true);
             } finally {
                 state.isIndicatorSaveInProgress = false;
+                renderInspector();
                 // Restore focus so caret doesn't "disappear" after clicking the indicator.
                 // Prefer restoring prior focus if it was in the editor; otherwise focus the editor.
                 const restore =
@@ -450,6 +458,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setHtmlMode(false);
     // Initialize unsaved indicator state
     updateUnsavedIndicator();
+    renderInspector();
     // Start freshness check and timer when tab is visible
     if (!document.hidden) {
         checkFreshness();

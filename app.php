@@ -140,32 +140,111 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                         </button>
                     </div>
                 </div>
-                <div class="editor-content" id="noteContent" contenteditable="true" placeholder="Start writing your note..."></div>
-                <textarea class="editor-content-html" id="noteContentHtml" hidden spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="Edit raw HTML..."></textarea>
-                <div class="editor-footer">
-                    <span id="noteMeta"></span>
-                    <span id="lastSaved" class="last-saved"></span>
+                <div class="editor-body">
+                    <div class="editor-main">
+                        <div class="editor-content" id="noteContent" contenteditable="true" placeholder="Start writing your note..."></div>
+                        <textarea class="editor-content-html" id="noteContentHtml" hidden spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="Edit raw HTML..."></textarea>
+                        <div class="editor-footer">
+                            <span id="noteMeta"></span>
+                            <span id="lastSaved" class="last-saved"></span>
 
-                    <!-- Desktop: show Delete as a normal button -->
-                    <div class="editor-actions desktop-only">
-                        <button class="btn-secondary" id="pinNoteBtn" type="button" title="Pin or unpin this note" aria-label="Pin or unpin this note">Pin</button>
-                        <button class="btn-secondary" id="shareLinkBtn" type="button" title="Copy public link" aria-label="Copy public link">Share</button>
-                        <button class="btn-secondary" id="editLinkBtn" type="button" title="Copy editable link" aria-label="Copy editable link">Edit link</button>
-                        <button class="btn-secondary" id="exportPdfBtn" type="button" title="Export to PDF" aria-label="Export to PDF">PDF</button>
-                        <button class="btn-danger deleteBtn" type="button" title="Delete this note" aria-label="Delete this note">Delete</button>
-                    </div>
+                            <!-- Desktop: show Delete as a normal button -->
+                            <div class="editor-actions desktop-only">
+                                <button class="btn-secondary" id="pinNoteBtn" type="button" title="Pin or unpin this note" aria-label="Pin or unpin this note">Pin</button>
+                                <button class="btn-secondary" id="shareLinkBtn" type="button" title="Copy public link" aria-label="Copy public link">Share</button>
+                                <button class="btn-secondary" id="editLinkBtn" type="button" title="Copy editable link" aria-label="Copy editable link">Edit link</button>
+                                <button class="btn-secondary" id="exportPdfBtn" type="button" title="Export to PDF" aria-label="Export to PDF">PDF</button>
+                                <button class="btn-danger deleteBtn" type="button" title="Delete this note" aria-label="Delete this note">Delete</button>
+                            </div>
 
-                    <!-- Mobile: overflow menu -->
-                    <details class="overflow-menu mobile-only">
-                        <summary class="overflow-menu-btn" aria-label="More actions" title="More actions">⋯</summary>
-                        <div class="overflow-menu-panel">
-                            <button class="overflow-menu-item" id="pinNoteBtnMobile" type="button">Pin</button>
-                            <button class="overflow-menu-item" id="shareLinkBtnMobile" type="button">Share (copy link)</button>
-                            <button class="overflow-menu-item" id="editLinkBtnMobile" type="button">Edit link</button>
-                            <hr class="overflow-menu-sep">
-                            <button class="overflow-menu-item danger deleteBtn" type="button">Delete</button>
+                            <!-- Mobile: overflow menu -->
+                            <details class="overflow-menu mobile-only">
+                                <summary class="overflow-menu-btn" aria-label="More actions" title="More actions">⋯</summary>
+                                <div class="overflow-menu-panel">
+                                    <button class="overflow-menu-item" id="pinNoteBtnMobile" type="button">Pin</button>
+                                    <button class="overflow-menu-item" id="shareLinkBtnMobile" type="button">Share (copy link)</button>
+                                    <button class="overflow-menu-item" id="editLinkBtnMobile" type="button">Edit link</button>
+                                    <hr class="overflow-menu-sep">
+                                    <button class="overflow-menu-item danger deleteBtn" type="button">Delete</button>
+                                </div>
+                            </details>
                         </div>
-                    </details>
+                    </div>
+                    <aside class="inspector-panel" id="noteInspectorPanel" aria-label="Note inspector">
+                        <div class="inspector-empty" id="noteInspectorEmpty">
+                            <h3>Inspector</h3>
+                            <p>Select a note to see stats, structure, tags, and quick actions here.</p>
+                        </div>
+                        <div class="inspector-content" id="noteInspectorContent" hidden>
+                            <section class="inspector-section">
+                                <div class="inspector-section-heading">Overview</div>
+                                <div class="inspector-status-card">
+                                    <div class="inspector-status-top">
+                                        <span class="inspector-note-state" id="inspectorNoteState">Saved</span>
+                                        <span class="inspector-pin-badge" id="inspectorPinBadge" hidden>Pinned</span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="inspector-section">
+                                <div class="inspector-section-heading">Actions</div>
+                                <div class="inspector-actions">
+                                    <button class="btn-secondary inspector-action-btn" id="pinNoteBtnInspector" type="button">Pin</button>
+                                    <button class="btn-secondary inspector-action-btn" id="shareLinkBtnInspector" type="button">Share</button>
+                                    <button class="btn-secondary inspector-action-btn" id="editLinkBtnInspector" type="button">Edit link</button>
+                                    <button class="btn-secondary inspector-action-btn" id="exportPdfBtnInspector" type="button">PDF</button>
+                                    <button class="btn-danger inspector-action-btn inspector-action-danger deleteBtn" type="button">Delete</button>
+                                </div>
+                            </section>
+
+                            <section class="inspector-section">
+                                <div class="inspector-section-heading">Outline</div>
+                                <div class="inspector-outline" id="noteInspectorOutline"></div>
+                            </section>
+
+                            <section class="inspector-section">
+                                <div class="inspector-section-heading">Tags</div>
+                                <div class="inspector-chip-list" id="noteInspectorTags"></div>
+                            </section>
+
+                            <section class="inspector-section">
+                                <div class="inspector-section-heading">Stats</div>
+                                <div class="inspector-stats-grid">
+                                    <div class="inspector-stat-card">
+                                        <span class="inspector-stat-label">Words</span>
+                                        <strong id="inspectorWordCount">0</strong>
+                                    </div>
+                                    <div class="inspector-stat-card">
+                                        <span class="inspector-stat-label">Reading</span>
+                                        <strong id="inspectorReadingTime">0 min</strong>
+                                    </div>
+                                    <div class="inspector-stat-card inspector-stat-card-muted">
+                                        <span class="inspector-stat-label">Chars</span>
+                                        <strong id="inspectorCharCount">0</strong>
+                                    </div>
+                                    <div class="inspector-stat-card">
+                                        <span class="inspector-stat-label">Sections</span>
+                                        <strong id="inspectorHeadingCount">0</strong>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="inspector-section inspector-section-secondary">
+                                <div class="inspector-section-heading">Timeline</div>
+                                <dl class="inspector-meta-list">
+                                    <div class="inspector-meta-row">
+                                        <dt>Created</dt>
+                                        <dd id="inspectorCreatedAt">-</dd>
+                                    </div>
+                                    <div class="inspector-meta-row">
+                                        <dt>Updated</dt>
+                                        <dd id="inspectorUpdatedAt">-</dd>
+                                    </div>
+                                </dl>
+                                <div class="inspector-meta-inline">Version <span id="inspectorVersion">-</span></div>
+                            </section>
+                        </div>
+                    </aside>
                 </div>
             </main>
         </div>

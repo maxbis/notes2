@@ -5,6 +5,7 @@ import { getEditorHtml } from './editor.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './indicators.js';
 import { hasMeaningfulNoteContent } from './utils.js';
 import { getCurrentTags, renderSidebarTagFilters, setCurrentTags, setSavedTags } from './tags.js';
+import { renderInspector } from './inspector.js';
 
 // Dependencies that will be injected
 let showConflictDialog = null;
@@ -14,7 +15,7 @@ let renderNotesList = null;
 function updatePinButtonsForSavedNote(note = null) {
     const isPinned = Number(note?.is_pinned) === 1;
     const label = isPinned ? 'Unpin' : 'Pin';
-    ['pinNoteBtn', 'pinNoteBtnMobile'].forEach((id) => {
+    ['pinNoteBtn', 'pinNoteBtnMobile', 'pinNoteBtnInspector'].forEach((id) => {
         const btn = document.getElementById(id);
         if (!btn) return;
         btn.disabled = !note;
@@ -174,6 +175,7 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
                 state.hasUnsavedChanges = false;
                 clearTimeout(state.autoSaveTimer);
                 updateUnsavedIndicator();
+                renderInspector();
                 return false;
             }
             // Create new note
@@ -253,6 +255,7 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
         // Update last saved timestamp
         const savedAt = new Date(savedNote.updated_at);
         updateLastSavedTime(savedAt);
+        renderInspector();
 
         console.log(`[SAVE COMPLETE] Save operation finished`, {
             noteId: savedNote.hash_id,
@@ -355,6 +358,7 @@ export function saveBeforeUnload() {
                     updateUnsavedIndicator();
                     const savedAt = new Date(data.updated_at);
                     updateLastSavedTime(savedAt);
+                    renderInspector();
                 }
                 // Reset flag after a delay to allow for potential retries if page doesn't unload
                 setTimeout(() => {
@@ -418,6 +422,7 @@ export function saveBeforeUnload() {
                     updateUnsavedIndicator();
                     const savedAt = new Date(data.updated_at);
                     updateLastSavedTime(savedAt);
+                    renderInspector();
                 }
                 // Reset flag after a delay
                 setTimeout(() => {
