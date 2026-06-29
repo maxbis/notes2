@@ -28,10 +28,15 @@ require_once __DIR__ . '/../zendure/login/validate.php';
 <body>
     <div class="container">
         <header>
-            <h1 class="app-title">
-                <img class="app-logo" src="icons/favicon-32x32.png" alt="" aria-hidden="true">
-                <span>Notes</span>
-            </h1>
+            <div class="app-title-shell">
+                <h1 class="app-title" aria-label="Notes">
+                    <img class="app-logo" src="icons/favicon-32x32.png" alt="" aria-hidden="true">
+                </h1>
+                <div class="header-note-title">
+                    <span id="unsavedIndicator" class="unsaved-indicator" title="Unsaved changes"></span>
+                    <input type="text" id="noteTitle" placeholder="Title..." aria-label="Note title">
+                </div>
+            </div>
             <div class="header-actions">
                 <div class="header-utility-actions">
                     <button class="btn-secondary mobile-only" id="showNotesBtn" type="button" title="Search / Notes" aria-label="Search / Notes">🔍</button>
@@ -70,10 +75,6 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                     <button type="button" class="stale-banner-dismiss">Dismiss</button>
                 </div>
                 <div class="editor-header">
-                    <div class="title-container">
-                        <span id="unsavedIndicator" class="unsaved-indicator" title="Unsaved changes"></span>
-                        <input type="text" id="noteTitle" placeholder="Title...">
-                    </div>
                     <div class="tag-editor" id="tagEditor">
                         <div class="tag-editor-input">
                             <div class="tag-chips" id="tagChips"></div>
