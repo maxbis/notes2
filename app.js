@@ -1,7 +1,7 @@
 // Main application entry point
 import state, { AUTO_SAVE_DELAY_MS } from './js/state.js';
 import { isMobileLayout, getPublicLink, getEditorLink, hasMeaningfulNoteContent } from './js/utils.js';
-import { setHtmlMode, getEditorHtml } from './js/editor.js';
+import { setHtmlMode, getEditorHtml, formatHtmlModeTextarea } from './js/editor.js';
 import { setupFormattingToolbar, initToolbar } from './js/toolbar.js';
 import { insertDate, insertCheckmark } from './js/insert.js';
 import { initSmartPaste } from './js/smart-paste.js';
@@ -314,6 +314,14 @@ function setupEventListeners() {
     const htmlModeBtn = document.getElementById('htmlModeBtn');
     if (htmlModeBtn) {
         htmlModeBtn.addEventListener('click', () => setHtmlMode(!state.isHtmlMode));
+    }
+    const formatHtmlBtn = document.getElementById('formatHtmlBtn');
+    if (formatHtmlBtn) {
+        formatHtmlBtn.addEventListener('click', () => {
+            formatHtmlModeTextarea();
+            trackChanges();
+            document.getElementById('noteContentHtml')?.focus();
+        });
     }
     const htmlModeBtnMobile = document.getElementById('htmlModeBtnMobile');
     if (htmlModeBtnMobile) {

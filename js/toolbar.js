@@ -41,6 +41,30 @@ export function getTextNodeAndOffsetAtCaret(range) {
     return { node: null, offset: 0 };
 }
 
+function deleteTextBeforeCaret(count) {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || count <= 0) return false;
+
+    const range = selection.getRangeAt(0);
+    if (!range.collapsed) return false;
+
+    const { node, offset } = getTextNodeAndOffsetAtCaret(range);
+    if (!node || offset < count) return false;
+
+    const deleteRange = document.createRange();
+    deleteRange.setStart(node, offset - count);
+    deleteRange.setEnd(node, offset);
+    deleteRange.deleteContents();
+
+    const newRange = document.createRange();
+    newRange.setStart(node, offset - count);
+    newRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+
+    return true;
+}
+
 function findLastTextNode(node) {
     if (!node) return null;
     if (node.nodeType === Node.TEXT_NODE) return node;
@@ -284,6 +308,39 @@ export function setupFormattingToolbar() {
     const applyBlock = (tag) => {
         document.execCommand('formatBlock', false, tag);
         focusEditorAndSync();
+    };
+
+    const applyInlineShortcut = (key) => {
+        if (!deleteTextBeforeCaret(2)) return false;
+
+        if (key === '0') {
+            clearFormatting();
+        } else if (key === 'p') {
+            applyBlock('p');
+        } else if (key === '1') {
+            applyBlock('h1');
+        } else if (key === '2') {
+            applyBlock('h2');
+        } else if (key === '3') {
+            applyBlock('h3');
+        } else if (key === 'b') {
+            document.execCommand('insertUnorderedList', false, null);
+            focusEditorAndSync();
+        } else if (key === 'n') {
+            document.execCommand('insertOrderedList', false, null);
+            focusEditorAndSync();
+        } else if (key === 'c') {
+            togglePre();
+        } else if (key === 'd') {
+            if (insertDate) insertDate();
+        } else if (key === 'v') {
+            if (insertCheckmark) insertCheckmark();
+        } else {
+            return false;
+        }
+
+        if (trackChanges) trackChanges();
+        return true;
     };
 
     const clearFormatting = () => {
@@ -536,53 +593,28 @@ export function setupFormattingToolbar() {
     });
 
     // Inline shortcuts:
+    // - type ";0" to clear formatting
+    // - type ";p" to convert the current block back to a paragraph
+    // - type ";1", ";2", ";3" to apply H1/H2/H3
+    // - type ";b", ";n", ";c" for bullet list, numbered list, code block
     // - type ";d" to insert date
     // - type ";v" to insert a checkmark
-    document.getElementById('noteContent').addEventListener('beforeinput', (e) => {
-        // Only handle literal character insertions (avoid paste, delete, IME composition, etc.)
-        if (e.inputType !== 'insertText' || typeof e.data !== 'string') return;
-        if (e.data !== 'd' && e.data !== 'v') return;
-
-        const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0) return;
-
-        const range = selection.getRangeAt(0);
-        if (!range.collapsed) return;
-
-        const { node, offset } = getTextNodeAndOffsetAtCaret(range);
-        if (!node || offset < 1) return;
-
-        // Only trigger if the character immediately before the caret is ';'
-        if (node.data[offset - 1] !== ';') return;
-
-        // Prevent inserting the typed character ('d'/'v'), then replace ";d"/";v"
-        e.preventDefault();
-
-        // Delete the ';' before the caret
-        const deleteRange = document.createRange();
-        deleteRange.setStart(node, offset - 1);
-        deleteRange.setEnd(node, offset);
-        deleteRange.deleteContents();
-
-        // Place caret where the ';' was, then insert replacement
-        const newRange = document.createRange();
-        newRange.setStart(node, offset - 1);
-        newRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-
-        if (e.data === 'd') {
-            if (insertDate) insertDate();
-        } else {
-            if (insertCheckmark) insertCheckmark();
-        }
-        if (trackChanges) trackChanges();
-    });
-    
     // Update toolbar button states based on selection
     document.getElementById('noteContent').addEventListener('input', () => {
         const editorEl = document.getElementById('noteContent');
         resetEditorFormattingIfEmpty(editorEl);
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            const { node, offset } = getTextNodeAndOffsetAtCaret(range);
+            if (node && offset >= 2) {
+                const shortcut = node.data.slice(offset - 2, offset);
+                if (shortcut.length === 2 && shortcut[0] === ';' && ['0', 'p', '1', '2', '3', 'b', 'n', 'c', 'd', 'v'].includes(shortcut[1])) {
+                    applyInlineShortcut(shortcut[1]);
+                    return;
+                }
+            }
+        }
         updateToolbarState();
     });
     document.addEventListener('selectionchange', updateToolbarState);

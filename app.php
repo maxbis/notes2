@@ -74,9 +74,7 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                 </div>
                 <div class="editor-header">
                     <div class="editor-title-shell">
-                        <div class="editor-title-meta">
-                            <span id="unsavedIndicator" class="unsaved-indicator" title="Unsaved changes"></span>
-                        </div>
+                        <span id="unsavedIndicator" class="unsaved-indicator" title="Unsaved changes"></span>
                         <input type="text" id="noteTitle" placeholder="Untitled note" aria-label="Note title">
                     </div>
                     <div class="tag-editor" id="tagEditor">
@@ -99,10 +97,10 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                         </button>
                     </div>
                     <div class="toolbar-group" aria-label="Structure and insertion">
-                        <button class="toolbar-btn" id="bulletListBtn" title="Bullet List" aria-label="Bullet list">
+                        <button class="toolbar-btn" id="bulletListBtn" title="Bullet List (;b)" aria-label="Bullet list">
                             •
                         </button>
-                        <button class="toolbar-btn" id="numberedListBtn" title="Numbered List" aria-label="Numbered list">
+                        <button class="toolbar-btn" id="numberedListBtn" title="Numbered List (;n)" aria-label="Numbered list">
                             1.
                         </button>
                         <button class="toolbar-btn" id="horizontalRuleBtn" title="Insert Horizontal Rule" aria-label="Insert horizontal rule">
@@ -115,11 +113,11 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                     <details class="overflow-menu mobile-only toolbar-overflow">
                         <summary class="overflow-menu-btn" aria-label="Headings / code" title="Headings / code">⋯</summary>
                         <div class="overflow-menu-panel">
-                            <button class="overflow-menu-item" id="h1BtnMobile" type="button">H1</button>
-                            <button class="overflow-menu-item" id="h2BtnMobile" type="button">H2</button>
-                            <button class="overflow-menu-item" id="h3BtnMobile" type="button">H3</button>
-                            <button class="overflow-menu-item" id="clearFormatBtnMobile" type="button">Clear</button>
-                            <button class="overflow-menu-item" id="preBtnMobile" type="button">Code block</button>
+                            <button class="overflow-menu-item" id="h1BtnMobile" type="button" title="Heading 1 (;1)">H1</button>
+                            <button class="overflow-menu-item" id="h2BtnMobile" type="button" title="Heading 2 (;2)">H2</button>
+                            <button class="overflow-menu-item" id="h3BtnMobile" type="button" title="Heading 3 (;3)">H3</button>
+                            <button class="overflow-menu-item" id="clearFormatBtnMobile" type="button" title="Clear formatting (;0)">Clear</button>
+                            <button class="overflow-menu-item" id="preBtnMobile" type="button" title="Code block (;c)">Code block</button>
                             <button class="overflow-menu-item" id="horizontalRuleBtnMobile" type="button">Divider</button>
                             <hr class="overflow-menu-sep">
                             <button class="overflow-menu-item" id="insertDateBtnMobile" type="button">📅 Date</button>
@@ -128,14 +126,15 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                     </details>
 
                     <div class="toolbar-group desktop-only" aria-label="Headings and code">
-                        <button class="toolbar-btn" id="h1Btn" title="Heading 1" aria-label="Heading 1">H1</button>
-                        <button class="toolbar-btn" id="h2Btn" title="Heading 2" aria-label="Heading 2">H2</button>
-                        <button class="toolbar-btn" id="h3Btn" title="Heading 3" aria-label="Heading 3">H3</button>
-                        <button class="toolbar-btn" id="clearFormatBtn" title="Clear formatting" aria-label="Clear formatting">Tx</button>
-                        <button class="toolbar-btn" id="preBtn" title="Preformatted (monospace)" aria-label="Preformatted (monospace)"><></button>
+                        <button class="toolbar-btn" id="h1Btn" title="Heading 1 (;1)" aria-label="Heading 1">H1</button>
+                        <button class="toolbar-btn" id="h2Btn" title="Heading 2 (;2)" aria-label="Heading 2">H2</button>
+                        <button class="toolbar-btn" id="h3Btn" title="Heading 3 (;3)" aria-label="Heading 3">H3</button>
+                        <button class="toolbar-btn" id="clearFormatBtn" title="Clear formatting (;0)" aria-label="Clear formatting">Tx</button>
+                        <button class="toolbar-btn" id="preBtn" title="Preformatted (monospace) (;c)" aria-label="Preformatted (monospace)"><></button>
                     </div>
                     <div class="toolbar-group desktop-only toolbar-group-utility" aria-label="Utilities">
                         <button class="toolbar-btn" id="htmlModeBtn" title="Edit HTML" aria-label="Edit HTML">HTML</button>
+                        <button class="toolbar-btn" id="formatHtmlBtn" title="Format HTML" aria-label="Format HTML" hidden>Format</button>
                         <button class="toolbar-btn" id="insertDateBtn" title="Insert Date (;d)" aria-label="Insert date (shortcut ;d)">
                             📅
                         </button>

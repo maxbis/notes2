@@ -556,6 +556,7 @@ aside.sidebar {
 }
 
 .editor-header {
+    --editor-text-gutter: 2.75rem;
     padding: 0.95rem 2.75rem 0.38rem;
     display: flex;
     flex-direction: column;
@@ -565,17 +566,11 @@ aside.sidebar {
 }
 
 .editor-title-shell {
+    position: relative;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-    width: min(860px, 100%);
-}
-
-.editor-title-meta {
-    display: inline-flex;
     align-items: center;
-    gap: 0.55rem;
+    gap: 0;
+    width: min(860px, 100%);
 }
 
 .tag-editor {
@@ -627,6 +622,8 @@ aside.sidebar {
 }
 
 .unsaved-indicator {
+    position: absolute;
+    left: -1rem;
     width: 8px;
     height: 8px;
     border-radius: 50%;
@@ -831,7 +828,9 @@ aside.sidebar {
     font-size: 0.95rem;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     color: var(--ink);
-    line-height: 1.5;
+    line-height: 1.65;
+    white-space: pre;
+    tab-size: 2;
     overflow-y: scroll;
     scrollbar-gutter: stable;
     outline: none;
@@ -1764,6 +1763,7 @@ button {
     }
     
     .editor-header {
+        --editor-text-gutter: 0.75rem;
         padding: 0.9rem 0.75rem 0.45rem;
         gap: 0.6rem;
     }
@@ -1772,15 +1772,12 @@ button {
         gap: 0.28rem;
     }
 
-    .editor-title-meta {
-        gap: 0.42rem;
-    }
-
     .tag-editor {
         display: none;
     }
     
     .unsaved-indicator {
+        left: -0.85rem;
         width: 9px;
         height: 9px;
     }
