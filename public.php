@@ -14,7 +14,7 @@ function render_error_page($title, $message, $statusCode = 400) {
     <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
         <title><?php echo $safeTitle; ?> - Notes</title>
         <link rel="stylesheet" href="style.css" />
         <style>
@@ -104,7 +104,7 @@ $safeTitle = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
     <title><?php echo $safeTitle; ?> - Notes</title>
     <link rel="icon" href="icons/favicon.ico">
     <link rel="stylesheet" href="style.css" />
@@ -173,4 +173,3 @@ $safeTitle = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     </script>
 </body>
 </html>
-
