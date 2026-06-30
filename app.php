@@ -5,7 +5,6 @@ require_once __DIR__ . '/../zendure/login/validate.php';
 
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -32,9 +31,8 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                 <h1 class="app-title" aria-label="Notes">
                     <img class="app-logo" src="icons/favicon-32x32.png" alt="" aria-hidden="true">
                 </h1>
-                <div class="header-note-title">
-                    <span id="unsavedIndicator" class="unsaved-indicator" title="Unsaved changes"></span>
-                    <input type="text" id="noteTitle" placeholder="Title..." aria-label="Note title">
+                <div class="app-brand">
+                    <span class="app-name">Notes</span>
                 </div>
             </div>
             <div class="header-actions">
@@ -75,6 +73,12 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                     <button type="button" class="stale-banner-dismiss">Dismiss</button>
                 </div>
                 <div class="editor-header">
+                    <div class="editor-title-shell">
+                        <div class="editor-title-meta">
+                            <span id="unsavedIndicator" class="unsaved-indicator" title="Unsaved changes"></span>
+                        </div>
+                        <input type="text" id="noteTitle" placeholder="Untitled note" aria-label="Note title">
+                    </div>
                     <div class="tag-editor" id="tagEditor">
                         <div class="tag-editor-input">
                             <div class="tag-chips" id="tagChips"></div>
@@ -108,7 +112,6 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                             🔗
                         </button>
                     </div>
-                    <!-- Mobile: move headings/pre into overflow menu -->
                     <details class="overflow-menu mobile-only toolbar-overflow">
                         <summary class="overflow-menu-btn" aria-label="Headings / code" title="Headings / code">⋯</summary>
                         <div class="overflow-menu-panel">
@@ -149,7 +152,6 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                             <span id="noteMeta"></span>
                             <span id="lastSaved" class="last-saved"></span>
 
-                            <!-- Desktop: show Delete as a normal button -->
                             <div class="editor-actions desktop-only">
                                 <button class="btn-secondary" id="pinNoteBtn" type="button" title="Pin or unpin this note" aria-label="Pin or unpin this note">Pin</button>
                                 <button class="btn-secondary" id="shareLinkBtn" type="button" title="Copy public link" aria-label="Copy public link">Share</button>
@@ -158,7 +160,6 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                                 <button class="btn-danger deleteBtn" type="button" title="Delete this note" aria-label="Delete this note">Delete</button>
                             </div>
 
-                            <!-- Mobile: overflow menu -->
                             <details class="overflow-menu mobile-only">
                                 <summary class="overflow-menu-btn" aria-label="More actions" title="More actions">⋯</summary>
                                 <div class="overflow-menu-panel">
@@ -178,13 +179,18 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                         </div>
                         <div class="inspector-content" id="noteInspectorContent" hidden>
                             <section class="inspector-section">
-                                <div class="inspector-section-heading">Overview</div>
-                                <div class="inspector-status-card">
-                                    <div class="inspector-status-top">
-                                        <span class="inspector-note-state" id="inspectorNoteState">Saved</span>
-                                        <span class="inspector-pin-badge" id="inspectorPinBadge" hidden>Pinned</span>
+                                <div class="inspector-section-heading">Tags</div>
+                                <div class="tag-editor tag-editor-inspector" id="tagEditorInspector">
+                                    <div class="tag-chips tag-chips-inspector" id="tagChipsInspector"></div>
+                                    <div class="tag-input-shell">
+                                        <input type="text" id="tagInputInspector" class="tag-input" placeholder="Add tag...">
                                     </div>
                                 </div>
+                            </section>
+
+                            <section class="inspector-section">
+                                <div class="inspector-section-heading">Outline</div>
+                                <div class="inspector-outline" id="noteInspectorOutline"></div>
                             </section>
 
                             <section class="inspector-section">
@@ -198,23 +204,33 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                                 </div>
                             </section>
 
-                            <section class="inspector-section">
-                                <div class="inspector-section-heading">Outline</div>
-                                <div class="inspector-outline" id="noteInspectorOutline"></div>
+                            <section class="inspector-section inspector-section-secondary">
+                                <div class="inspector-section-heading">Timeline</div>
+                                <dl class="inspector-meta-list">
+                                    <div class="inspector-meta-row">
+                                        <dt>Created</dt>
+                                        <dd id="inspectorCreatedAt">-</dd>
+                                    </div>
+                                    <div class="inspector-meta-row">
+                                        <dt>Updated</dt>
+                                        <dd id="inspectorUpdatedAt">-</dd>
+                                    </div>
+                                </dl>
+                                <div class="inspector-meta-inline">Version <span id="inspectorVersion">-</span></div>
                             </section>
 
                             <section class="inspector-section">
-                                <div class="inspector-section-heading">Tags</div>
-                                <div class="tag-editor tag-editor-inspector" id="tagEditorInspector">
-                                    <div class="tag-chips tag-chips-inspector" id="tagChipsInspector"></div>
-                                    <div class="tag-input-shell">
-                                        <input type="text" id="tagInputInspector" class="tag-input" placeholder="Add tag...">
+                                <div class="inspector-section-heading">Status</div>
+                                <div class="inspector-status-card">
+                                    <div class="inspector-status-top">
+                                        <span class="inspector-note-state" id="inspectorNoteState">Saved</span>
+                                        <span class="inspector-pin-badge" id="inspectorPinBadge" hidden>Pinned</span>
                                     </div>
                                 </div>
                             </section>
 
                             <section class="inspector-section">
-                                <div class="inspector-section-heading">Stats</div>
+                                <div class="inspector-section-heading">Note info</div>
                                 <div class="inspector-stats-grid">
                                     <div class="inspector-stat-card">
                                         <span class="inspector-stat-label">Words</span>
@@ -234,21 +250,6 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                                     </div>
                                 </div>
                             </section>
-
-                            <section class="inspector-section inspector-section-secondary">
-                                <div class="inspector-section-heading">Timeline</div>
-                                <dl class="inspector-meta-list">
-                                    <div class="inspector-meta-row">
-                                        <dt>Created</dt>
-                                        <dd id="inspectorCreatedAt">-</dd>
-                                    </div>
-                                    <div class="inspector-meta-row">
-                                        <dt>Updated</dt>
-                                        <dd id="inspectorUpdatedAt">-</dd>
-                                    </div>
-                                </dl>
-                                <div class="inspector-meta-inline">Version <span id="inspectorVersion">-</span></div>
-                            </section>
                         </div>
                     </aside>
                 </div>
@@ -256,7 +257,6 @@ require_once __DIR__ . '/../zendure/login/validate.php';
         </div>
     </div>
 
-    <!-- Modern Dialog Modal -->
     <div id="modalOverlay" class="modal-overlay">
         <div class="modal-dialog">
             <div class="modal-header">
@@ -272,7 +272,6 @@ require_once __DIR__ . '/../zendure/login/validate.php';
         </div>
     </div>
 
-    <!-- Link Dialog Modal -->
     <div id="linkModalOverlay" class="modal-overlay">
         <div class="modal-dialog">
             <div class="modal-header">

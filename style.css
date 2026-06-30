@@ -11,7 +11,9 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: #f5f5f7;
+    background:
+        radial-gradient(circle at top left, rgba(248, 245, 236, 0.95), rgba(245, 245, 247, 0.84) 32%, transparent 58%),
+        linear-gradient(180deg, #f8f6f0 0%, #f3f2ee 100%);
     color: #1d1d1f;
     line-height: 1.6;
 }
@@ -36,7 +38,7 @@ body {
 }
 
 .container {
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
     height: 100vh;
     display: flex;
@@ -44,13 +46,14 @@ body {
 }
 
 header {
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.76);
+    backdrop-filter: blur(18px);
     border-bottom: 1px solid var(--shell-border);
-    padding: 0.9rem 1.5rem;
+    padding: 0.58rem 1.3rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
     box-shadow: 0 1px 0 rgba(29, 29, 31, 0.03);
 }
 
@@ -70,36 +73,42 @@ header h1 {
 .app-title-shell {
     display: flex;
     align-items: center;
-    gap: 0.78rem;
+    gap: 0.6rem;
     flex: 1 1 auto;
     min-width: 0;
 }
 
-.header-note-title {
-    display: flex;
+.app-brand {
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
     min-width: 0;
-    flex: 1 1 auto;
+}
+
+.app-name {
+    font-size: 0.94rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #1d1d1f;
 }
 
 .app-logo {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     flex: 0 0 auto;
 }
 
 .header-actions {
     display: flex;
-    gap: 0.9rem;
+    gap: 0.55rem;
     align-items: center;
     flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .header-utility-actions {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.35rem;
     padding: 0;
     border: none;
     border-radius: 0;
@@ -125,15 +134,15 @@ header h1 {
 }
 
 aside.sidebar {
-    width: 240px;
-    min-width: 240px;
-    flex: 0 0 240px;
+    width: 272px;
+    min-width: 272px;
+    flex: 0 0 272px;
     background: var(--sidebar-surface);
     border-right: 1px solid var(--shell-border);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding: 0.85rem 0.75rem 0.65rem;
+    padding: 0.95rem 0.8rem 0.72rem;
     gap: 0.7rem;
 }
 
@@ -372,7 +381,7 @@ aside.sidebar {
 .notes-list {
     flex: 1;
     overflow-y: auto;
-    padding: 0.05rem 0 0;
+    padding: 0.2rem 0 0;
 }
 
 .note-group {
@@ -426,9 +435,9 @@ aside.sidebar {
 }
 
 .note-item {
-    padding: 0.42rem 0.68rem;
-    margin-bottom: 0.22rem;
-    border-radius: 10px;
+    padding: 0.58rem 0.72rem;
+    margin-bottom: 0.28rem;
+    border-radius: 14px;
     cursor: pointer;
     transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
     border: 1px solid transparent;
@@ -439,9 +448,12 @@ aside.sidebar {
 }
 
 .note-item.active {
-    background: var(--sidebar-card-active);
-    border-color: var(--sidebar-card-active-border);
-    box-shadow: none;
+    background:
+        linear-gradient(180deg, rgba(240, 247, 255, 0.96), rgba(232, 243, 255, 0.9));
+    border-color: rgba(0, 122, 255, 0.34);
+    box-shadow:
+        inset 3px 0 0 #007aff,
+        0 10px 22px rgba(0, 122, 255, 0.08);
 }
 
 .note-item-header {
@@ -501,6 +513,7 @@ aside.sidebar {
         linear-gradient(180deg, rgba(255, 255, 255, 0.55), var(--paper-shadow)),
         var(--paper-noise);
     background-size: 100% 100%, 240px 240px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .stale-banner {
@@ -538,25 +551,31 @@ aside.sidebar {
 }
 
 .editor-header {
-    padding: 0.55rem 1.1rem 0.45rem;
+    padding: 0.95rem 2.75rem 0.38rem;
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.8rem;
-    border-bottom: 1px solid rgba(90, 78, 55, 0.06);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.9rem;
+    border-bottom: 1px solid rgba(90, 78, 55, 0.05);
 }
 
-.title-container {
+.editor-title-shell {
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    width: min(860px, 100%);
+}
+
+.editor-title-meta {
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    flex: 1 1 auto;
-    min-width: 0;
+    gap: 0.55rem;
 }
 
 .tag-editor {
     display: flex;
-    flex: 0 1 420px;
+    width: min(860px, 100%);
     min-width: 220px;
 }
 
@@ -637,14 +656,17 @@ aside.sidebar {
 
 #noteTitle {
     flex: 1;
+    width: 100%;
     border: none;
-    font-size: 1.18rem;
-    font-weight: 580;
+    font-size: clamp(1rem, 2.35vw, 1.6rem);
+    line-height: 1;
+    font-weight: 700;
     color: #1d1d1f;
-    padding: 0.2rem 0;
+    padding: 0;
     min-width: 0;
     background: transparent;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.04em;
+    caret-color: #007aff;
 }
 
 #noteTitle:focus {
@@ -658,24 +680,28 @@ aside.sidebar {
 
 /* Toolbar styles */
 .toolbar {
-    padding: 0.55rem 1.1rem 0.8rem;
+    padding: 0.36rem 2.75rem 0.56rem;
     border-bottom: 1px solid var(--shell-border);
     display: flex;
-    gap: 0.55rem;
+    gap: 0.42rem;
     background: var(--toolbar-surface);
     align-items: center; /* prevent buttons stretching full toolbar height */
     flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    backdrop-filter: blur(18px);
 }
 
 .toolbar-group {
     display: flex;
     flex-direction: row;
-    gap: 0.2rem;
-    padding: 0.2rem;
+    gap: 0.16rem;
+    padding: 0.16rem;
     margin: 0;
     align-items: center;
     flex-wrap: nowrap;
-    border-radius: 14px;
+    border-radius: 11px;
     background: var(--toolbar-group-surface);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
     border: 1px solid rgba(90, 78, 55, 0.08);
@@ -686,16 +712,16 @@ aside.sidebar {
 }
 
 .toolbar-btn {
-    padding: 0.5rem 0.75rem;
+    padding: 0.38rem 0.58rem;
     border: 1px solid rgba(90, 78, 55, 0.06);
-    border-radius: 10px;
+    border-radius: 8px;
     background: rgba(255, 255, 255, 0.34);
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 500;
     transition: all 0.2s;
     color: #46464b;
-    min-width: 36px;
+    min-width: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -728,6 +754,9 @@ aside.sidebar {
     min-height: 0;
     display: flex;
     flex-direction: column;
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 18%),
+        transparent;
 }
 
 .editor-main {
@@ -745,15 +774,16 @@ aside.sidebar {
 /* ContentEditable styles */
 .editor-content {
     flex: 1;
-    max-width: 900px;
-    margin-left: 20px;
+    max-width: 860px;
+    width: 100%;
+    margin-left: 0;
     margin-right: auto;
-    padding: 0.75rem 1.5rem;
+    padding: 1.3rem 2.75rem 2.1rem;
     border: none;
-    font-size: 1rem;
+    font-size: 1.02rem;
     font-family: inherit;
     color: #1d1d1f; 
-    line-height: 1.6;
+    line-height: 1.72;
     overflow-y: scroll;
     scrollbar-gutter: stable;
     outline: none;
@@ -787,10 +817,11 @@ aside.sidebar {
 
 .editor-content-html {
     flex: 1;
-    max-width: 900px;
-    margin-left: 20px;
+    max-width: 860px;
+    width: 100%;
+    margin-left: 0;
     margin-right: auto;
-    padding: 1.5rem;
+    padding: 1.3rem 2.75rem 2.1rem;
     border: none;
     font-size: 0.95rem;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -820,6 +851,7 @@ aside.sidebar {
 
 .editor-content li {
     margin-bottom: 0.25rem;
+    padding: 3px;
 }
 
 .editor-content strong {
@@ -831,9 +863,9 @@ aside.sidebar {
 }
 
 .editor-content h1 { font-size: 1.6rem; margin: 0.75rem 0 0.5rem; line-height: 1.2;color: #161694; }
-.editor-content h2 { font-size: 1.3rem; margin: 0.7rem 0 0.45rem; line-height: 1.25;color: #161694; font-style: italic; }
-.editor-content h3 { font-size: 1.1rem; margin: 0.6rem 0 0.4rem; line-height: 1.3;color: #161694; }
-.editor-content h4, h5 { font-size: 1.0rem; margin: 0.6rem 0 0.4rem; line-height: 1.3;color: #236fa1; font-weight:600; }
+.editor-content h2 { font-size: 1.3rem; margin: 1rem 0 0.45rem; line-height: 1.25;color: #161694; font-style: italic; }
+.editor-content h3 { font-size: 1.1rem; margin: 0.8rem 0 0.4rem; line-height: 1.3;color: #161694; }
+.editor-content h4, .editor-content h5 { font-size: 1.0rem; margin: 0.6rem 0 0.4rem; line-height: 1.3;color: #236fa1; font-weight:600; }
 .editor-content pre {
     font-size: 0.8rem;
     margin: 0.5rem 0 0.35rem;
@@ -853,7 +885,6 @@ aside.sidebar {
 }
 
 .editor-content a { color: #000ac9; border-bottom: 1px #a0a0a0 dashed; }
-.editor-content li { padding:3px; }
 .editor-content p { margin: 0.5rem 0; }
 .editor-content hr { margin: 0.5rem 0; }
 .editor-content blockquote { margin: 0.5rem 0; }
@@ -866,10 +897,6 @@ aside.sidebar {
 
 #noteContent:focus {
     outline: none;
-}
-
-#noteTitle {
-    caret-color: #007aff;
 }
 
 .editor-footer {
@@ -922,23 +949,23 @@ aside.sidebar {
 .inspector-content {
     display: flex;
     flex-direction: column;
-    gap: 1.1rem;
+    gap: 0.82rem;
 }
 
 .inspector-section {
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: 0.58rem;
 }
 
 .inspector-section-secondary {
-    gap: 0.55rem;
+    gap: 0.42rem;
 }
 
 .inspector-section-heading {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: #8c8576;
 }
@@ -1004,15 +1031,15 @@ aside.sidebar {
 .inspector-stats-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.6rem;
+    gap: 0.48rem;
 }
 
 .inspector-stat-card {
     border-radius: 16px;
-    padding: 0.8rem 0.85rem;
+    padding: 0.68rem 0.76rem;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.18rem;
 }
 
 .inspector-stat-card-muted {
@@ -1027,7 +1054,7 @@ aside.sidebar {
 }
 
 .inspector-stat-card strong {
-    font-size: 1rem;
+    font-size: 0.96rem;
     color: #25231e;
 }
 
@@ -1044,7 +1071,7 @@ aside.sidebar {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.2rem;
-    padding: 0.72rem 0.9rem;
+    padding: 0.62rem 0.82rem;
     border-bottom: 1px solid rgba(90, 78, 55, 0.08);
 }
 
@@ -1065,21 +1092,14 @@ aside.sidebar {
     white-space: nowrap;
 }
 
-.inspector-chip-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.55rem;
-    padding: 0.2rem 0 0.1rem;
-}
-
 .inspector-chip {
     display: inline-flex;
     align-items: center;
-    padding: 0.38rem 0.7rem;
+    padding: 0.34rem 0.62rem;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.92);
     border: 1px solid #d2d2d7;
-    font-size: 0.86rem;
+    font-size: 0.82rem;
     font-weight: 500;
     color: #33312c;
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
@@ -1091,17 +1111,17 @@ aside.sidebar {
 }
 
 .inspector-outline {
-    border-radius: 18px;
-    padding: 0.45rem;
+    border-radius: 16px;
+    padding: 0.34rem;
     display: flex;
     flex-direction: column;
-    gap: 0.18rem;
-    min-height: 72px;
+    gap: 0.12rem;
+    min-height: 60px;
 }
 
 .inspector-outline-empty {
-    padding: 0.8rem 0.85rem;
-    font-size: 0.84rem;
+    padding: 0.68rem 0.72rem;
+    font-size: 0.8rem;
     color: #8c8576;
 }
 
@@ -1110,11 +1130,11 @@ aside.sidebar {
     border: none;
     background: transparent;
     color: #35322d;
-    border-radius: 14px;
-    padding: 0.58rem 0.72rem;
+    border-radius: 12px;
+    padding: 0.48rem 0.62rem;
     display: flex;
     align-items: baseline;
-    gap: 0.55rem;
+    gap: 0.48rem;
     text-align: left;
     opacity: 1;
 }
@@ -1125,29 +1145,29 @@ aside.sidebar {
 }
 
 .inspector-outline-level {
-    font-size: 0.7rem;
+    font-size: 0.66rem;
     font-weight: 700;
     color: #8c8576;
     min-width: 1.45rem;
 }
 
 .inspector-outline-text {
-    font-size: 0.88rem;
-    line-height: 1.4;
+    font-size: 0.84rem;
+    line-height: 1.34;
 }
 
 .inspector-actions {
-    border-radius: 18px;
-    padding: 0.4rem;
+    border-radius: 16px;
+    padding: 0.32rem;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.45rem;
+    grid-template-columns: 1fr;
+    gap: 0.34rem;
 }
 
 .inspector-action-btn {
     width: 100%;
-    justify-content: center;
-    min-height: 38px;
+    justify-content: flex-start;
+    min-height: 34px;
     transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
 }
 
@@ -1165,7 +1185,6 @@ aside.sidebar {
 }
 
 .inspector-actions .inspector-action-danger {
-    grid-column: auto;
     background: var(--secondary-btn-bg);
     color: #4b4b4f;
     border: 1px solid var(--secondary-btn-border);
@@ -1214,15 +1233,15 @@ button {
 
 .btn-primary,
 .btn-danger {
-    padding: 0.42rem 0.9rem;
+    padding: 0.38rem 0.82rem;
     color: #f0f0f0;
     border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 10px;
+    border-radius: 9px;
     box-shadow: 
         0 1px 2px rgba(0, 0, 0, 0.15),
         0 4px 10px rgba(0, 0, 0, 0.12);
     /* Keep New/Delete same size + aligned */
-    min-width: 60px;
+    min-width: 56px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1242,6 +1261,8 @@ button {
     border: 1px solid var(--secondary-btn-border);
     box-shadow: none;
     opacity: 1;
+    padding: 0.38rem 0.78rem;
+    border-radius: 9px;
 }
 
 .btn-secondary:hover {
@@ -1444,9 +1465,9 @@ button {
 /* Responsive design */
 @media (min-width: 1280px) {
     aside.sidebar {
-        width: 280px;
-        min-width: 280px;
-        flex: 0 0 280px;
+        width: 296px;
+        min-width: 296px;
+        flex: 0 0 296px;
     }
 
     .editor-body {
@@ -1456,11 +1477,11 @@ button {
     }
 
     .inspector-panel {
-        width: 224px;
-        min-width: 224px;
+        width: 284px;
+        min-width: 284px;
         display: block;
         overflow-y: auto;
-        padding: 1.15rem 1.1rem 1.25rem;
+        padding: 1.3rem 1.15rem 1.35rem;
         border-left: 1px solid rgba(90, 78, 55, 0.08);
         background:
             linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0)),
@@ -1471,7 +1492,7 @@ button {
     }
 
     .editor-header {
-        display: none;
+        padding-right: 3.1rem;
     }
 
     .editor-header .tag-editor {
@@ -1518,7 +1539,7 @@ button {
 
     .editor-content,
     .editor-content-html {
-        max-width: 760px;
+        max-width: 840px;
     }
 
     .editor-footer {
@@ -1537,8 +1558,8 @@ button {
     }
     
     header {
-        padding: 0.55rem 0.75rem;
-        align-items: flex-start;
+        padding: 0.46rem 0.7rem;
+        align-items: center;
     }
     
     header h1 {
@@ -1546,18 +1567,21 @@ button {
     }
 
     .app-title-shell {
-        gap: 0.5rem;
-        align-items: flex-start;
+        gap: 0.42rem;
+        align-items: center;
     }
 
     .app-logo {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
     }
 
-    .header-note-title {
-        gap: 0.35rem;
+    .app-brand {
         min-width: 0;
+    }
+
+    .app-name {
+        font-size: 0.88rem;
     }
 
     .mobile-only {
@@ -1571,18 +1595,18 @@ button {
     }
     
     .btn-primary {
-        padding: 0.52rem 0.75rem;
-        font-size: 0.78rem;
-        min-width: 54px;
+        padding: 0.42rem 0.68rem;
+        font-size: 0.76rem;
+        min-width: 50px;
     }
 
     .header-actions {
-        gap: 0.45rem;
+        gap: 0.3rem;
         flex: 0 0 auto;
     }
 
     .header-utility-actions {
-        gap: 0.28rem;
+        gap: 0.22rem;
         padding: 0;
         border: none;
         border-radius: 0;
@@ -1595,9 +1619,9 @@ button {
     }
 
     .header-utility-actions .btn-secondary {
-        padding: 0.45rem 0.62rem;
-        font-size: 0.76rem;
-        border-radius: 9px;
+        padding: 0.38rem 0.56rem;
+        font-size: 0.72rem;
+        border-radius: 8px;
     }
 
     .reload-page-btn {
@@ -1733,8 +1757,16 @@ button {
     }
     
     .editor-header {
-        padding: 0.45rem 0.75rem 0.35rem;
-        gap: 0.25rem;
+        padding: 0.9rem 0.75rem 0.45rem;
+        gap: 0.6rem;
+    }
+
+    .editor-title-shell {
+        gap: 0.28rem;
+    }
+
+    .editor-title-meta {
+        gap: 0.42rem;
     }
 
     .tag-editor {
@@ -1752,7 +1784,7 @@ button {
         flex: 1;
         min-width: 0;
         margin-bottom: 0;
-        padding: 0.08rem 0;
+        padding: 0.02rem 0;
     }
     
     .editor-actions {
@@ -1779,6 +1811,8 @@ button {
         flex-wrap: wrap;
         /* Allow overflow menus (⋯) to render outside the toolbar */
         overflow: visible;
+        position: static;
+        backdrop-filter: none;
     }
 
     .toolbar-group {
