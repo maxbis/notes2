@@ -1569,7 +1569,6 @@ button {
     body {
         min-height: 100svh;
         min-height: 100dvh;
-        padding-bottom: var(--safe-area-bottom);
     }
 
     .container {
@@ -1578,7 +1577,6 @@ button {
         height: 100svh;
         height: 100dvh; /* Dynamic viewport height for mobile browsers */
         padding-right: var(--safe-area-right);
-        padding-bottom: var(--safe-area-bottom);
         padding-left: var(--safe-area-left);
     }
 
