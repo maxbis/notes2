@@ -45,6 +45,7 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
 
     $allowedSet = array_fill_keys(array_map('strtolower', $allowedTags), true);
     $forbiddenSet = array_fill_keys(array_map('strtolower', $forbiddenTags), true);
+    $indentClassTags = array_fill_keys(['div', 'p', 'h1', 'h2', 'h3', 'h4', 'li', 'blockquote', 'pre'], true);
     $isSafeHref = static function ($value) {
         $href = trim((string)$value);
         if ($href === '') return false;
@@ -134,6 +135,19 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
                     $classes = preg_split('/\s+/', trim((string)$attr->nodeValue)) ?: [];
                     $classes = array_values(array_filter($classes, static function ($className) {
                         return preg_match('/^language-[a-z0-9_-]+$/i', $className) === 1;
+                    }));
+                    if (!$classes) {
+                        $toRemove[] = $attr->nodeName;
+                    } else {
+                        $node->setAttribute($attr->nodeName, implode(' ', $classes));
+                    }
+                    continue;
+                }
+
+                if ($name === 'class' && isset($indentClassTags[$tag])) {
+                    $classes = preg_split('/\s+/', trim((string)$attr->nodeValue)) ?: [];
+                    $classes = array_values(array_filter($classes, static function ($className) {
+                        return preg_match('/^indent-[1-4]$/', $className) === 1;
                     }));
                     if (!$classes) {
                         $toRemove[] = $attr->nodeName;

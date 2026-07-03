@@ -747,6 +747,17 @@ aside.sidebar {
     color: #1d1d1f;
 }
 
+.toolbar-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.toolbar-btn:disabled:hover {
+    background: rgba(255, 255, 255, 0.34);
+    border-color: rgba(90, 78, 55, 0.06);
+    color: #46464b;
+}
+
 .toolbar-btn.active {
     background: var(--accent-soft);
     border-color: rgba(47, 92, 148, 0.28);
@@ -905,6 +916,11 @@ aside.sidebar {
 .editor-content hr { margin: 0.5rem 0; }
 .editor-content blockquote { margin: 0.5rem 0; }
 .editor-content code { margin: 0.5rem 0; }
+
+.editor-content .indent-1 { padding-left: 40px; }
+.editor-content .indent-2 { padding-left: 80px; }
+.editor-content .indent-3 { padding-left: 120px; }
+.editor-content .indent-4 { padding-left: 160px; }
 
 /* Show pointer cursor on links when modifier key (Cmd/Ctrl) is pressed */
 .editor.modifier-key-pressed .editor-content a {

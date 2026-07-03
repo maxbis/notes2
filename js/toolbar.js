@@ -78,6 +78,7 @@ function findLastTextNode(node) {
 
 const BLOCK_TAG_NAMES = new Set(['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'PRE', 'LI', 'BLOCKQUOTE', 'TD', 'TH']);
 const EMPTY_EDITOR_HTML = '<p><br></p>';
+const MAX_INDENT_LEVEL = 4;
 
 function getBlockElement(container, editorRoot) {
     let node = container && container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
@@ -109,6 +110,53 @@ function resetEditorFormattingIfEmpty(editor) {
     return true;
 }
 
+function getSelectionElement() {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return null;
+
+    const range = selection.getRangeAt(0);
+    const container = range.startContainer;
+    if (!container) return null;
+
+    return container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
+}
+
+function getIndentTarget(editor) {
+    const element = getSelectionElement();
+    if (!element || !editor) return null;
+
+    const block = getBlockElement(element, editor);
+    if (!block || block === editor) return null;
+
+    return block;
+}
+
+function getIndentLevel(element) {
+    if (!element || !element.classList) return 0;
+    for (let level = MAX_INDENT_LEVEL; level >= 1; level--) {
+        if (element.classList.contains(`indent-${level}`)) {
+            return level;
+        }
+    }
+    return 0;
+}
+
+function setIndentLevel(element, level) {
+    if (!element || !element.classList) return;
+    for (let current = 1; current <= MAX_INDENT_LEVEL; current++) {
+        element.classList.remove(`indent-${current}`);
+    }
+    if (level > 0) {
+        element.classList.add(`indent-${level}`);
+    }
+}
+
+function setButtonEnabled(btn, enabled) {
+    if (!btn) return;
+    btn.disabled = !enabled;
+    btn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+}
+
 export function updateToolbarState() {
     const editor = document.getElementById('noteContent');
     if (!editor) return;
@@ -125,10 +173,14 @@ export function updateToolbarState() {
     const bulletListBtn = document.getElementById('bulletListBtn');
     const bulletListBtnMobile = document.getElementById('bulletListBtnMobile');
     const numberedListBtn = document.getElementById('numberedListBtn');
+    const outdentBtn = document.getElementById('outdentBtn');
+    const indentBtn = document.getElementById('indentBtn');
     const h1Btn = document.getElementById('h1Btn');
     const h2Btn = document.getElementById('h2Btn');
     const h3Btn = document.getElementById('h3Btn');
     const preBtn = document.getElementById('preBtn');
+    const outdentBtnMobile = document.getElementById('outdentBtnMobile');
+    const indentBtnMobile = document.getElementById('indentBtnMobile');
     const h1BtnMobile = document.getElementById('h1BtnMobile');
     const h2BtnMobile = document.getElementById('h2BtnMobile');
     const h3BtnMobile = document.getElementById('h3BtnMobile');
@@ -170,6 +222,13 @@ export function updateToolbarState() {
     setPressed(bulletListBtnMobile, document.queryCommandState('insertUnorderedList'));
     setPressed(numberedListBtn, document.queryCommandState('insertOrderedList'));
 
+    const indentTarget = getIndentTarget(editor);
+    const indentLevel = getIndentLevel(indentTarget);
+    setButtonEnabled(outdentBtn, !!indentTarget && indentLevel > 0);
+    setButtonEnabled(indentBtn, !!indentTarget && indentLevel < MAX_INDENT_LEVEL);
+    setButtonEnabled(outdentBtnMobile, !!indentTarget && indentLevel > 0);
+    setButtonEnabled(indentBtnMobile, !!indentTarget && indentLevel < MAX_INDENT_LEVEL);
+
     let block = '';
     try {
         block = String(document.queryCommandValue('formatBlock') || '').toLowerCase();
@@ -208,6 +267,20 @@ export function setupFormattingToolbar() {
         if (trackChanges) trackChanges();
     };
 
+    const adjustBlockIndentation = (delta) => {
+        const editor = document.getElementById('noteContent');
+        const target = getIndentTarget(editor);
+        if (!target) return false;
+
+        const currentLevel = getIndentLevel(target);
+        const nextLevel = Math.max(0, Math.min(MAX_INDENT_LEVEL, currentLevel + delta));
+        if (nextLevel === currentLevel) return false;
+
+        setIndentLevel(target, nextLevel);
+        focusEditorAndSync();
+        return true;
+    };
+
     document.getElementById('boldBtn').addEventListener('click', () => {
         document.execCommand('bold', false, null);
         focusEditorAndSync();
@@ -231,6 +304,14 @@ export function setupFormattingToolbar() {
     document.getElementById('numberedListBtn').addEventListener('click', () => {
         document.execCommand('insertOrderedList', false, null);
         focusEditorAndSync();
+    });
+
+    bindClickIfExists('outdentBtn', () => {
+        adjustBlockIndentation(-1);
+    });
+
+    bindClickIfExists('indentBtn', () => {
+        adjustBlockIndentation(1);
     });
     
     bindClickIfExists('horizontalRuleBtn', () => {
@@ -421,6 +502,14 @@ export function setupFormattingToolbar() {
         togglePre();
         closeParentDetails(e.currentTarget);
     });
+    bindClickIfExists('outdentBtnMobile', (e) => {
+        adjustBlockIndentation(-1);
+        closeParentDetails(e.currentTarget);
+    });
+    bindClickIfExists('indentBtnMobile', (e) => {
+        adjustBlockIndentation(1);
+        closeParentDetails(e.currentTarget);
+    });
     bindClickIfExists('bulletListBtnMobile', (e) => {
         document.execCommand('insertUnorderedList', false, null);
         focusEditorAndSync();
@@ -466,6 +555,14 @@ export function setupFormattingToolbar() {
         // Only apply custom shortcuts in visual mode (not HTML source mode).
         if (typeof isHtmlMode === 'function' && isHtmlMode()) {
             return;
+        }
+
+        if (e.key === 'Tab' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            if (getIndentTarget(document.getElementById('noteContent'))) {
+                e.preventDefault();
+                adjustBlockIndentation(e.shiftKey ? -1 : 1);
+                return;
+            }
         }
 
         // Shift+Enter inside lists: insert a line break within the current <li>.

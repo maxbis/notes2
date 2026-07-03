@@ -103,6 +103,12 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                         <button class="toolbar-btn" id="numberedListBtn" title="Numbered List (;n)" aria-label="Numbered list">
                             1.
                         </button>
+                        <button class="toolbar-btn" id="outdentBtn" title="Outdent list item (Shift+Tab)" aria-label="Outdent list item">
+                            ⇤
+                        </button>
+                        <button class="toolbar-btn" id="indentBtn" title="Indent list item (Tab)" aria-label="Indent list item">
+                            ⇥
+                        </button>
                         <button class="toolbar-btn" id="horizontalRuleBtn" title="Insert Horizontal Rule" aria-label="Insert horizontal rule">
                             ─
                         </button>
@@ -118,6 +124,8 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                             <button class="overflow-menu-item" id="h3BtnMobile" type="button" title="Heading 3 (;3)">H3</button>
                             <button class="overflow-menu-item" id="clearFormatBtnMobile" type="button" title="Clear formatting (;0)">Clear</button>
                             <button class="overflow-menu-item" id="preBtnMobile" type="button" title="Code block (;c)">Code block</button>
+                            <button class="overflow-menu-item" id="outdentBtnMobile" type="button" title="Outdent list item (Shift+Tab)">Outdent</button>
+                            <button class="overflow-menu-item" id="indentBtnMobile" type="button" title="Indent list item (Tab)">Indent</button>
                             <button class="overflow-menu-item" id="horizontalRuleBtnMobile" type="button">Divider</button>
                             <hr class="overflow-menu-sep">
                             <button class="overflow-menu-item" id="insertDateBtnMobile" type="button">📅 Date</button>
