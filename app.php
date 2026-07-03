@@ -305,8 +305,6 @@ require_once __DIR__ . '/../zendure/login/validate.php';
 
     <script src="vendor/beautify-html.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script type="module" src="app.js"></script>
 
 </body>
