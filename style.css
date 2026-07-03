@@ -904,6 +904,14 @@ aside.sidebar {
     border-radius: 0.5rem;
 }
 
+/* Public/read-only notes wrap <pre> contents in highlight.js <code class="hljs">.
+   Keep that inner layer visually merged with the outer block. */
+.editor-content pre code.hljs {
+    display: block;
+    background: transparent;
+    padding: 0;
+}
+
 /* Soft wrap and max-width only in the editable editor; read-only (public) view keeps default pre so hljs formatting stays correct */
 #noteContent pre {
     max-width: 120ch; /* 30% wider than 120ch */
