@@ -162,6 +162,35 @@ function getEditorElement() {
     return document.getElementById('noteContent');
 }
 
+function focusWithoutScroll(element) {
+    if (!element || typeof element.focus !== 'function') return;
+    try {
+        element.focus({ preventScroll: true });
+    } catch {
+        element.focus();
+    }
+}
+
+function getScrollSnapshot() {
+    const scrollingElement = document.scrollingElement || document.documentElement;
+    return {
+        windowX: window.scrollX,
+        windowY: window.scrollY,
+        documentTop: scrollingElement ? scrollingElement.scrollTop : 0,
+        documentLeft: scrollingElement ? scrollingElement.scrollLeft : 0
+    };
+}
+
+function restoreScrollSnapshot(snapshot) {
+    if (!snapshot) return;
+    const scrollingElement = document.scrollingElement || document.documentElement;
+    if (scrollingElement) {
+        scrollingElement.scrollTop = snapshot.documentTop;
+        scrollingElement.scrollLeft = snapshot.documentLeft;
+    }
+    window.scrollTo(snapshot.windowX, snapshot.windowY);
+}
+
 function saveEditorSelection() {
     const editor = getEditorElement();
     const selection = window.getSelection();
@@ -183,11 +212,13 @@ function restoreEditorSelection() {
     const editor = getEditorElement();
     if (!editor || !lastEditorRange) return false;
 
-    editor.focus();
+    const scrollSnapshot = getScrollSnapshot();
+    focusWithoutScroll(editor);
     const selection = window.getSelection();
     if (!selection) return false;
     selection.removeAllRanges();
     selection.addRange(lastEditorRange.cloneRange());
+    restoreScrollSnapshot(scrollSnapshot);
     return true;
 }
 
@@ -302,7 +333,7 @@ export function setupFormattingToolbar() {
     const focusEditorAndSync = () => {
         restoreEditorSelection();
         const editor = getEditorElement();
-        if (editor && document.activeElement !== editor) editor.focus();
+        if (editor && document.activeElement !== editor) focusWithoutScroll(editor);
         saveEditorSelection();
         updateToolbarState();
         if (trackChanges) trackChanges();
