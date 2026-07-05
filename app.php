@@ -103,10 +103,10 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                         <button class="toolbar-btn" id="numberedListBtn" title="Numbered List (;n)" aria-label="Numbered list">
                             1.
                         </button>
-                        <button class="toolbar-btn" id="outdentBtn" title="Outdent list item (Shift+Tab)" aria-label="Outdent list item">
+                        <button class="toolbar-btn mobile-toolbar-hidden" id="outdentBtn" title="Outdent list item (Shift+Tab)" aria-label="Outdent list item">
                             ⇤
                         </button>
-                        <button class="toolbar-btn" id="indentBtn" title="Indent list item (Tab)" aria-label="Indent list item">
+                        <button class="toolbar-btn mobile-toolbar-hidden" id="indentBtn" title="Indent list item (Tab)" aria-label="Indent list item">
                             ⇥
                         </button>
                         <button class="toolbar-btn" id="horizontalRuleBtn" title="Insert Horizontal Rule" aria-label="Insert horizontal rule">

@@ -1695,6 +1695,10 @@ button {
         flex-direction: column;
     }
 
+    body.mobile-search-mode .container {
+        overflow: hidden;
+    }
+
     .editor-body {
         display: flex;
         flex-direction: column;
@@ -1703,6 +1707,19 @@ button {
     /* Mobile: hide notes list while editing to maximize editor space */
     body.mobile-sidebar-hidden aside.sidebar {
         display: none;
+    }
+
+    body.mobile-search-mode .header-actions {
+        gap: 0.35rem;
+    }
+
+    body.mobile-search-mode .header-utility-actions > :not(#showNotesBtn),
+    body.mobile-search-mode #newNoteBtn {
+        display: none;
+    }
+
+    body.mobile-search-mode #showNotesBtn {
+        min-width: 72px;
     }
     
     aside.sidebar {
@@ -1716,6 +1733,15 @@ button {
         background: #f9f7f2;
         padding: 0.6rem 0.75rem 0.45rem;
         gap: 0.5rem;
+    }
+
+    body.mobile-search-mode aside.sidebar {
+        display: flex;
+        max-height: none;
+        height: 100%;
+        flex: 1 1 auto;
+        padding: 0.75rem;
+        gap: 0.7rem;
     }
     
     .tag-filters {
@@ -1743,9 +1769,19 @@ button {
         touch-action: pan-y; /* Allow vertical panning for scrolling */
     }
 
+    body.mobile-search-mode .notes-list {
+        max-height: none;
+        flex: 1 1 auto;
+        padding-top: 0.1rem;
+    }
+
     .list-view-tabs {
         gap: 0.16rem;
         padding: 0.02rem 0 0.24rem;
+    }
+
+    body.mobile-search-mode .list-view-tabs {
+        padding-bottom: 0.35rem;
     }
 
     .list-view-tab {
@@ -1760,6 +1796,12 @@ button {
         padding: 0.2rem 1rem; /* Reduced horizontal padding, slightly more vertical */
         margin-bottom: 0.15rem; /* Reduced spacing between items */
         border-radius: 6px;
+    }
+
+    body.mobile-search-mode .note-item {
+        padding: 0.72rem 0.9rem;
+        margin-bottom: 0.3rem;
+        border-radius: 12px;
     }
     
     .note-item-header {
@@ -1800,11 +1842,23 @@ button {
     .note-item-preview {
         display: none;
     }
+
+    body.mobile-search-mode .note-item-preview {
+        display: block;
+        margin-top: 0.28rem;
+        font-size: 0.82rem;
+        line-height: 1.4;
+        color: #6d6d72;
+    }
     
     .editor {
         flex: 1;
         min-height: 0;
         box-shadow: none;
+    }
+
+    body.mobile-search-mode .editor {
+        display: none;
     }
     
     .editor-header {
@@ -1884,6 +1938,10 @@ button {
     #htmlModeBtn,
     #insertDateBtn,
     #insertCheckmarkBtn {
+        display: none;
+    }
+
+    .mobile-toolbar-hidden {
         display: none;
     }
     

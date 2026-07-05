@@ -18,8 +18,24 @@ import { renderInspector } from './js/inspector.js';
 // Make selectNote available globally for onclick handlers in rendered HTML
 window.selectNote = selectNote;
 
+function isMobileSearchMode() {
+    return document.body.classList.contains('mobile-search-mode');
+}
+
+function updateMobileSearchButtonLabel() {
+    const showNotesBtn = document.getElementById('showNotesBtn');
+    if (!showNotesBtn) return;
+    const inSearchMode = isMobileLayout() && isMobileSearchMode();
+    showNotesBtn.textContent = inSearchMode ? 'Cancel' : '🔍';
+    showNotesBtn.setAttribute('aria-label', inSearchMode ? 'Close search' : 'Search / Notes');
+    showNotesBtn.setAttribute('title', inSearchMode ? 'Close search' : 'Search / Notes');
+}
+
 function showNotesSidebarAndFocusSearch() {
+    if (!isMobileLayout()) return;
+    document.body.classList.add('mobile-search-mode');
     document.body.classList.remove('mobile-sidebar-hidden');
+    updateMobileSearchButtonLabel();
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         // Delay focus slightly to ensure layout is visible
@@ -29,7 +45,27 @@ function showNotesSidebarAndFocusSearch() {
 
 function hideNotesSidebarForEditing() {
     if (!isMobileLayout()) return;
+    document.body.classList.remove('mobile-search-mode');
     document.body.classList.add('mobile-sidebar-hidden');
+    updateMobileSearchButtonLabel();
+}
+
+function closeMobileSearchMode() {
+    if (!isMobileLayout()) return;
+    document.body.classList.remove('mobile-search-mode');
+    document.body.classList.add('mobile-sidebar-hidden');
+    updateMobileSearchButtonLabel();
+}
+
+function syncMobileShellState() {
+    if (isMobileLayout()) {
+        updateMobileSearchButtonLabel();
+        return;
+    }
+
+    document.body.classList.remove('mobile-search-mode');
+    document.body.classList.remove('mobile-sidebar-hidden');
+    updateMobileSearchButtonLabel();
 }
 
 function updateSearchClearButtonVisibility() {
@@ -249,6 +285,10 @@ function setupEventListeners() {
     const showNotesBtn = document.getElementById('showNotesBtn');
     if (showNotesBtn) {
         showNotesBtn.addEventListener('click', () => {
+            if (isMobileSearchMode()) {
+                closeMobileSearchMode();
+                return;
+            }
             showNotesSidebarAndFocusSearch();
         });
     }
@@ -394,6 +434,7 @@ function setupEventListeners() {
     }
     document.getElementById('noteTitle').addEventListener('pointerdown', hideNotesSidebarForEditing);
     document.getElementById('noteContent').addEventListener('pointerdown', hideNotesSidebarForEditing);
+    window.addEventListener('resize', syncMobileShellState);
     
     // Save on tab switch or page hide through the normal queued save path.
     // This reduces overlap with unload-specific saves while still flushing dirty edits
@@ -472,4 +513,5 @@ document.addEventListener('DOMContentLoaded', async () => {
         checkFreshness();
         startFreshnessInterval();
     }
+    syncMobileShellState();
 });
