@@ -8,6 +8,7 @@ let trackChanges = null;
 let showLinkDialog = null;
 let insertDate = null;
 let insertCheckmark = null;
+let lastEditorRange = null;
 
 // Initialize with dependencies
 export function initToolbar(deps) {
@@ -157,13 +158,47 @@ function setButtonEnabled(btn, enabled) {
     btn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
 }
 
+function getEditorElement() {
+    return document.getElementById('noteContent');
+}
+
+function saveEditorSelection() {
+    const editor = getEditorElement();
+    const selection = window.getSelection();
+    if (!editor || !selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    const commonAncestor = range.commonAncestorContainer;
+    if (!commonAncestor) return;
+
+    const isInsideEditor = commonAncestor === editor
+        || (commonAncestor.nodeType === Node.ELEMENT_NODE && editor.contains(commonAncestor))
+        || (commonAncestor.nodeType === Node.TEXT_NODE && editor.contains(commonAncestor.parentNode));
+
+    if (!isInsideEditor) return;
+    lastEditorRange = range.cloneRange();
+}
+
+function restoreEditorSelection() {
+    const editor = getEditorElement();
+    if (!editor || !lastEditorRange) return false;
+
+    editor.focus();
+    const selection = window.getSelection();
+    if (!selection) return false;
+    selection.removeAllRanges();
+    selection.addRange(lastEditorRange.cloneRange());
+    return true;
+}
+
 export function updateToolbarState() {
-    const editor = document.getElementById('noteContent');
+    const editor = getEditorElement();
     if (!editor) return;
 
     const selection = window.getSelection();
     const anchorNode = selection && selection.anchorNode ? selection.anchorNode : null;
     const isInEditor = document.activeElement === editor || (anchorNode && editor.contains(anchorNode));
+    if (isInEditor) saveEditorSelection();
     if (!isInEditor) return;
 
     const boldBtn = document.getElementById('boldBtn');
@@ -257,12 +292,18 @@ export function setupFormattingToolbar() {
     const bindClickIfExists = (id, handler) => {
         const el = document.getElementById(id);
         if (!el) return;
+        el.addEventListener('pointerdown', (event) => {
+            event.preventDefault();
+            restoreEditorSelection();
+        });
         el.addEventListener('click', handler);
     };
 
     const focusEditorAndSync = () => {
-        const editor = document.getElementById('noteContent');
-        if (editor) editor.focus();
+        restoreEditorSelection();
+        const editor = getEditorElement();
+        if (editor && document.activeElement !== editor) editor.focus();
+        saveEditorSelection();
         updateToolbarState();
         if (trackChanges) trackChanges();
     };
@@ -541,11 +582,13 @@ export function setupFormattingToolbar() {
     });
     
     document.getElementById('insertDateBtn').addEventListener('click', () => {
+        restoreEditorSelection();
         if (insertDate) insertDate();
         if (trackChanges) trackChanges();
     });
     
     document.getElementById('insertCheckmarkBtn').addEventListener('click', () => {
+        restoreEditorSelection();
         if (insertCheckmark) insertCheckmark();
         if (trackChanges) trackChanges();
     });
@@ -712,11 +755,19 @@ export function setupFormattingToolbar() {
                 }
             }
         }
+        saveEditorSelection();
         updateToolbarState();
     });
     document.addEventListener('selectionchange', updateToolbarState);
-    document.getElementById('noteContent').addEventListener('mouseup', updateToolbarState);
-    document.getElementById('noteContent').addEventListener('keyup', updateToolbarState);
+    document.getElementById('noteContent').addEventListener('mouseup', () => {
+        saveEditorSelection();
+        updateToolbarState();
+    });
+    document.getElementById('noteContent').addEventListener('keyup', () => {
+        saveEditorSelection();
+        updateToolbarState();
+    });
+    document.getElementById('noteContent').addEventListener('focus', saveEditorSelection);
     
     // Handle Ctrl/Cmd+click on links to open them
     document.getElementById('noteContent').addEventListener('click', (e) => {
