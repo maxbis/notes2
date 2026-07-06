@@ -45,7 +45,7 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
 
     $allowedSet = array_fill_keys(array_map('strtolower', $allowedTags), true);
     $forbiddenSet = array_fill_keys(array_map('strtolower', $forbiddenTags), true);
-    $indentClassTags = array_fill_keys(['div', 'p', 'h1', 'h2', 'h3', 'h4', 'li', 'blockquote', 'pre'], true);
+    $indentClassTags = array_fill_keys(['div', 'p', 'h1', 'h2', 'h3', 'h4', 'li', 'blockquote', 'pre', 'td', 'th'], true);
     $isSafeHref = static function ($value) {
         $href = trim((string)$value);
         if ($href === '') return false;
@@ -53,7 +53,7 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
         return preg_match('/^(https?:|mailto:|tel:)/i', $href) === 1;
     };
 
-    $sanitizeNode = function ($node) use (&$sanitizeNode, $allowedSet, $allowedAttrsByTag, $forbiddenSet, $dom, $placeholder, $isSafeHref) {
+    $sanitizeNode = function ($node) use (&$sanitizeNode, $allowedSet, $allowedAttrsByTag, $forbiddenSet, $dom, $placeholder, $isSafeHref, $indentClassTags) {
         if (!$node) return;
 
         // Remove comments
