@@ -40,12 +40,12 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                     <button class="btn-secondary mobile-only" id="showNotesBtn" type="button" title="Search / Notes" aria-label="Search / Notes">🔍</button>
                     <button class="btn-secondary" id="openLastModifiedBtn" type="button" title="Open last modified note" aria-label="Open last modified note">Recent</button>
                     <button class="btn-secondary reload-page-btn" id="reloadPageBtn" type="button" title="Reload page" aria-label="Reload page">
-                        <span class="reload-page-btn-label">Reload</span>
+                        <span class="reload-page-btn-label">↺ Reload</span>
                         <span class="reload-page-btn-icon" aria-hidden="true">↻</span>
                     </button>
                     <button class="btn-secondary" id="importMarkdownBtn" type="button" title="Import a Markdown file" aria-label="Import a Markdown file">Import MD</button>
                 </div>
-                <button class="btn-primary" id="newNoteBtn" type="button" title="Create a new note" aria-label="Create a new note">New</button>
+                <button class="btn-primary" id="newNoteBtn" type="button" title="Create a new note" aria-label="Create a new note">+ New</button>
                 <input type="file" id="importMarkdownInput" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
             </div>
         </header>
