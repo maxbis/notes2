@@ -35,6 +35,8 @@ Explain how the note editor manages rich-text content, HTML mode, formatting con
    - the live `innerHTML` when rich-text mode is active
 4. `formatHtmlForDisplay()` pretty-prints HTML for readability in HTML mode without changing the semantic content being saved.
 5. The toolbar module applies inline formatting, headings, lists, indentation classes, block structure changes, links, and utility insertions.
+   - on mobile layouts, typing a second consecutive space in rich-text prose replaces the two spaces with a full stop followed by one space
+   - this shortcut is disabled in `pre` and `code` content and in HTML source mode
 6. Smart paste examines pasted input before inserting it.
    - HTML is sanitized against a client allowlist
    - markdown-like text can be converted through the markdown import logic

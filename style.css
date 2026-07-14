@@ -1876,7 +1876,7 @@ button {
     }
     
     .unsaved-indicator {
-        left: -0.85rem;
+        left: -0.70rem;
         width: 9px;
         height: 9px;
     }
@@ -1914,7 +1914,9 @@ button {
         flex-wrap: wrap;
         /* Allow overflow menus (⋯) to render outside the toolbar */
         overflow: visible;
-        position: static;
+        position: sticky;
+        top: 0;
+        z-index: 5;
         backdrop-filter: none;
     }
 
@@ -1998,14 +2000,27 @@ button {
         margin-right: 0.24rem;
     }
     .overflow-menu-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        min-width: 40px;
+        min-height: 40px;
         list-style: none;
         border: 1px solid rgba(90, 78, 55, 0.12);
         border-radius: 9px;
         background: rgba(255, 255, 255, 0.76);
-        padding: 0.18rem 0.42rem;
+        padding: 0.3rem 0.55rem;
+        font-size: 1.1rem;
         line-height: 1;
         cursor: pointer;
         user-select: none;
+    }
+
+    .editor-footer .overflow-menu-btn {
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 1.2rem;
     }
     .overflow-menu summary::-webkit-details-marker {
         display: none;

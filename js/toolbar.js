@@ -1,5 +1,5 @@
 // Formatting toolbar setup and state management
-import { escapeHtml } from './utils.js';
+import { escapeHtml, isMobileLayout } from './utils.js';
 import { isHtmlMode } from './state.js';
 import { handleSmartPaste } from './smart-paste.js';
 
@@ -75,6 +75,56 @@ function findLastTextNode(node) {
         if (found) return found;
     }
     return null;
+}
+
+function replaceMobileDoubleSpace(editor, event) {
+    if (isHtmlMode() || !isMobileLayout() || event.inputType !== 'insertText' || event.data !== ' ' || event.isComposing) {
+        return false;
+    }
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return false;
+
+    const range = selection.getRangeAt(0);
+    if (!range.collapsed || !editor.contains(range.startContainer)) return false;
+
+    const { node, offset } = getTextNodeAndOffsetAtCaret(range);
+    if (!node || offset < 1 || !/[ \u00a0]/.test(node.data[offset - 1])) return false;
+
+    const parent = node.parentElement;
+    if (parent && parent.closest('pre, code')) return false;
+
+    event.preventDefault();
+
+    const replacementRange = document.createRange();
+    replacementRange.setStart(node, offset - 1);
+    replacementRange.setEnd(node, offset);
+    selection.removeAllRanges();
+    selection.addRange(replacementRange);
+
+    let replaced = false;
+    try {
+        replaced = document.execCommand('insertText', false, '. ');
+    } catch {
+        replaced = false;
+    }
+
+    if (!replaced) {
+        replacementRange.deleteContents();
+        const replacement = document.createTextNode('. ');
+        replacementRange.insertNode(replacement);
+        replacementRange.setStartAfter(replacement);
+        replacementRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(replacementRange);
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    saveEditorSelection();
+    updateToolbarState();
+    if (trackChanges) trackChanges();
+
+    return true;
 }
 
 const BLOCK_TAG_NAMES = new Set(['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'PRE', 'LI', 'BLOCKQUOTE', 'TD', 'TH']);
@@ -624,8 +674,16 @@ export function setupFormattingToolbar() {
         if (trackChanges) trackChanges();
     });
     
+    const noteContent = document.getElementById('noteContent');
+
+    // On mobile, turn a second typed space into the conventional full stop + space.
+    // `beforeinput` also covers on-screen keyboards, unlike keydown alone.
+    noteContent.addEventListener('beforeinput', (e) => {
+        replaceMobileDoubleSpace(noteContent, e);
+    });
+
     // Keyboard shortcuts
-    document.getElementById('noteContent').addEventListener('keydown', (e) => {
+    noteContent.addEventListener('keydown', (e) => {
         // Only apply custom shortcuts in visual mode (not HTML source mode).
         if (typeof isHtmlMode === 'function' && isHtmlMode()) {
             return;
