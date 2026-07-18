@@ -74,10 +74,24 @@ function loadGroupState() {
     try {
         const stored = localStorage.getItem(GROUP_STORAGE_KEY);
         const parsed = stored ? JSON.parse(stored) : {};
-        return parsed && typeof parsed === 'object' ? parsed : {};
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            return Object.create(null);
+        }
+
+        // Group names are case-insensitive. Normalizing persisted keys also
+        // preserves collapsed state created before grouping was normalized.
+        return Object.entries(parsed).reduce((groupState, [groupName, isCollapsed]) => {
+            const groupKey = normalizeGroupKey(groupName);
+            groupState[groupKey] = groupState[groupKey] === true || isCollapsed === true;
+            return groupState;
+        }, Object.create(null));
     } catch (error) {
-        return {};
+        return Object.create(null);
     }
+}
+
+function normalizeGroupKey(groupName) {
+    return String(groupName).toLowerCase();
 }
 
 function saveGroupState(groupState) {
@@ -284,14 +298,15 @@ export function renderNotesList(searchTerm = '') {
         const rawTitle = (note.title || 'Untitled').trim();
         const dotIndex = rawTitle.indexOf('.');
         const groupName = dotIndex > 0 ? rawTitle.slice(0, dotIndex).trim() || defaultGroup : defaultGroup;
+        const groupKey = normalizeGroupKey(groupName);
         const itemTitle = dotIndex > 0 ? rawTitle.slice(dotIndex + 1).trim() || 'Untitled' : rawTitle;
-        const bucket = groups.get(groupName) || [];
-        bucket.push({ note, itemTitle });
-        groups.set(groupName, bucket);
+        const group = groups.get(groupKey) || { groupName, items: [] };
+        group.items.push({ note, itemTitle });
+        groups.set(groupKey, group);
     });
 
-    notesList.innerHTML = Array.from(groups.entries()).map(([groupName, items]) => {
-        const isCollapsed = groupState[groupName] === true;
+    notesList.innerHTML = Array.from(groups.entries()).map(([groupKey, { groupName, items }]) => {
+        const isCollapsed = groupState[groupKey] === true;
         const itemsHtml = items.map(({ note, itemTitle }) => `
             <div class="note-item ${state.currentNote && state.currentNote.hash_id === note.hash_id ? 'active' : ''}"
                  onclick="window.selectNote('${note.hash_id}')">
@@ -304,8 +319,8 @@ export function renderNotesList(searchTerm = '') {
         `).join('');
 
         return `
-            <div class="note-group" data-group="${escapeHtml(groupName)}" data-collapsed="${isCollapsed ? 'true' : 'false'}">
-                <button class="note-group-header" type="button" aria-expanded="${!isCollapsed}" data-group="${escapeHtml(groupName)}">
+            <div class="note-group" data-group="${escapeHtml(groupKey)}" data-collapsed="${isCollapsed ? 'true' : 'false'}">
+                <button class="note-group-header" type="button" aria-expanded="${!isCollapsed}" data-group="${escapeHtml(groupKey)}">
                     <span class="note-group-caret" aria-hidden="true"></span>
                     <span class="note-group-title">${escapeHtml(groupName)}</span>
                 </button>
