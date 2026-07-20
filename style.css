@@ -1589,7 +1589,13 @@ button {
     }
 }
 
-@media (max-width: 768px) {
+/*
+ * Use the compact layout on narrow screens and on short, touch-based
+ * landscape viewports. Phones commonly exceed 768px wide after rotation,
+ * while still having too little vertical space for the desktop layout.
+ */
+@media (max-width: 768px),
+       (max-height: 500px) and (orientation: landscape) and (pointer: coarse) {
     body {
         min-height: 100svh;
         min-height: 100dvh;

@@ -1,7 +1,12 @@
 // Utility functions
 
 export function isMobileLayout() {
-    return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+    const mobileLayoutQuery = [
+        '(max-width: 768px)',
+        '(max-height: 500px) and (orientation: landscape) and (pointer: coarse)',
+    ].join(', ');
+
+    return Boolean(window.matchMedia && window.matchMedia(mobileLayoutQuery).matches);
 }
 
 export function getPublicLink(hashId) {
