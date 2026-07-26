@@ -5,6 +5,12 @@ require_once __DIR__ . '/api/settings_helper.php';
 
 $hash_id = isset($_GET['id']) ? trim((string)$_GET['id']) : '';
 
+function public_asset_url($path) {
+    $version = @filemtime(__DIR__ . '/' . $path);
+    $suffix = $version === false ? '' : '?v=' . rawurlencode((string) $version);
+    return htmlspecialchars($path . $suffix, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
 function render_error_page($title, $message, $statusCode = 400) {
     http_response_code($statusCode);
     $safeTitle = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -16,22 +22,14 @@ function render_error_page($title, $message, $statusCode = 400) {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
         <title><?php echo $safeTitle; ?> - Notes</title>
-        <link rel="stylesheet" href="style.css" />
-        <style>
-            /* Minimal layout without the authenticated editor shell */
-            header { display: none; }
-            .main-content { height: auto; }
-            .sidebar { display: none; }
-            .editor { border: 1px solid #e5e5e7; border-radius: 14px; overflow: hidden; }
-            .editor-header { padding: 1.25rem 1.5rem; }
-            .toolbar { display: none; }
-            .editor-footer { opacity: 1; }
-        </style>
+        <meta name="theme-color" content="#315f8d">
+        <link rel="stylesheet" href="<?php echo public_asset_url('warm-paper/warm-paper.css'); ?>" />
+        <link rel="stylesheet" href="<?php echo public_asset_url('style.css'); ?>" />
     </head>
-    <body>
-        <div class="container" style="height:auto; min-height:100vh;">
-            <div class="main-content" style="height:auto; padding: 1.25rem;">
-                <main class="editor" aria-label="Public note">
+    <body class="wp-theme public-view">
+        <div class="container wp-app public-container">
+            <div class="main-content public-main">
+                <main class="editor wp-card public-note public-note--error" aria-label="Public note">
                     <div class="editor-header">
                         <div class="title-container">
                             <h2><?php echo $safeTitle; ?></h2>
@@ -107,23 +105,15 @@ $safeTitle = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
     <title><?php echo $safeTitle; ?> - Notes</title>
     <link rel="icon" href="icons/favicon.ico">
-    <link rel="stylesheet" href="style.css" />
+    <meta name="theme-color" content="#315f8d">
+    <link rel="stylesheet" href="<?php echo public_asset_url('warm-paper/warm-paper.css'); ?>" />
+    <link rel="stylesheet" href="<?php echo public_asset_url('style.css'); ?>" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
-    <style>
-        /* Minimal layout without the authenticated editor shell */
-        header { display: none; }
-        .main-content { height: auto; }
-        .sidebar { display: none; }
-        .editor { border: 1px solid #e5e5e7; border-radius: 14px; overflow: hidden; }
-        .editor-header { padding: 1.25rem 1.5rem; }
-        .toolbar { display: none; }
-        .editor-footer { opacity: 1; }
-    </style>
 </head>
-<body>
-    <div class="container" style="height:auto; min-height:100vh;">
-        <div class="main-content" style="height:auto; padding: 1.25rem;">
-            <main class="editor" aria-label="Public note (read-only)">
+<body class="wp-theme public-view">
+    <div class="container wp-app public-container">
+        <div class="main-content public-main">
+            <main class="editor wp-card public-note" aria-label="Public note (read-only)">
                 <div class="editor-header">
                     <div class="title-container">
                         <h2><?php echo $safeTitle; ?></h2>

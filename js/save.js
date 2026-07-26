@@ -19,7 +19,17 @@ function updatePinButtonsForSavedNote(note = null) {
         const btn = document.getElementById(id);
         if (!btn) return;
         btn.disabled = !note;
-        btn.textContent = label;
+        if (id === 'pinNoteBtnInspector') {
+            const labelElement = btn.querySelector('.inspector-action-label');
+            if (labelElement) {
+                labelElement.textContent = label;
+            } else {
+                btn.textContent = label;
+            }
+            btn.setAttribute('aria-pressed', isPinned ? 'true' : 'false');
+        } else {
+            btn.textContent = label;
+        }
         btn.setAttribute('aria-label', note ? `${label} this note` : 'No note selected');
         btn.setAttribute('title', note ? `${label} this note` : 'No note selected');
     });

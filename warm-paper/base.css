@@ -1,0 +1,89 @@
+/*
+ * Scoped baseline
+ *
+ * Nothing outside .wp-theme is changed. The selectors intentionally avoid
+ * !important so an adopting project can override the theme normally.
+ */
+
+.wp-theme,
+.wp-theme *,
+.wp-theme *::before,
+.wp-theme *::after {
+    box-sizing: border-box;
+}
+
+.wp-theme {
+    min-height: 100%;
+    margin: 0;
+    background: var(--wp-surface-page);
+    color: var(--wp-text-primary);
+    font-family: var(--wp-font-sans);
+    font-size: 16px;
+    line-height: 1.45;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+.wp-theme :where(h1, h2, h3, h4, p, ul, ol, dl, figure) {
+    margin-top: 0;
+}
+
+.wp-theme :where(button, input, textarea, select) {
+    font: inherit;
+}
+
+.wp-theme :where(button, a, input, textarea, select, summary) {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.wp-theme :where(a) {
+    color: var(--wp-accent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+.wp-theme :where(a:hover) {
+    color: var(--wp-accent-hover);
+}
+
+.wp-theme :where(a:focus-visible, button:focus-visible, summary:focus-visible) {
+    outline: 2px solid var(--wp-accent);
+    outline-offset: 2px;
+}
+
+.wp-theme :where(img, svg) {
+    max-width: 100%;
+}
+
+.wp-theme :where(code, kbd, pre, samp) {
+    font-family: var(--wp-font-mono);
+}
+
+.wp-theme :where(code, kbd) {
+    border: 1px solid var(--wp-border-subtle);
+    border-radius: 5px;
+    background: var(--wp-surface-input);
+    color: var(--wp-text-primary);
+    font-size: 0.875em;
+}
+
+.wp-theme :where(code) {
+    padding: 1px 4px;
+}
+
+.wp-theme :where(kbd) {
+    padding: 2px 5px;
+    box-shadow: 0 1px 0 var(--wp-border-subtle);
+}
+
+.wp-theme :where(hr) {
+    height: 1px;
+    margin: var(--wp-space-4) 0;
+    border: 0;
+    background: var(--wp-border-subtle);
+}
+
+.wp-theme ::selection {
+    background: var(--wp-surface-selected);
+    color: var(--wp-text-primary);
+}

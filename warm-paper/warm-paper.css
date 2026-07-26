@@ -1,0 +1,13 @@
+/*
+ * Warm Paper and Ink
+ * Framework-independent theme entry point.
+ *
+ * Add class="wp-theme" to the application root, then use the wp-* component
+ * classes documented in README.md.
+ */
+
+@import "./tokens.css";
+@import "./base.css";
+@import "./components.css";
+@import "./utilities.css";
+@import "./responsive.css";

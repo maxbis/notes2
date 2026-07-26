@@ -3,6 +3,9 @@
 // Validate user access
 require_once __DIR__ . '/../zendure/login/validate.php';
 
+$warmPaperVersion = (string) filemtime(__DIR__ . '/warm-paper/warm-paper.css');
+$styleVersion = (string) filemtime(__DIR__ . '/style.css');
+
 ?>
 
 <!DOCTYPE html>
@@ -14,7 +17,7 @@ require_once __DIR__ . '/../zendure/login/validate.php';
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Notes">
-    <meta name="theme-color" content="#007aff">
+    <meta name="theme-color" content="#315f8d">
     <title>Notes - Simple Note Taking</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="icons/favicon.ico">
@@ -22,11 +25,12 @@ require_once __DIR__ . '/../zendure/login/validate.php';
     <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
     <!-- iOS Home Screen icon prefers PNG (180x180). -->
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="warm-paper/warm-paper.css?v=<?php echo rawurlencode($warmPaperVersion); ?>">
+    <link rel="stylesheet" href="style.css?v=<?php echo rawurlencode($styleVersion); ?>">
 </head>
-<body>
-    <div class="container">
-        <header>
+<body class="wp-theme">
+    <div class="container wp-app">
+        <header class="wp-header">
             <div class="app-title-shell">
                 <h1 class="app-title" aria-label="Notes">
                     <img class="app-logo" src="icons/favicon-32x32.png" alt="" aria-hidden="true">
@@ -37,29 +41,29 @@ require_once __DIR__ . '/../zendure/login/validate.php';
             </div>
             <div class="header-actions">
                 <div class="header-utility-actions">
-                    <button class="btn-secondary mobile-only" id="showNotesBtn" type="button" title="Search / Notes" aria-label="Search / Notes">🔍</button>
-                    <button class="btn-secondary" id="openLastModifiedBtn" type="button" title="Open last modified note" aria-label="Open last modified note">Recent</button>
-                    <button class="btn-secondary reload-page-btn" id="reloadPageBtn" type="button" title="Reload page" aria-label="Reload page">
+                    <button class="btn-secondary wp-button wp-button--secondary mobile-only" id="showNotesBtn" type="button" title="Search / Notes" aria-label="Search / Notes">🔍</button>
+                    <button class="btn-secondary wp-button wp-button--secondary" id="openLastModifiedBtn" type="button" title="Open last modified note" aria-label="Open last modified note">Recent</button>
+                    <button class="btn-secondary wp-button wp-button--secondary reload-page-btn" id="reloadPageBtn" type="button" title="Reload page" aria-label="Reload page">
                         <span class="reload-page-btn-label">↺ Reload</span>
                         <span class="reload-page-btn-icon" aria-hidden="true">↻</span>
                     </button>
-                    <button class="btn-secondary" id="importMarkdownBtn" type="button" title="Import a Markdown file" aria-label="Import a Markdown file">Import MD</button>
+                    <button class="btn-secondary wp-button wp-button--secondary" id="importMarkdownBtn" type="button" title="Import a Markdown file" aria-label="Import a Markdown file">Import MD</button>
                 </div>
-                <button class="btn-primary" id="newNoteBtn" type="button" title="Create a new note" aria-label="Create a new note">+ New</button>
+                <button class="btn-primary wp-button wp-button--primary" id="newNoteBtn" type="button" title="Create a new note" aria-label="Create a new note">+ New</button>
                 <input type="file" id="importMarkdownInput" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
             </div>
         </header>
 
         <div class="main-content">
             <aside class="sidebar">
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Search notes...">
-                    <button type="button" id="clearSearchBtn" class="search-clear-btn" aria-label="Clear search" title="Clear search" hidden>&times;</button>
+                <div class="search-box wp-search">
+                    <input class="wp-input" type="text" id="searchInput" placeholder="Search notes..." aria-label="Search notes">
+                    <button type="button" id="clearSearchBtn" class="search-clear-btn wp-icon-button" aria-label="Clear search" title="Clear search" hidden>&times;</button>
                 </div>
                 <div class="tag-filters" id="tagFilters" hidden></div>
                 <div class="list-view-tabs" role="tablist" aria-label="List view">
-                    <button type="button" class="list-view-tab" role="tab" data-view="all" aria-selected="false">ALL</button>
-                    <button type="button" class="list-view-tab active" role="tab" data-view="groups" aria-selected="true">Groups</button>
+                    <button type="button" class="list-view-tab wp-button wp-button--quiet" role="tab" data-view="all" aria-selected="false">ALL</button>
+                    <button type="button" class="list-view-tab wp-button wp-button--quiet active" role="tab" data-view="groups" aria-selected="true">Groups</button>
                 </div>
                 <div class="notes-list" id="notesList">
                     <!-- Notes will be loaded here -->
@@ -67,10 +71,10 @@ require_once __DIR__ . '/../zendure/login/validate.php';
             </aside>
 
             <main class="editor">
-                <div id="staleBanner" class="stale-banner" hidden>
+                <div id="staleBanner" class="stale-banner wp-alert wp-alert--warning" role="status" hidden>
                     <span>This note was updated elsewhere.</span>
-                    <button type="button" class="stale-banner-refresh">Refresh</button>
-                    <button type="button" class="stale-banner-dismiss">Dismiss</button>
+                    <button type="button" class="stale-banner-refresh wp-button wp-button--primary">Refresh</button>
+                    <button type="button" class="stale-banner-dismiss wp-button wp-button--quiet">Dismiss</button>
                 </div>
                 <div class="editor-header">
                     <div class="editor-title-shell">
@@ -86,67 +90,67 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                 </div>
                 <div class="toolbar">
                     <div class="toolbar-group" aria-label="Inline formatting">
-                        <button class="toolbar-btn" id="boldBtn" title="Bold (Ctrl+B)" aria-label="Bold">
+                        <button class="toolbar-btn wp-icon-button" id="boldBtn" title="Bold (Ctrl+B)" aria-label="Bold">
                             <strong>B</strong>
                         </button>
-                        <button class="toolbar-btn" id="italicBtn" title="Italic (Ctrl+I)" aria-label="Italic">
+                        <button class="toolbar-btn wp-icon-button" id="italicBtn" title="Italic (Ctrl+I)" aria-label="Italic">
                             <em>I</em>
                         </button>
-                        <button class="toolbar-btn" id="underlineBtn" title="Underline (Ctrl+U)" aria-label="Underline">
+                        <button class="toolbar-btn wp-icon-button" id="underlineBtn" title="Underline (Ctrl+U)" aria-label="Underline">
                             <u>U</u>
                         </button>
                     </div>
                     <div class="toolbar-group" aria-label="Structure and insertion">
-                        <button class="toolbar-btn" id="bulletListBtn" title="Bullet List (;b)" aria-label="Bullet list">
+                        <button class="toolbar-btn wp-icon-button" id="bulletListBtn" title="Bullet List (;b)" aria-label="Bullet list">
                             •
                         </button>
-                        <button class="toolbar-btn" id="numberedListBtn" title="Numbered List (;n)" aria-label="Numbered list">
+                        <button class="toolbar-btn wp-icon-button" id="numberedListBtn" title="Numbered List (;n)" aria-label="Numbered list">
                             1.
                         </button>
-                        <button class="toolbar-btn mobile-toolbar-hidden" id="outdentBtn" title="Outdent list item (Shift+Tab)" aria-label="Outdent list item">
+                        <button class="toolbar-btn wp-icon-button mobile-toolbar-hidden" id="outdentBtn" title="Outdent list item (Shift+Tab)" aria-label="Outdent list item">
                             ⇤
                         </button>
-                        <button class="toolbar-btn mobile-toolbar-hidden" id="indentBtn" title="Indent list item (Tab)" aria-label="Indent list item">
+                        <button class="toolbar-btn wp-icon-button mobile-toolbar-hidden" id="indentBtn" title="Indent list item (Tab)" aria-label="Indent list item">
                             ⇥
                         </button>
-                        <button class="toolbar-btn" id="horizontalRuleBtn" title="Insert Horizontal Rule" aria-label="Insert horizontal rule">
+                        <button class="toolbar-btn wp-icon-button" id="horizontalRuleBtn" title="Insert Horizontal Rule" aria-label="Insert horizontal rule">
                             ─
                         </button>
-                        <button class="toolbar-btn" id="linkBtn" title="Insert Link" aria-label="Insert link">
+                        <button class="toolbar-btn wp-icon-button" id="linkBtn" title="Insert Link" aria-label="Insert link">
                             🔗
                         </button>
                     </div>
                     <details class="overflow-menu mobile-only toolbar-overflow">
-                        <summary class="overflow-menu-btn" aria-label="Headings / code" title="Headings / code">⋯</summary>
-                        <div class="overflow-menu-panel">
-                            <button class="overflow-menu-item" id="h1BtnMobile" type="button" title="Heading 1 (;1)">H1</button>
-                            <button class="overflow-menu-item" id="h2BtnMobile" type="button" title="Heading 2 (;2)">H2</button>
-                            <button class="overflow-menu-item" id="h3BtnMobile" type="button" title="Heading 3 (;3)">H3</button>
-                            <button class="overflow-menu-item" id="clearFormatBtnMobile" type="button" title="Clear formatting (;0)">Clear</button>
-                            <button class="overflow-menu-item" id="preBtnMobile" type="button" title="Code block (;c)">Code block</button>
-                            <button class="overflow-menu-item" id="outdentBtnMobile" type="button" title="Outdent list item (Shift+Tab)">Outdent</button>
-                            <button class="overflow-menu-item" id="indentBtnMobile" type="button" title="Indent list item (Tab)">Indent</button>
-                            <button class="overflow-menu-item" id="horizontalRuleBtnMobile" type="button">Divider</button>
-                            <hr class="overflow-menu-sep">
-                            <button class="overflow-menu-item" id="insertDateBtnMobile" type="button">📅 Date</button>
-                            <button class="overflow-menu-item" id="insertCheckmarkBtnMobile" type="button">✅ Check</button>
+                        <summary class="overflow-menu-btn wp-icon-button" aria-label="Headings / code" title="Headings / code">⋯</summary>
+                        <div class="overflow-menu-panel wp-menu">
+                            <button class="overflow-menu-item wp-menu__item" id="h1BtnMobile" type="button" title="Heading 1 (;1)">H1</button>
+                            <button class="overflow-menu-item wp-menu__item" id="h2BtnMobile" type="button" title="Heading 2 (;2)">H2</button>
+                            <button class="overflow-menu-item wp-menu__item" id="h3BtnMobile" type="button" title="Heading 3 (;3)">H3</button>
+                            <button class="overflow-menu-item wp-menu__item" id="clearFormatBtnMobile" type="button" title="Clear formatting (;0)">Clear</button>
+                            <button class="overflow-menu-item wp-menu__item" id="preBtnMobile" type="button" title="Code block (;c)">Code block</button>
+                            <button class="overflow-menu-item wp-menu__item" id="outdentBtnMobile" type="button" title="Outdent list item (Shift+Tab)">Outdent</button>
+                            <button class="overflow-menu-item wp-menu__item" id="indentBtnMobile" type="button" title="Indent list item (Tab)">Indent</button>
+                            <button class="overflow-menu-item wp-menu__item" id="horizontalRuleBtnMobile" type="button">Divider</button>
+                            <hr class="overflow-menu-sep wp-menu__separator">
+                            <button class="overflow-menu-item wp-menu__item" id="insertDateBtnMobile" type="button">📅 Date</button>
+                            <button class="overflow-menu-item wp-menu__item" id="insertCheckmarkBtnMobile" type="button">✅ Check</button>
                         </div>
                     </details>
 
                     <div class="toolbar-group desktop-only" aria-label="Headings and code">
-                        <button class="toolbar-btn" id="h1Btn" title="Heading 1 (;1)" aria-label="Heading 1">H1</button>
-                        <button class="toolbar-btn" id="h2Btn" title="Heading 2 (;2)" aria-label="Heading 2">H2</button>
-                        <button class="toolbar-btn" id="h3Btn" title="Heading 3 (;3)" aria-label="Heading 3">H3</button>
-                        <button class="toolbar-btn" id="clearFormatBtn" title="Clear formatting (;0)" aria-label="Clear formatting">Tx</button>
-                        <button class="toolbar-btn" id="preBtn" title="Preformatted (monospace) (;c)" aria-label="Preformatted (monospace)"><></button>
+                        <button class="toolbar-btn wp-icon-button" id="h1Btn" title="Heading 1 (;1)" aria-label="Heading 1">H1</button>
+                        <button class="toolbar-btn wp-icon-button" id="h2Btn" title="Heading 2 (;2)" aria-label="Heading 2">H2</button>
+                        <button class="toolbar-btn wp-icon-button" id="h3Btn" title="Heading 3 (;3)" aria-label="Heading 3">H3</button>
+                        <button class="toolbar-btn wp-icon-button" id="clearFormatBtn" title="Clear formatting (;0)" aria-label="Clear formatting">Tx</button>
+                        <button class="toolbar-btn wp-icon-button" id="preBtn" title="Preformatted (monospace) (;c)" aria-label="Preformatted (monospace)"><></button>
                     </div>
                     <div class="toolbar-group desktop-only toolbar-group-utility" aria-label="Utilities">
-                        <button class="toolbar-btn" id="htmlModeBtn" title="Edit HTML" aria-label="Edit HTML">HTML</button>
-                        <button class="toolbar-btn" id="formatHtmlBtn" title="Format HTML" aria-label="Format HTML" hidden>Format</button>
-                        <button class="toolbar-btn" id="insertDateBtn" title="Insert Date (;d)" aria-label="Insert date (shortcut ;d)">
+                        <button class="toolbar-btn wp-icon-button" id="htmlModeBtn" title="Edit HTML" aria-label="Edit HTML">HTML</button>
+                        <button class="toolbar-btn wp-icon-button" id="formatHtmlBtn" title="Format HTML" aria-label="Format HTML" hidden>Format</button>
+                        <button class="toolbar-btn wp-icon-button" id="insertDateBtn" title="Insert Date (;d)" aria-label="Insert date (shortcut ;d)">
                             📅
                         </button>
-                        <button class="toolbar-btn" id="insertCheckmarkBtn" title="Insert Checkmark (;v)" aria-label="Insert checkmark (shortcut ;v)">
+                        <button class="toolbar-btn wp-icon-button" id="insertCheckmarkBtn" title="Insert Checkmark (;v)" aria-label="Insert checkmark (shortcut ;v)">
                             ✅
                         </button>
                     </div>
@@ -160,21 +164,21 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                             <span id="lastSaved" class="last-saved"></span>
 
                             <div class="editor-actions desktop-only">
-                                <button class="btn-secondary" id="pinNoteBtn" type="button" title="Pin or unpin this note" aria-label="Pin or unpin this note">Pin</button>
-                                <button class="btn-secondary" id="shareLinkBtn" type="button" title="Copy public link" aria-label="Copy public link">Share</button>
-                                <button class="btn-secondary" id="editLinkBtn" type="button" title="Copy editable link" aria-label="Copy editable link">Edit link</button>
-                                <button class="btn-secondary" id="exportPdfBtn" type="button" title="Export to PDF" aria-label="Export to PDF">PDF</button>
-                                <button class="btn-danger deleteBtn" type="button" title="Delete this note" aria-label="Delete this note">Delete</button>
+                                <button class="btn-secondary wp-button wp-button--secondary" id="pinNoteBtn" type="button" title="Pin or unpin this note" aria-label="Pin or unpin this note">Pin</button>
+                                <button class="btn-secondary wp-button wp-button--secondary" id="shareLinkBtn" type="button" title="Copy public link" aria-label="Copy public link">Share</button>
+                                <button class="btn-secondary wp-button wp-button--secondary" id="editLinkBtn" type="button" title="Copy editable link" aria-label="Copy editable link">Edit link</button>
+                                <button class="btn-secondary wp-button wp-button--secondary" id="exportPdfBtn" type="button" title="Export to PDF" aria-label="Export to PDF">PDF</button>
+                                <button class="btn-danger wp-button wp-button--danger-subtle deleteBtn" type="button" title="Delete this note" aria-label="Delete this note">Delete</button>
                             </div>
 
                             <details class="overflow-menu mobile-only">
-                                <summary class="overflow-menu-btn" aria-label="More actions" title="More actions">⋯</summary>
-                                <div class="overflow-menu-panel">
-                                    <button class="overflow-menu-item" id="pinNoteBtnMobile" type="button">Pin</button>
-                                    <button class="overflow-menu-item" id="shareLinkBtnMobile" type="button">Share (copy link)</button>
-                                    <button class="overflow-menu-item" id="editLinkBtnMobile" type="button">Edit link</button>
-                                    <hr class="overflow-menu-sep">
-                                    <button class="overflow-menu-item danger deleteBtn" type="button">Delete</button>
+                                <summary class="overflow-menu-btn wp-icon-button" aria-label="More actions" title="More actions">⋯</summary>
+                                <div class="overflow-menu-panel wp-menu">
+                                    <button class="overflow-menu-item wp-menu__item" id="pinNoteBtnMobile" type="button">Pin</button>
+                                    <button class="overflow-menu-item wp-menu__item" id="shareLinkBtnMobile" type="button">Share (copy link)</button>
+                                    <button class="overflow-menu-item wp-menu__item" id="editLinkBtnMobile" type="button">Edit link</button>
+                                    <hr class="overflow-menu-sep wp-menu__separator">
+                                    <button class="overflow-menu-item wp-menu__item wp-menu__item--danger danger deleteBtn" type="button">Delete</button>
                                 </div>
                             </details>
                         </div>
@@ -203,11 +207,50 @@ require_once __DIR__ . '/../zendure/login/validate.php';
                             <section class="inspector-section">
                                 <div class="inspector-section-heading">Actions</div>
                                 <div class="inspector-actions">
-                                    <button class="btn-secondary inspector-action-btn" id="pinNoteBtnInspector" type="button">Pin</button>
-                                    <button class="btn-secondary inspector-action-btn" id="shareLinkBtnInspector" type="button">Share</button>
-                                    <button class="btn-secondary inspector-action-btn" id="editLinkBtnInspector" type="button">Edit link</button>
-                                    <button class="btn-secondary inspector-action-btn" id="exportPdfBtnInspector" type="button">PDF</button>
-                                    <button class="btn-danger inspector-action-btn inspector-action-danger deleteBtn" type="button">Delete</button>
+                                    <button class="btn-secondary wp-button wp-button--secondary inspector-action-btn" id="pinNoteBtnInspector" type="button" aria-pressed="false">
+                                        <svg class="inspector-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <path d="M12 17v5"></path>
+                                            <path d="M5 3h14"></path>
+                                            <path d="m6 3 1 8-3 3h16l-3-3 1-8"></path>
+                                        </svg>
+                                        <span class="inspector-action-label">Pin</span>
+                                    </button>
+                                    <button class="btn-secondary wp-button wp-button--secondary inspector-action-btn" id="shareLinkBtnInspector" type="button">
+                                        <svg class="inspector-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <circle cx="18" cy="5" r="3"></circle>
+                                            <circle cx="6" cy="12" r="3"></circle>
+                                            <circle cx="18" cy="19" r="3"></circle>
+                                            <path d="m8.6 10.5 6.8-4"></path>
+                                            <path d="m8.6 13.5 6.8 4"></path>
+                                        </svg>
+                                        <span class="inspector-action-label">Share</span>
+                                    </button>
+                                    <button class="btn-secondary wp-button wp-button--secondary inspector-action-btn" id="editLinkBtnInspector" type="button">
+                                        <svg class="inspector-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"></path>
+                                            <path d="M14 11a5 5 0 0 0-7.1-.1l-2 2a5 5 0 0 0 7.1 7.1l1.1-1.1"></path>
+                                        </svg>
+                                        <span class="inspector-action-label">Edit link</span>
+                                    </button>
+                                    <button class="btn-secondary wp-button wp-button--secondary inspector-action-btn" id="exportPdfBtnInspector" type="button">
+                                        <svg class="inspector-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
+                                            <path d="M14 2v6h6"></path>
+                                            <path d="M8 15h8"></path>
+                                            <path d="M8 18h5"></path>
+                                        </svg>
+                                        <span class="inspector-action-label">PDF</span>
+                                    </button>
+                                    <button class="btn-danger wp-button wp-button--danger-subtle inspector-action-btn inspector-action-danger deleteBtn" type="button">
+                                        <svg class="inspector-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <path d="M3 6h18"></path>
+                                            <path d="M8 6V4h8v2"></path>
+                                            <path d="M19 6 18 21H6L5 6"></path>
+                                            <path d="M10 11v6"></path>
+                                            <path d="M14 11v6"></path>
+                                        </svg>
+                                        <span class="inspector-action-label">Delete</span>
+                                    </button>
                                 </div>
                             </section>
 
@@ -264,41 +307,43 @@ require_once __DIR__ . '/../zendure/login/validate.php';
         </div>
     </div>
 
-    <div id="modalOverlay" class="modal-overlay">
-        <div class="modal-dialog">
-            <div class="modal-header">
+    <div id="modalOverlay" class="modal-overlay wp-dialog-backdrop" aria-hidden="true">
+        <div class="modal-dialog wp-dialog wp-dialog--compact" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
+            <div class="modal-header wp-dialog__header">
                 <h2 class="modal-title" id="modalTitle">Title</h2>
+                <button class="modal-close wp-icon-button wp-dialog__close" type="button" data-dialog-close aria-label="Close dialog">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body wp-dialog__body">
                 <p id="modalMessage">Message</p>
             </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" id="modalCancelBtn">Cancel</button>
-                <button class="btn-primary" id="modalConfirmBtn">Confirm</button>
+            <div class="modal-footer wp-dialog__actions">
+                <button class="btn-secondary wp-button wp-button--secondary" id="modalCancelBtn">Cancel</button>
+                <button class="btn-primary wp-button wp-button--primary" id="modalConfirmBtn">Confirm</button>
             </div>
         </div>
     </div>
 
-    <div id="linkModalOverlay" class="modal-overlay">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h2 class="modal-title">Insert Link</h2>
+    <div id="linkModalOverlay" class="modal-overlay wp-dialog-backdrop" aria-hidden="true">
+        <div class="modal-dialog wp-dialog wp-dialog--compact" role="dialog" aria-modal="true" aria-labelledby="linkModalTitle" tabindex="-1">
+            <div class="modal-header wp-dialog__header">
+                <h2 class="modal-title" id="linkModalTitle">Insert Link</h2>
+                <button class="modal-close wp-icon-button wp-dialog__close" type="button" data-dialog-close aria-label="Close dialog">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body wp-dialog__body">
                 <div class="link-dialog-form">
-                    <div class="link-dialog-field">
+                    <div class="link-dialog-field wp-field">
                         <label for="linkModalTitleInput">Title</label>
-                        <input type="text" id="linkModalTitleInput" placeholder="Link text" autocomplete="off">
+                        <input class="wp-input" type="text" id="linkModalTitleInput" placeholder="Link text" autocomplete="off">
                     </div>
-                    <div class="link-dialog-field">
+                    <div class="link-dialog-field wp-field">
                         <label for="linkModalUrlInput">URL</label>
-                        <input type="url" id="linkModalUrlInput" placeholder="https://example.com" autocomplete="off">
+                        <input class="wp-input" type="url" id="linkModalUrlInput" placeholder="https://example.com" autocomplete="off" required>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" id="linkModalCancelBtn">Cancel</button>
-                <button class="btn-primary" id="linkModalInsertBtn">Insert</button>
+            <div class="modal-footer wp-dialog__actions">
+                <button class="btn-secondary wp-button wp-button--secondary" id="linkModalCancelBtn">Cancel</button>
+                <button class="btn-primary wp-button wp-button--primary" id="linkModalInsertBtn">Insert</button>
             </div>
         </div>
     </div>

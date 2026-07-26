@@ -1,0 +1,102 @@
+/*
+ * Warm Paper and Ink design tokens
+ *
+ * All variables are prefixed so the theme can coexist with an existing
+ * framework or design system. Override them on .wp-theme or a descendant to
+ * create a project-specific variation.
+ */
+
+.wp-theme {
+    color-scheme: light;
+
+    /* Surfaces */
+    --wp-surface-page: #f5f2ec;
+    --wp-surface-panel: #fffefb;
+    --wp-surface-input: #fbfaf7;
+    --wp-surface-subtle: #f0ece5;
+    --wp-surface-hover: #eaf0f6;
+    --wp-surface-selected: #dfeaf6;
+
+    /* Borders */
+    --wp-border-subtle: #e3ddd3;
+    --wp-border-strong: #8b8377;
+
+    /* Text and inactive controls */
+    --wp-text-primary: #252525;
+    --wp-text-secondary: #65686f;
+    --wp-text-heading-muted: #61748a;
+    --wp-control-muted: #7f858e;
+
+    /* Accent */
+    --wp-accent: #315f8d;
+    --wp-accent-hover: #264b70;
+    --wp-accent-soft: #e4edf7;
+    --wp-accent-border: #b9ccde;
+    --wp-focus-ring: rgba(49, 95, 141, 0.22);
+
+    /* Semantic states */
+    --wp-danger: #ad403b;
+    --wp-danger-hover: #91332f;
+    --wp-danger-soft: #f8e9e7;
+    --wp-danger-border: #bc746f;
+    --wp-success: #2f6b50;
+    --wp-success-hover: #275a43;
+    --wp-success-soft: #e5f1ea;
+    --wp-success-border: #bfd6c8;
+    --wp-warning: #8a641c;
+    --wp-warning-hover: #715116;
+    --wp-warning-soft: #f7edd3;
+    --wp-warning-border: #dfc98f;
+
+    /* Typography */
+    --wp-font-sans:
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    --wp-font-mono:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        "Liberation Mono",
+        monospace;
+    --wp-text-xs: 0.75rem;
+    --wp-text-sm: 0.8125rem;
+    --wp-text-base: 0.875rem;
+    --wp-text-section: 1rem;
+    --wp-text-dialog: 1.125rem;
+    --wp-text-title: 1.5rem;
+
+    /* Four-pixel spacing rhythm */
+    --wp-space-1: 4px;
+    --wp-space-2: 8px;
+    --wp-space-3: 12px;
+    --wp-space-4: 16px;
+    --wp-space-5: 20px;
+    --wp-space-6: 24px;
+    --wp-space-8: 32px;
+
+    /* Shape */
+    --wp-radius-row: 7px;
+    --wp-radius-control: 8px;
+    --wp-radius-input: 10px;
+    --wp-radius-card: 12px;
+    --wp-radius-pill: 999px;
+
+    /* Elevation */
+    --wp-shadow-raised: 0 2px 8px rgba(61, 49, 31, 0.07);
+    --wp-shadow-floating: 0 12px 30px rgba(61, 49, 31, 0.16);
+
+    /* Motion */
+    --wp-duration-fast: 150ms;
+    --wp-duration-disclosure: 200ms;
+    --wp-ease-standard: ease;
+
+    /* Layout */
+    --wp-header-height: 56px;
+    --wp-content-width: 1440px;
+}

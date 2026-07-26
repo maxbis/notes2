@@ -1,0 +1,104 @@
+/*
+ * Small, namespaced utilities for common composition and accessibility needs.
+ * Prefer component classes for visual styling.
+ */
+
+.wp-theme .wp-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wp-stack-gap, var(--wp-space-3));
+}
+
+.wp-theme .wp-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--wp-cluster-gap, var(--wp-space-2));
+}
+
+.wp-theme .wp-split {
+    display: flex;
+    align-items: center;
+    gap: var(--wp-space-2);
+}
+
+.wp-theme .wp-split > :last-child {
+    margin-left: auto;
+}
+
+.wp-theme .wp-divider {
+    height: 1px;
+    margin: var(--wp-space-3) 0;
+    border: 0;
+    background: var(--wp-border-subtle);
+}
+
+.wp-theme .wp-text-primary {
+    color: var(--wp-text-primary);
+}
+
+.wp-theme .wp-text-secondary {
+    color: var(--wp-text-secondary);
+}
+
+.wp-theme .wp-text-heading {
+    color: var(--wp-text-heading-muted);
+}
+
+.wp-theme .wp-text-accent {
+    color: var(--wp-accent);
+}
+
+.wp-theme .wp-text-danger {
+    color: var(--wp-danger);
+}
+
+.wp-theme .wp-surface-subtle {
+    background: var(--wp-surface-subtle);
+}
+
+.wp-theme .wp-surface-selected {
+    background: var(--wp-surface-selected);
+}
+
+.wp-theme .wp-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wp-theme .wp-scroll {
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.wp-theme .wp-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.wp-theme .wp-visually-hidden:focus {
+    position: fixed;
+    top: var(--wp-space-2);
+    left: var(--wp-space-2);
+    z-index: 100;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    margin: 0;
+    padding: var(--wp-space-2) var(--wp-space-3);
+    border-radius: var(--wp-radius-control);
+    background: var(--wp-surface-panel);
+    clip: auto;
+    clip-path: none;
+    white-space: normal;
+}

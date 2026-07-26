@@ -1,0 +1,113 @@
+/* Responsive layout */
+
+@media (max-width: 768px) {
+    .wp-theme .wp-header__inner {
+        min-height: 52px;
+        flex-wrap: wrap;
+        padding: 6px var(--wp-space-4);
+    }
+
+    .wp-theme .wp-header__brand {
+        max-width: 55vw;
+    }
+
+    .wp-theme .wp-main {
+        padding: var(--wp-space-3) var(--wp-space-4) var(--wp-space-6);
+    }
+
+    .wp-theme .wp-toolbar,
+    .wp-theme .wp-toolbar__end {
+        align-items: stretch;
+    }
+
+    .wp-theme .wp-toolbar__end {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .wp-theme .wp-toolbar .wp-search {
+        width: 100%;
+        max-width: none;
+    }
+
+    .wp-theme .wp-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wp-theme .wp-icon-button {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .wp-theme .wp-page-title {
+        font-size: 1.25rem;
+    }
+
+    .wp-theme .wp-flash-region {
+        top: max(var(--wp-space-2), env(safe-area-inset-top));
+        width: calc(100vw - 16px);
+    }
+
+    .wp-theme .wp-panel {
+        padding: var(--wp-space-4);
+    }
+
+    .wp-theme .wp-dialog-backdrop {
+        align-items: end;
+        padding: var(--wp-space-2);
+    }
+
+    .wp-theme .wp-dialog {
+        max-height: calc(100vh - 16px);
+        max-height: calc(100dvh - 16px);
+    }
+
+    .wp-theme .wp-dialog__header,
+    .wp-theme .wp-dialog__body,
+    .wp-theme .wp-dialog__actions {
+        padding-right: var(--wp-space-4);
+        padding-left: var(--wp-space-4);
+    }
+
+    .wp-theme .wp-dialog__actions {
+        flex-wrap: wrap;
+    }
+
+    .wp-theme .wp-dialog__actions .wp-button {
+        min-height: 40px;
+    }
+
+    .wp-theme .wp-dialog__actions-start {
+        width: 100%;
+        margin-right: 0;
+    }
+}
+
+/* These declarations deliberately win over project animations for users who
+   request reduced motion. They are the theme's only use of !important. */
+@media (prefers-reduced-motion: reduce) {
+    .wp-theme *,
+    .wp-theme *::before,
+    .wp-theme *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
+
+/* Preserve usability in Windows High Contrast Mode. */
+@media (forced-colors: active) {
+    .wp-theme .wp-button,
+    .wp-theme .wp-icon-button,
+    .wp-theme .wp-input,
+    .wp-theme .wp-select,
+    .wp-theme .wp-textarea,
+    .wp-theme .wp-card,
+    .wp-theme .wp-panel {
+        border-color: ButtonText;
+    }
+}
