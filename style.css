@@ -2154,7 +2154,6 @@ button {
     color: var(--wp-text-secondary);
 }
 
-.wp-theme .inspector-status-card,
 .wp-theme .inspector-stat-card,
 .wp-theme .inspector-meta-list,
 .wp-theme .inspector-outline {
@@ -2208,10 +2207,14 @@ button {
     color: var(--wp-text-secondary);
 }
 
-.wp-theme .inspector-note-state.unsaved,
-.wp-theme .inspector-note-state.saving {
+.wp-theme .inspector-note-state.unsaved {
     background: var(--wp-warning-soft);
     color: var(--wp-warning);
+}
+
+.wp-theme .inspector-note-state.saving {
+    background: var(--wp-accent-soft);
+    color: var(--wp-accent);
 }
 
 .wp-theme .inspector-pin-badge {

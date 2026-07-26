@@ -190,6 +190,16 @@ $styleVersion = (string) filemtime(__DIR__ . '/style.css');
                         </div>
                         <div class="inspector-content" id="noteInspectorContent" hidden>
                             <section class="inspector-section">
+                                <div class="inspector-section-heading">Status</div>
+                                <div class="inspector-status-card">
+                                    <div class="inspector-status-top">
+                                        <span class="inspector-note-state" id="inspectorNoteState">Saved</span>
+                                        <span class="inspector-pin-badge" id="inspectorPinBadge" hidden>Pinned</span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="inspector-section">
                                 <div class="inspector-section-heading">Tags</div>
                                 <div class="tag-editor tag-editor-inspector" id="tagEditorInspector">
                                     <div class="tag-chips tag-chips-inspector" id="tagChipsInspector"></div>
@@ -267,16 +277,6 @@ $styleVersion = (string) filemtime(__DIR__ . '/style.css');
                                     </div>
                                 </dl>
                                 <div class="inspector-meta-inline">Version <span id="inspectorVersion">-</span></div>
-                            </section>
-
-                            <section class="inspector-section">
-                                <div class="inspector-section-heading">Status</div>
-                                <div class="inspector-status-card">
-                                    <div class="inspector-status-top">
-                                        <span class="inspector-note-state" id="inspectorNoteState">Saved</span>
-                                        <span class="inspector-pin-badge" id="inspectorPinBadge" hidden>Pinned</span>
-                                    </div>
-                                </div>
                             </section>
 
                             <section class="inspector-section">
