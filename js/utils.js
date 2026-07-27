@@ -11,7 +11,7 @@ export function isMobileLayout() {
 
 export function getPublicLink(publicToken) {
     if (!publicToken) return '';
-    const u = new URL('public.php', window.location.href);
+    const u = new URL('public', window.location.href);
     u.searchParams.set('id', publicToken);
     return u.toString();
 }

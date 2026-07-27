@@ -806,6 +806,12 @@ aside.sidebar {
     line-height: 1;
 }
 
+.sharing-default-badge.is-inactive {
+    color: var(--wp-text-secondary);
+    background: var(--wp-surface-panel);
+    box-shadow: inset 0 0 0 1px var(--wp-border-subtle);
+}
+
 .sharing-default-description {
     margin: 0;
     color: var(--wp-text-secondary);

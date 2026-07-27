@@ -202,12 +202,12 @@ async function manageSharingForCurrentNote() {
         onRegenerate: () => applySharingAction('regenerate'),
         isEasyAccess: () => state.publicDefaultHashId === state.currentNote?.hash_id,
         onSetEasyAccess: async () => {
-            await setPublicDefault(state.currentNote?.hash_id ?? null);
-            state.publicDefaultHashId = state.currentNote?.hash_id ?? null;
+            const result = await setPublicDefault(state.currentNote?.hash_id ?? null);
+            state.publicDefaultHashId = result.public_default_hash_id ?? null;
         },
         onRemoveEasyAccess: async () => {
-            await setPublicDefault(null);
-            state.publicDefaultHashId = null;
+            const result = await setPublicDefault(null);
+            state.publicDefaultHashId = result.public_default_hash_id ?? null;
         }
     });
 }

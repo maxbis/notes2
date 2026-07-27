@@ -40,11 +40,37 @@ function handle_put(mysqli $conn): void {
         $value = $data['set_public_default'];
         $hashId = (is_string($value) && $value !== '') ? $value : null;
         if ($hashId !== null) {
-            set_setting($conn, 'public_default_hash_id', $hashId);
+            $stmtDefaultCandidate = $conn->prepare(
+                "SELECT hash_id FROM notes
+                 WHERE hash_id = ? AND is_published = 1 AND public_token IS NOT NULL
+                 LIMIT 1"
+            );
+            if (!$stmtDefaultCandidate) __notes_db_fail($conn, 'prepare: validate public default');
+            $stmtDefaultCandidate->bind_param("s", $hashId);
+            if (!$stmtDefaultCandidate->execute()) __notes_db_fail($conn, 'execute: validate public default');
+            if (!fetch_assoc_from_stmt($stmtDefaultCandidate)) {
+                __notes_json_error(409, 'Only a published note can be used as the default public note');
+            }
+
+            if (!set_setting($conn, 'public_default_hash_id', $hashId)) {
+                __notes_db_fail($conn, 'save public default');
+            }
         } else {
-            set_setting($conn, 'public_default_hash_id', '');
+            if (!set_setting($conn, 'public_default_hash_id', '')) {
+                __notes_db_fail($conn, 'clear public default');
+            }
         }
-        echo json_encode(['ok' => true, 'public_default_hash_id' => $hashId], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        $storedHashId = get_setting($conn, 'public_default_hash_id');
+        $expectedHashId = $hashId ?? '';
+        if ($storedHashId !== $expectedHashId) {
+            __notes_json_error(500, 'Default public note setting was not saved');
+        }
+
+        echo json_encode([
+            'ok' => true,
+            'public_default_hash_id' => $storedHashId !== '' ? $storedHashId : null
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         return;
     }
     if (array_key_exists('set_sharing', $data) && is_array($data['set_sharing'] ?? null)) {

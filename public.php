@@ -12,6 +12,11 @@ function public_asset_url($path) {
     return htmlspecialchars($path . $suffix, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
+function public_document_base_href() {
+    $baseHref = defined('PUBLIC_DOCUMENT_BASE_HREF') ? PUBLIC_DOCUMENT_BASE_HREF : './';
+    return htmlspecialchars($baseHref, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
 function render_error_page($title, $message, $statusCode = 400) {
     http_response_code($statusCode);
     $safeTitle = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -22,6 +27,7 @@ function render_error_page($title, $message, $statusCode = 400) {
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+        <base href="<?php echo public_document_base_href(); ?>">
         <title><?php echo $safeTitle; ?> - Notes</title>
         <meta name="theme-color" content="#315f8d">
         <link rel="stylesheet" href="<?php echo public_asset_url('warm-paper/warm-paper.css'); ?>" />
@@ -66,19 +72,24 @@ if ($public_token === '') {
                     $stmtDefault->execute();
                     $defaultNote = fetch_assoc_from_stmt($stmtDefault);
                     if (!empty($defaultNote['public_token'])) {
-                        $redirect = 'public.php?id=' . rawurlencode($defaultNote['public_token']);
-                        $conn->close();
-                        header('Location: ' . $redirect, true, 302);
-                        exit;
+                        $public_token = (string)$defaultNote['public_token'];
                     }
                 }
             }
-            $conn->close();
+            if (isset($conn) && $conn instanceof mysqli) {
+                $conn->close();
+            }
         } catch (Throwable $e) {
-            // Fall through to error page
+            render_error_page('Server error', 'The default public note could not be loaded.', 500);
         }
     }
-    render_error_page('Missing note id', 'No note id was provided.', 400);
+    if ($public_token === '') {
+        render_error_page(
+            'No default public note',
+            'No published note is currently selected as the default public note.',
+            404
+        );
+    }
 }
 
 try {
@@ -117,6 +128,7 @@ $safeTitle = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+    <base href="<?php echo public_document_base_href(); ?>">
     <title><?php echo $safeTitle; ?> - Notes</title>
     <link rel="icon" href="icons/favicon.ico">
     <meta name="theme-color" content="#315f8d">

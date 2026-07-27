@@ -427,12 +427,10 @@ export function showShareDialog(options) {
                 const defaultTitle = document.createElement('strong');
                 defaultTitle.textContent = 'Default public note';
                 defaultHeading.append(defaultTitle);
-                if (isEasyAccess) {
-                    const activeBadge = document.createElement('span');
-                    activeBadge.className = 'sharing-default-badge';
-                    activeBadge.textContent = 'Active';
-                    defaultHeading.append(activeBadge);
-                }
+                const defaultBadge = document.createElement('span');
+                defaultBadge.className = `sharing-default-badge ${isEasyAccess ? 'is-active' : 'is-inactive'}`;
+                defaultBadge.textContent = isEasyAccess ? 'Active' : 'Inactive';
+                defaultHeading.append(defaultBadge);
 
                 const defaultDescription = document.createElement('p');
                 defaultDescription.className = 'sharing-default-description';

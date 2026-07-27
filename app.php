@@ -5,6 +5,7 @@ require_once __DIR__ . '/login/validate.php';
 
 $warmPaperVersion = (string) filemtime(__DIR__ . '/warm-paper/warm-paper.css');
 $styleVersion = (string) filemtime(__DIR__ . '/style.css');
+$appVersion = (string) filemtime(__DIR__ . '/app.js');
 
 ?>
 
@@ -423,7 +424,7 @@ $styleVersion = (string) filemtime(__DIR__ . '/style.css');
 
     <script src="vendor/beautify-html.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script type="module" src="app.js"></script>
+    <script type="module" src="app.js?v=<?php echo rawurlencode($appVersion); ?>"></script>
 
 </body>
 </html>
