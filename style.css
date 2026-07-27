@@ -1747,7 +1747,8 @@ button {
     .toolbar {
         padding: 0.34rem 0.75rem 0.46rem;
         gap: 0.3rem;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        min-width: 0;
         /* Allow overflow menus (⋯) to render outside the toolbar */
         overflow: visible;
         position: sticky;
@@ -1757,6 +1758,7 @@ button {
     }
 
     .toolbar-group {
+        flex: 0 0 auto;
         margin: 0;
         padding: 0.14rem;
         border-radius: 12px;
@@ -1784,6 +1786,11 @@ button {
 
     .wp-theme .mobile-toolbar-hidden {
         display: none;
+    }
+
+    .toolbar > .toolbar-overflow {
+        flex: 0 0 40px;
+        margin-left: auto;
     }
     
     .editor-content {
