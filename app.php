@@ -26,9 +26,10 @@ $styleVersion = (string) filemtime(__DIR__ . '/style.css');
     <!-- iOS Home Screen icon prefers PNG (180x180). -->
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
     <link rel="stylesheet" href="warm-paper/warm-paper.css?v=<?php echo rawurlencode($warmPaperVersion); ?>">
+    <link rel="stylesheet" href="warm-paper/variants/paper-texture.css">
     <link rel="stylesheet" href="style.css?v=<?php echo rawurlencode($styleVersion); ?>">
 </head>
-<body class="wp-theme">
+<body class="wp-theme wp-textured">
     <div class="container wp-app">
         <header class="wp-header">
             <div class="app-title-shell">

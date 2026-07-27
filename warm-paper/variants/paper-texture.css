@@ -11,40 +11,46 @@
  */
 
 .wp-theme.wp-textured {
-    /* Subtle noise texture via SVG data URI (no external files needed) */
-    --wp-paper-grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    /* Paper grain texture via SVG noise filter */
+    --wp-paper-grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    --wp-grain-opacity: 0.08;
 }
 
-/* Apply grain to main surfaces */
-.wp-theme.wp-textured,
-.wp-theme.wp-textured .editor-content,
-.wp-theme.wp-textured .public-note {
-    position: relative;
-}
-
-.wp-theme.wp-textured::before,
-.wp-theme.wp-textured .editor-content::before,
-.wp-theme.wp-textured .public-note::before {
-    content: "";
-    position: absolute;
-    inset: 0;
+/* Apply grain directly to the editor panel background */
+.wp-theme.wp-textured .editor {
     background-image: var(--wp-paper-grain);
-    opacity: 0.025;
-    pointer-events: none;
-    z-index: 0;
-    mix-blend-mode: multiply;
+    background-blend-mode: multiply;
+    background-color: var(--wp-surface-panel);
 }
 
-.wp-theme.wp-textured .editor-content::before {
-    border-radius: inherit;
+.wp-theme.wp-textured .editor-content {
+    background-image: var(--wp-paper-grain);
+    background-blend-mode: overlay;
+    background-color: transparent;
 }
 
-/* Ensure content stays above the texture layer */
-.wp-theme.wp-textured > *,
-.wp-theme.wp-textured .editor-content > *,
-.wp-theme.wp-textured .public-note > * {
-    position: relative;
-    z-index: 1;
+/* Sidebar gets lighter texture */
+.wp-theme.wp-textured aside.sidebar {
+    background-image: var(--wp-paper-grain);
+    background-blend-mode: multiply;
+}
+
+/* Public note view */
+.wp-theme.wp-textured .public-note {
+    background-image: var(--wp-paper-grain);
+    background-blend-mode: multiply;
+    background-color: var(--wp-surface-panel);
+}
+
+/* Stronger texture variant: add wp-textured-strong */
+.wp-theme.wp-textured.wp-textured-strong {
+    --wp-grain-opacity: 0.15;
+}
+
+.wp-theme.wp-textured.wp-textured-strong .editor,
+.wp-theme.wp-textured.wp-textured-strong .editor-content,
+.wp-theme.wp-textured.wp-textured-strong aside.sidebar {
+    background-blend-mode: soft-light;
 }
 
 /*
