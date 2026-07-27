@@ -1763,11 +1763,10 @@ button {
     }
     
     .toolbar-btn {
-        /* ~10% smaller toolbar buttons on mobile */
-        padding: 0.08rem 0.52rem;
-        min-width: 30px;
-        min-height: 30px;
-        font-size: 0.66rem;
+        padding: 0.08rem 0.58rem;
+        min-width: 36px;
+        min-height: 36px;
+        font-size: 0.72rem;
         touch-action: manipulation;
         flex-shrink: 0;
     }
@@ -1780,6 +1779,10 @@ button {
     }
 
     .mobile-toolbar-hidden {
+        display: none;
+    }
+
+    .wp-theme .mobile-toolbar-hidden {
         display: none;
     }
     
@@ -1890,6 +1893,8 @@ button {
         display: flex;
         justify-content: flex-start;
         align-items: center;
+        gap: 0.5rem;
+        min-height: 38px;
         padding: 0.34rem 0.5rem;
         border-radius: 8px;
         background: transparent;
@@ -1898,6 +1903,16 @@ button {
         font-weight: 500;
         line-height: 1.2;
         opacity: 1;
+    }
+    .overflow-menu-item svg {
+        width: 17px;
+        height: 17px;
+        flex: 0 0 17px;
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 2;
     }
 
     .editor-footer .overflow-menu-item {
@@ -2334,9 +2349,9 @@ button {
     }
 
     .wp-theme .toolbar-btn {
-        min-width: 30px;
+        min-width: 36px;
         width: auto;
-        height: 30px;
+        height: 36px;
     }
 
     .wp-theme .wp-input,

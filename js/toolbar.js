@@ -425,6 +425,17 @@ export function updateToolbarState() {
 }
 
 export function setupFormattingToolbar() {
+    const platform = navigator.userAgentData?.platform || navigator.platform || '';
+    const primaryModifier = /mac|iphone|ipad|ipod/i.test(platform) ? '⌘' : 'Ctrl+';
+    [
+        ['boldBtn', 'Bold', 'B'],
+        ['italicBtn', 'Italic', 'I'],
+        ['underlineBtn', 'Underline', 'U']
+    ].forEach(([id, label, key]) => {
+        const button = document.getElementById(id);
+        if (button) button.title = `${label} (${primaryModifier}${key})`;
+    });
+
     const bindClickIfExists = (id, handler) => {
         const el = document.getElementById(id);
         if (!el) return;

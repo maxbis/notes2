@@ -331,11 +331,13 @@ export async function showConflictDialog(serverUpdatedAt, serverTitle, serverCon
     return showModal('⚠️ Conflict Detected', message, 'Overwrite', 'Cancel & Refresh');
 }
 
-export function showDeleteConfirmDialog() {
+export function showDeleteConfirmDialog(isUnsavedDraft = false) {
     return showConfirmation({
-        title: 'Delete Note',
-        message: 'Are you sure you want to delete this note? This action cannot be undone.',
-        confirmText: 'Delete',
+        title: isUnsavedDraft ? 'Discard New Note' : 'Delete Note',
+        message: isUnsavedDraft
+            ? 'Discard this new note? Any unsaved content will be lost.'
+            : 'Are you sure you want to delete this note? This action cannot be undone.',
+        confirmText: isUnsavedDraft ? 'Discard' : 'Delete',
         cancelText: 'Cancel',
         danger: true
     });

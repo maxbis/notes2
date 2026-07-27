@@ -88,36 +88,85 @@ $styleVersion = (string) filemtime(__DIR__ . '/style.css');
                         </div>
                     </div>
                 </div>
-                <div class="toolbar">
-                    <div class="toolbar-group" aria-label="Inline formatting">
-                        <button class="toolbar-btn wp-icon-button" id="boldBtn" title="Bold (Ctrl+B)" aria-label="Bold">
+                <div class="toolbar" role="toolbar" aria-label="Note formatting">
+                    <div class="toolbar-group" role="group" aria-label="Inline formatting">
+                        <button class="toolbar-btn wp-icon-button" id="boldBtn" title="Bold (Ctrl/Cmd+B)" aria-label="Bold">
                             <strong>B</strong>
                         </button>
-                        <button class="toolbar-btn wp-icon-button" id="italicBtn" title="Italic (Ctrl+I)" aria-label="Italic">
+                        <button class="toolbar-btn wp-icon-button" id="italicBtn" title="Italic (Ctrl/Cmd+I)" aria-label="Italic">
                             <em>I</em>
                         </button>
-                        <button class="toolbar-btn wp-icon-button" id="underlineBtn" title="Underline (Ctrl+U)" aria-label="Underline">
+                        <button class="toolbar-btn wp-icon-button" id="underlineBtn" title="Underline (Ctrl/Cmd+U)" aria-label="Underline">
                             <u>U</u>
                         </button>
                     </div>
-                    <div class="toolbar-group" aria-label="Structure and insertion">
+                    <div class="toolbar-group" role="group" aria-label="Lists and indentation">
                         <button class="toolbar-btn wp-icon-button" id="bulletListBtn" title="Bullet List (;b)" aria-label="Bullet list">
-                            •
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M9 6h11M9 12h11M9 18h11"/>
+                                <circle cx="4" cy="6" r="1"/>
+                                <circle cx="4" cy="12" r="1"/>
+                                <circle cx="4" cy="18" r="1"/>
+                            </svg>
                         </button>
                         <button class="toolbar-btn wp-icon-button" id="numberedListBtn" title="Numbered List (;n)" aria-label="Numbered list">
-                            1.
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M10 6h10M10 12h10M10 18h10M3 5h2v4M3 14h2l-2 4h2"/>
+                            </svg>
                         </button>
                         <button class="toolbar-btn wp-icon-button mobile-toolbar-hidden" id="outdentBtn" title="Outdent list item (Shift+Tab)" aria-label="Outdent list item">
-                            ⇤
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M10 6h10M10 12h10M10 18h10M3 12h5M6 9l-3 3 3 3"/>
+                            </svg>
                         </button>
                         <button class="toolbar-btn wp-icon-button mobile-toolbar-hidden" id="indentBtn" title="Indent list item (Tab)" aria-label="Indent list item">
-                            ⇥
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M10 6h10M10 12h10M10 18h10M3 12h5M5 9l3 3-3 3"/>
+                            </svg>
                         </button>
+                    </div>
+
+                    <div class="toolbar-group desktop-only" role="group" aria-label="Headings and code">
+                        <button class="toolbar-btn wp-icon-button" id="h1Btn" title="Heading 1 (;1)" aria-label="Heading 1">H1</button>
+                        <button class="toolbar-btn wp-icon-button" id="h2Btn" title="Heading 2 (;2)" aria-label="Heading 2">H2</button>
+                        <button class="toolbar-btn wp-icon-button" id="h3Btn" title="Heading 3 (;3)" aria-label="Heading 3">H3</button>
+                        <button class="toolbar-btn wp-icon-button" id="clearFormatBtn" title="Clear formatting (;0)" aria-label="Clear formatting">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="m15 4 5 5-9 9H6l-3-3L15 4Z"/>
+                                <path d="m10 9 5 5M6 18h15"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn wp-icon-button" id="preBtn" title="Code block (;c)" aria-label="Code block">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="3" y="4" width="18" height="16" rx="2"/>
+                                <path d="m9 9-3 3 3 3M15 9l3 3-3 3"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="toolbar-group mobile-toolbar-hidden" role="group" aria-label="Insert">
                         <button class="toolbar-btn wp-icon-button" id="horizontalRuleBtn" title="Insert Horizontal Rule" aria-label="Insert horizontal rule">
-                            ─
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M4 16h16M12 4v7M8.5 7.5h7"/>
+                            </svg>
                         </button>
                         <button class="toolbar-btn wp-icon-button" id="linkBtn" title="Insert Link" aria-label="Insert link">
-                            🔗
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/>
+                                <path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn wp-icon-button desktop-only" id="insertDateBtn" title="Insert Date (;d)" aria-label="Insert date (shortcut ;d)">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="3" y="5" width="18" height="16" rx="2"/>
+                                <path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+                            </svg>
+                        </button>
+                        <button class="toolbar-btn wp-icon-button desktop-only" id="insertCheckmarkBtn" title="Insert Checkmark (;v)" aria-label="Insert checkmark (shortcut ;v)">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                                <path d="m7 12 3 3 7-7"/>
+                            </svg>
                         </button>
                     </div>
                     <details class="overflow-menu mobile-only toolbar-overflow">
@@ -126,33 +175,56 @@ $styleVersion = (string) filemtime(__DIR__ . '/style.css');
                             <button class="overflow-menu-item wp-menu__item" id="h1BtnMobile" type="button" title="Heading 1 (;1)">H1</button>
                             <button class="overflow-menu-item wp-menu__item" id="h2BtnMobile" type="button" title="Heading 2 (;2)">H2</button>
                             <button class="overflow-menu-item wp-menu__item" id="h3BtnMobile" type="button" title="Heading 3 (;3)">H3</button>
-                            <button class="overflow-menu-item wp-menu__item" id="clearFormatBtnMobile" type="button" title="Clear formatting (;0)">Clear</button>
-                            <button class="overflow-menu-item wp-menu__item" id="preBtnMobile" type="button" title="Code block (;c)">Code block</button>
+                            <button class="overflow-menu-item wp-menu__item" id="clearFormatBtnMobile" type="button" title="Clear formatting (;0)">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="m15 4 5 5-9 9H6l-3-3L15 4Z"/>
+                                    <path d="m10 9 5 5M6 18h15"/>
+                                </svg>
+                                <span>Clear formatting</span>
+                            </button>
+                            <button class="overflow-menu-item wp-menu__item" id="preBtnMobile" type="button" title="Code block (;c)">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <rect x="3" y="4" width="18" height="16" rx="2"/>
+                                    <path d="m9 9-3 3 3 3M15 9l3 3-3 3"/>
+                                </svg>
+                                <span>Code block</span>
+                            </button>
                             <button class="overflow-menu-item wp-menu__item" id="outdentBtnMobile" type="button" title="Outdent list item (Shift+Tab)">Outdent</button>
                             <button class="overflow-menu-item wp-menu__item" id="indentBtnMobile" type="button" title="Indent list item (Tab)">Indent</button>
-                            <button class="overflow-menu-item wp-menu__item" id="horizontalRuleBtnMobile" type="button">Divider</button>
                             <hr class="overflow-menu-sep wp-menu__separator">
-                            <button class="overflow-menu-item wp-menu__item" id="insertDateBtnMobile" type="button">📅 Date</button>
-                            <button class="overflow-menu-item wp-menu__item" id="insertCheckmarkBtnMobile" type="button">✅ Check</button>
+                            <button class="overflow-menu-item wp-menu__item" id="linkBtnMobile" type="button">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/>
+                                    <path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/>
+                                </svg>
+                                <span>Insert link</span>
+                            </button>
+                            <button class="overflow-menu-item wp-menu__item" id="horizontalRuleBtnMobile" type="button">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M4 16h16M12 4v7M8.5 7.5h7"/>
+                                </svg>
+                                <span>Insert divider</span>
+                            </button>
+                            <button class="overflow-menu-item wp-menu__item" id="insertDateBtnMobile" type="button">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <rect x="3" y="5" width="18" height="16" rx="2"/>
+                                    <path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+                                </svg>
+                                <span>Insert date</span>
+                            </button>
+                            <button class="overflow-menu-item wp-menu__item" id="insertCheckmarkBtnMobile" type="button">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <rect x="3" y="3" width="18" height="18" rx="3"/>
+                                    <path d="m7 12 3 3 7-7"/>
+                                </svg>
+                                <span>Insert checkmark</span>
+                            </button>
                         </div>
                     </details>
 
-                    <div class="toolbar-group desktop-only" aria-label="Headings and code">
-                        <button class="toolbar-btn wp-icon-button" id="h1Btn" title="Heading 1 (;1)" aria-label="Heading 1">H1</button>
-                        <button class="toolbar-btn wp-icon-button" id="h2Btn" title="Heading 2 (;2)" aria-label="Heading 2">H2</button>
-                        <button class="toolbar-btn wp-icon-button" id="h3Btn" title="Heading 3 (;3)" aria-label="Heading 3">H3</button>
-                        <button class="toolbar-btn wp-icon-button" id="clearFormatBtn" title="Clear formatting (;0)" aria-label="Clear formatting">Tx</button>
-                        <button class="toolbar-btn wp-icon-button" id="preBtn" title="Preformatted (monospace) (;c)" aria-label="Preformatted (monospace)"><></button>
-                    </div>
-                    <div class="toolbar-group desktop-only toolbar-group-utility" aria-label="Utilities">
+                    <div class="toolbar-group desktop-only toolbar-group-utility" role="group" aria-label="Utilities">
                         <button class="toolbar-btn wp-icon-button" id="htmlModeBtn" title="Edit HTML" aria-label="Edit HTML">HTML</button>
                         <button class="toolbar-btn wp-icon-button" id="formatHtmlBtn" title="Format HTML" aria-label="Format HTML" hidden>Format</button>
-                        <button class="toolbar-btn wp-icon-button" id="insertDateBtn" title="Insert Date (;d)" aria-label="Insert date (shortcut ;d)">
-                            📅
-                        </button>
-                        <button class="toolbar-btn wp-icon-button" id="insertCheckmarkBtn" title="Insert Checkmark (;v)" aria-label="Insert checkmark (shortcut ;v)">
-                            ✅
-                        </button>
                     </div>
                 </div>
                 <div class="editor-body">

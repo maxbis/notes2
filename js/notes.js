@@ -1,5 +1,5 @@
 // CRUD operations for notes
-import state, { API_ENDPOINT } from './state.js';
+import state, { API_ENDPOINT, AUTO_SAVE_DELAY_MS } from './state.js';
 import { readJsonResponse } from './api.js';
 import { setPinned } from './pin-api.js';
 import { setEditorHtml } from './editor.js';
@@ -536,10 +536,51 @@ export async function createNewNote() {
 }
 
 export async function deleteNote() {
-    if (!state.currentNote) return;
-    
-    const confirmed = await showDeleteConfirmDialog();
+    const isUnsavedDraft = !state.currentNote;
+    const hadPendingAutoSave = state.hasUnsavedChanges && state.autoSaveTimer != null;
+    clearTimeout(state.autoSaveTimer);
+    state.autoSaveTimer = null;
+
+    const resumeAutoSave = () => {
+        if (!hadPendingAutoSave || !state.hasUnsavedChanges) return;
+        state.autoSaveTimer = setTimeout(() => {
+            if (state.hasUnsavedChanges) {
+                saveNote(false);
+            }
+        }, AUTO_SAVE_DELAY_MS);
+    };
+
+    const confirmed = await showDeleteConfirmDialog(isUnsavedDraft);
     if (!confirmed) {
+        resumeAutoSave();
+        return;
+    }
+
+    // A save that was already in flight may have created the draft while the
+    // confirmation dialog was open. Re-read currentNote before deciding
+    // whether this is a local discard or a server-side delete.
+    const noteToDelete = state.currentNote;
+    if (!noteToDelete) {
+        state.hasUnsavedChanges = false;
+        state.savedTitle = '';
+        state.savedContent = '';
+        setSavedTags([]);
+        setCurrentTags([]);
+        state.originalVersion = null;
+        updatePinButtons(null);
+        document.getElementById('noteTitle').value = '';
+        setEditorHtml('');
+        document.getElementById('noteMeta').textContent = '';
+        document.getElementById('lastSaved').textContent = '';
+        syncCurrentNoteToUrl('');
+        updateUnsavedIndicator();
+        renderInspector();
+        renderSidebarTagFilters();
+        renderNotesList(document.getElementById('searchInput').value);
+
+        if (state.notes.length > 0) {
+            await selectNote(state.notes[0].hash_id);
+        }
         return;
     }
 
@@ -550,7 +591,7 @@ export async function deleteNote() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                hash_id: state.currentNote.hash_id
+                hash_id: noteToDelete.hash_id
             })
         });
 
@@ -558,21 +599,28 @@ export async function deleteNote() {
         
         if (result.error) {
             alert('Error deleting note: ' + result.error);
+            resumeAutoSave();
             return;
         }
 
         // Remove from local array
-        state.notes = state.notes.filter(n => n.hash_id !== state.currentNote.hash_id);
+        state.notes = state.notes.filter(n => n.hash_id !== noteToDelete.hash_id);
         state.currentNote = null;
+        state.hasUnsavedChanges = false;
+        clearTimeout(state.autoSaveTimer);
+        state.autoSaveTimer = null;
         updatePinButtons(null);
         document.getElementById('noteTitle').value = '';
         setEditorHtml('');
         setCurrentTags([]);
         document.getElementById('noteMeta').textContent = '';
         document.getElementById('lastSaved').textContent = '';
+        state.savedTitle = '';
+        state.savedContent = '';
         setSavedTags([]);
         state.originalVersion = null;
         syncCurrentNoteToUrl('');
+        updateUnsavedIndicator();
         renderInspector();
         
         renderSidebarTagFilters();
@@ -585,6 +633,7 @@ export async function deleteNote() {
     } catch (error) {
         console.error('Error deleting note:', error);
         alert('Error deleting note. Please try again.');
+        resumeAutoSave();
     }
 }
 
