@@ -1,0 +1,132 @@
+/*
+ * Paper Texture Enhancements
+ *
+ * Adds subtle visual texture to reinforce the paper metaphor.
+ * Load this AFTER the base theme and any variant.
+ *
+ * Usage: Add class "wp-textured" alongside "wp-theme"
+ *        <body class="wp-theme wp-textured">
+ *
+ * Combines well with both warm-paper and paper-white variants.
+ */
+
+.wp-theme.wp-textured {
+    /* Subtle noise texture via SVG data URI (no external files needed) */
+    --wp-paper-grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* Apply grain to main surfaces */
+.wp-theme.wp-textured,
+.wp-theme.wp-textured .editor-content,
+.wp-theme.wp-textured .public-note {
+    position: relative;
+}
+
+.wp-theme.wp-textured::before,
+.wp-theme.wp-textured .editor-content::before,
+.wp-theme.wp-textured .public-note::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: var(--wp-paper-grain);
+    opacity: 0.025;
+    pointer-events: none;
+    z-index: 0;
+    mix-blend-mode: multiply;
+}
+
+.wp-theme.wp-textured .editor-content::before {
+    border-radius: inherit;
+}
+
+/* Ensure content stays above the texture layer */
+.wp-theme.wp-textured > *,
+.wp-theme.wp-textured .editor-content > *,
+.wp-theme.wp-textured .public-note > * {
+    position: relative;
+    z-index: 1;
+}
+
+/*
+ * Ruled paper lines (optional, for a notebook feel)
+ * Add class "wp-ruled" for horizontal rules
+ */
+.wp-theme.wp-ruled .editor-content {
+    --rule-color: rgba(180, 200, 220, 0.3);
+    --rule-spacing: 1.72em;
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent calc(var(--rule-spacing) - 1px),
+        var(--rule-color) calc(var(--rule-spacing) - 1px),
+        var(--rule-color) var(--rule-spacing)
+    );
+    background-size: 100% var(--rule-spacing);
+    background-position: 0 0.86em;
+}
+
+/* Warm paper variant of ruled lines */
+.wp-theme:not(.wp-paper-white).wp-ruled .editor-content {
+    --rule-color: rgba(160, 145, 125, 0.2);
+}
+
+/*
+ * Margin line (red/pink vertical line like notebook paper)
+ * Add class "wp-margin-line" for the classic look
+ */
+.wp-theme.wp-margin-line .editor-content {
+    border-left: 2px solid rgba(220, 80, 80, 0.25);
+    margin-left: 2rem;
+    padding-left: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .wp-theme.wp-margin-line .editor-content {
+        margin-left: 0.5rem;
+        padding-left: 1rem;
+    }
+}
+
+/*
+ * Subtle page shadow for depth
+ * Creates the illusion of a physical page
+ */
+.wp-theme.wp-textured .editor,
+.wp-theme.wp-textured .public-note {
+    box-shadow:
+        0 1px 1px rgba(0, 0, 0, 0.02),
+        0 2px 4px rgba(0, 0, 0, 0.02),
+        0 4px 8px rgba(0, 0, 0, 0.02),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+/*
+ * Deckled/torn paper edge effect (top of editor)
+ * Purely decorative, adds character
+ */
+.wp-theme.wp-deckled .editor-content {
+    --deckle-color: var(--wp-surface-panel);
+    border-top: none;
+    position: relative;
+}
+
+.wp-theme.wp-deckled .editor-content::after {
+    content: "";
+    position: absolute;
+    top: -4px;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: linear-gradient(
+        135deg,
+        var(--deckle-color) 25%,
+        transparent 25%,
+        transparent 50%,
+        var(--deckle-color) 50%,
+        var(--deckle-color) 75%,
+        transparent 75%
+    );
+    background-size: 8px 8px;
+    opacity: 0.6;
+    pointer-events: none;
+}
