@@ -161,6 +161,37 @@ function resetEditorFormattingIfEmpty(editor) {
     return true;
 }
 
+function removeInlineTypingMarkers(editor) {
+    if (!editor || !(editor.textContent || '').includes('\u200B')) return;
+
+    const selection = window.getSelection();
+    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    const caretNode = range && range.collapsed ? range.startContainer : null;
+    const caretOffset = range && range.collapsed ? range.startOffset : 0;
+    let nextCaretOffset = caretOffset;
+
+    const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+    textNodes.forEach((node) => {
+        if (!node.data.includes('\u200B')) return;
+        if (node === caretNode) {
+            const markersBeforeCaret = (node.data.slice(0, caretOffset).match(/\u200B/g) || []).length;
+            nextCaretOffset = Math.max(0, caretOffset - markersBeforeCaret);
+        }
+        node.data = node.data.replace(/\u200B/g, '');
+    });
+
+    if (caretNode && editor.contains(caretNode)) {
+        const nextRange = document.createRange();
+        nextRange.setStart(caretNode, Math.min(nextCaretOffset, caretNode.data.length));
+        nextRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(nextRange);
+    }
+}
+
 function getSelectionElement() {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return null;
@@ -262,12 +293,40 @@ function restoreEditorSelection() {
     const editor = getEditorElement();
     if (!editor || !lastEditorRange) return false;
 
+    const commonAncestor = lastEditorRange.commonAncestorContainer;
+    const isInsideEditor = commonAncestor === editor
+        || (commonAncestor.nodeType === Node.ELEMENT_NODE && editor.contains(commonAncestor))
+        || (commonAncestor.nodeType === Node.TEXT_NODE && editor.contains(commonAncestor.parentNode));
+    if (!isInsideEditor) return false;
+
     const scrollSnapshot = getScrollSnapshot();
     focusWithoutScroll(editor);
     const selection = window.getSelection();
     if (!selection) return false;
     selection.removeAllRanges();
     selection.addRange(lastEditorRange.cloneRange());
+    restoreScrollSnapshot(scrollSnapshot);
+    return true;
+}
+
+function ensureEditorSelection() {
+    if (restoreEditorSelection()) return true;
+
+    const editor = getEditorElement();
+    const selection = window.getSelection();
+    if (!editor || !selection) return false;
+
+    const scrollSnapshot = getScrollSnapshot();
+    focusWithoutScroll(editor);
+
+    const range = document.createRange();
+    const target = editor.querySelector('p') || editor;
+    range.selectNodeContents(target);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    lastEditorRange = range.cloneRange();
+
     restoreScrollSnapshot(scrollSnapshot);
     return true;
 }
@@ -309,13 +368,13 @@ export function updateToolbarState() {
         btn.setAttribute('aria-pressed', pressed ? 'true' : 'false');
     };
 
-    const isEditorEmpty = (editor.textContent || '').replace(/\u200B/g, '').trim() === '';
+    setPressed(boldBtn, document.queryCommandState('bold'));
+    setPressed(italicBtn, document.queryCommandState('italic'));
+    setPressed(underlineBtn, document.queryCommandState('underline'));
+    setPressed(underlineBtnMobile, document.queryCommandState('underline'));
 
+    const isEditorEmpty = (editor.textContent || '').replace(/\u200B/g, '').trim() === '';
     if (isEditorEmpty) {
-        setPressed(boldBtn, false);
-        setPressed(italicBtn, false);
-        setPressed(underlineBtn, false);
-        setPressed(underlineBtnMobile, false);
         setPressed(bulletListBtn, false);
         setPressed(bulletListBtnMobile, false);
         setPressed(numberedListBtn, false);
@@ -330,10 +389,6 @@ export function updateToolbarState() {
         return;
     }
 
-    setPressed(boldBtn, document.queryCommandState('bold'));
-    setPressed(italicBtn, document.queryCommandState('italic'));
-    setPressed(underlineBtn, document.queryCommandState('underline'));
-    setPressed(underlineBtnMobile, document.queryCommandState('underline'));
     setPressed(bulletListBtn, document.queryCommandState('insertUnorderedList'));
     setPressed(bulletListBtnMobile, document.queryCommandState('insertUnorderedList'));
     setPressed(numberedListBtn, document.queryCommandState('insertOrderedList'));
@@ -375,18 +430,50 @@ export function setupFormattingToolbar() {
         if (!el) return;
         el.addEventListener('pointerdown', (event) => {
             event.preventDefault();
-            restoreEditorSelection();
+            ensureEditorSelection();
         });
         el.addEventListener('click', handler);
     };
 
     const focusEditorAndSync = () => {
-        restoreEditorSelection();
         const editor = getEditorElement();
         if (editor && document.activeElement !== editor) focusWithoutScroll(editor);
         saveEditorSelection();
         updateToolbarState();
         if (trackChanges) trackChanges();
+    };
+
+    const toggleInlineFormat = (command, tagName) => {
+        const editor = getEditorElement();
+        if (!editor) return;
+
+        const isEditorEmpty = (editor.textContent || '').replace(/\u200B/g, '').trim() === '';
+        if (!isEditorEmpty) {
+            document.execCommand(command, false, null);
+            focusEditorAndSync();
+            return;
+        }
+
+        if (document.queryCommandState(command)) {
+            resetEditorFormattingIfEmpty(editor);
+        } else {
+            const block = document.createElement('p');
+            const inline = document.createElement(tagName);
+            const marker = document.createTextNode('\u200B');
+            inline.appendChild(marker);
+            block.appendChild(inline);
+            editor.replaceChildren(block);
+
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.setStart(marker, marker.data.length);
+            range.collapse(true);
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+        }
+
+        saveEditorSelection();
+        focusEditorAndSync();
     };
 
     const adjustBlockIndentation = (delta) => {
@@ -403,19 +490,16 @@ export function setupFormattingToolbar() {
         return true;
     };
 
-    document.getElementById('boldBtn').addEventListener('click', () => {
-        document.execCommand('bold', false, null);
-        focusEditorAndSync();
+    bindClickIfExists('boldBtn', () => {
+        toggleInlineFormat('bold', 'strong');
     });
     
-    document.getElementById('italicBtn').addEventListener('click', () => {
-        document.execCommand('italic', false, null);
-        focusEditorAndSync();
+    bindClickIfExists('italicBtn', () => {
+        toggleInlineFormat('italic', 'em');
     });
     
     bindClickIfExists('underlineBtn', () => {
-        document.execCommand('underline', false, null);
-        focusEditorAndSync();
+        toggleInlineFormat('underline', 'u');
     });
     
     document.getElementById('bulletListBtn').addEventListener('click', () => {
@@ -508,8 +592,19 @@ export function setupFormattingToolbar() {
     
     bindClickIfExists('linkBtn', insertLink);
 
-    const applyBlock = (tag) => {
-        document.execCommand('formatBlock', false, tag);
+    const getCurrentBlockTag = () => {
+        try {
+            return String(document.queryCommandValue('formatBlock') || '')
+                .toLowerCase()
+                .replace(/[<>]/g, '');
+        } catch {
+            return '';
+        }
+    };
+
+    const applyBlock = (tag, toggle = false) => {
+        const nextTag = toggle && getCurrentBlockTag() === tag ? 'p' : tag;
+        document.execCommand('formatBlock', false, nextTag);
         focusEditorAndSync();
     };
 
@@ -597,23 +692,23 @@ export function setupFormattingToolbar() {
         }
     };
 
-    bindClickIfExists('h1Btn', () => applyBlock('h1'));
-    bindClickIfExists('h2Btn', () => applyBlock('h2'));
-    bindClickIfExists('h3Btn', () => applyBlock('h3'));
+    bindClickIfExists('h1Btn', () => applyBlock('h1', true));
+    bindClickIfExists('h2Btn', () => applyBlock('h2', true));
+    bindClickIfExists('h3Btn', () => applyBlock('h3', true));
     bindClickIfExists('clearFormatBtn', () => clearFormatting());
     bindClickIfExists('preBtn', togglePre);
 
     // Mobile overflow menu buttons (same actions)
     bindClickIfExists('h1BtnMobile', (e) => {
-        applyBlock('h1');
+        applyBlock('h1', true);
         closeParentDetails(e.currentTarget);
     });
     bindClickIfExists('h2BtnMobile', (e) => {
-        applyBlock('h2');
+        applyBlock('h2', true);
         closeParentDetails(e.currentTarget);
     });
     bindClickIfExists('h3BtnMobile', (e) => {
-        applyBlock('h3');
+        applyBlock('h3', true);
         closeParentDetails(e.currentTarget);
     });
     bindClickIfExists('clearFormatBtnMobile', (e) => {
@@ -831,6 +926,7 @@ export function setupFormattingToolbar() {
     // Update toolbar button states based on selection
     document.getElementById('noteContent').addEventListener('input', () => {
         const editorEl = document.getElementById('noteContent');
+        removeInlineTypingMarkers(editorEl);
         resetEditorFormattingIfEmpty(editorEl);
         const selection = window.getSelection();
         if (selection && selection.rangeCount > 0) {

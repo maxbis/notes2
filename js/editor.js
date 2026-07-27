@@ -18,7 +18,12 @@ export function getEditorHtml() {
         return htmlEl ? htmlEl.value : '';
     }
     const editor = document.getElementById('noteContent');
-    return editor ? editor.innerHTML : '';
+    if (!editor) return '';
+
+    const text = editor.textContent || '';
+    const hasOnlyInlineTypingMarkers = text.includes('\u200B')
+        && text.replace(/\u200B/g, '').trim() === '';
+    return hasOnlyInlineTypingMarkers ? EMPTY_EDITOR_HTML : editor.innerHTML;
 }
 
 export function formatHtmlForDisplay(html) {
