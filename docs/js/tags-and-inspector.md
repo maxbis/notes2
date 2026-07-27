@@ -31,10 +31,10 @@ Document how tags are normalized and edited, how tag-based filtering works, and 
    - `currentTags` for the active draft
    - `savedTags` for change detection after successful saves
 3. Tag chips are rendered in both the main editor and the inspector.
-4. Sidebar filters are derived from all loaded notes.
+4. Sidebar filters are derived from the loaded metadata summaries.
    - each tag tracks usage count and latest usage time
    - active tags are ranked above inactive tags
-   - filtering requires a note to match every active tag
+   - active filters are sent to the server and require every selected tag to match
 5. The inspector parses the current editor HTML to compute:
    - word count
    - character count

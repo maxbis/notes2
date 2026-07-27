@@ -15,7 +15,7 @@ Describe the HTTP entrypoint, request routing, and the note-oriented API contrac
 ## Inputs/Outputs
 
 - Inputs:
-  - `GET` requests for all notes, one note by `id`, or lightweight freshness fields
+  - `GET` requests for all notes, metadata-only note lists, one note by `id`, or lightweight freshness fields
   - `POST` requests for note creation
   - `PUT` requests for note updates, pinning, and public-default setting changes
   - `DELETE` requests for note removal
@@ -30,36 +30,57 @@ Describe the HTTP entrypoint, request routing, and the note-oriented API contrac
    - shutdown and exception handling convert fatals into JSON payloads
    - config, database helpers, sanitization config, and utility functions are loaded before dispatch
 
-2. `GET` supports two main modes.
+2. `GET` supports legacy full-list and single-note modes.
    - Without `id`, the API returns all notes plus `public_default_hash_id`
    - With `id`, the API returns one note by `hash_id`
    - With `fields=version,updated_at`, the API returns only freshness data for the selected note
 
-3. `POST` creates notes.
+3. `GET view=list` returns a bounded metadata-only list.
+   - `content` and the internal numeric note ID are omitted
+   - each item includes `hash_id`, `title`, `preview`, `is_pinned`, timestamps, `version`, and `tags`
+   - `limit` defaults to 50 and accepts values from 1 through 100
+   - `q` performs a case-insensitive substring search across title, complete HTML content, and tags
+   - `tags` accepts a comma-separated value or a query-string array and requires every selected tag to match
+   - results sort pinned notes first, then by most recently updated
+   - `has_more` reports whether the bounded result has additional matches
+   - the legacy no-parameter response remains unchanged for frontend compatibility
+
+4. Metadata list previews are generated server-side.
+   - the API reads only an initial bounded content excerpt for preview generation
+   - block-level HTML is converted to spacing, tags are stripped, entities are decoded, and whitespace is normalized
+   - previews are limited to 160 characters
+
+5. `POST` creates notes.
    - request JSON can contain `title`, `content`, `tags`, and `is_pinned`
    - note HTML is sanitized before insert
    - the inserted note is reloaded and returned with tags attached
 
-4. `PUT` handles three branches.
+6. `PUT` handles three branches.
    - `set_public_default` stores or clears the public easy-access default note
    - `set_pinned` toggles a note’s pinned flag and bumps its version
    - standard note update writes title, content, tags, and pin state
 
-5. Standard `PUT` note updates use optimistic locking.
+7. Standard `PUT` note updates use optimistic locking.
    - the client sends `expected_version`
    - the server updates only when the database version matches
    - a mismatch returns `409 conflict` with current server data and version details
 
-6. Forced overwrite is explicit.
+8. Forced overwrite is explicit.
    - when `force_overwrite` is true and the server has a newer version, the API first copies the overwritten server version into a new note
    - the original note is then updated unconditionally and its version is bumped
 
-7. `DELETE` removes a note by `hash_id`.
+9. `DELETE` removes a note by `hash_id`.
 
 ## Edge Cases/Failure Modes
 
 - When request JSON is invalid:
   - handlers return `400 Invalid JSON`
+
+- When metadata-list `limit` is malformed or outside 1 through 100:
+  - the API returns `400`
+
+- When metadata-list `q` is longer than 200 characters:
+  - the API returns `400`
 
 - When database preparation or execution fails:
   - shared database error helpers emit JSON error responses

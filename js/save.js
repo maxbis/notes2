@@ -6,11 +6,13 @@ import { updateUnsavedIndicator, updateLastSavedTime } from './indicators.js';
 import { hasMeaningfulNoteContent } from './utils.js';
 import { getCurrentTags, renderSidebarTagFilters, setCurrentTags, setSavedTags } from './tags.js';
 import { renderInspector } from './inspector.js';
+import { upsertNoteSummary } from './note-summary.js';
 
 // Dependencies that will be injected
 let showConflictDialog = null;
 let refreshCurrentNote = null;
 let renderNotesList = null;
+let refreshNotesView = null;
 
 function updatePinButtonsForSavedNote(note = null) {
     const isPinned = Number(note?.is_pinned) === 1;
@@ -39,6 +41,7 @@ export function initSave(deps) {
     showConflictDialog = deps.showConflictDialog;
     refreshCurrentNote = deps.refreshCurrentNote;
     renderNotesList = deps.renderNotesList;
+    refreshNotesView = deps.refreshNotesView;
 }
 
 /**
@@ -226,16 +229,20 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
             saveType: saveType
         });
 
-        // Update local notes array
+        // Keep complete content only in currentNote; sidebar collections store summaries.
         if (state.currentNote) {
-            const index = state.notes.findIndex(n => n.hash_id === state.currentNote.hash_id);
-            if (index !== -1) {
-                state.notes[index] = savedNote;
+            upsertNoteSummary(state.notes, savedNote);
+            if (Array.isArray(state.searchResults)) {
+                upsertNoteSummary(state.searchResults, savedNote, false);
             }
             state.currentNote = savedNote;
         } else {
-            state.notes.unshift(savedNote);
+            upsertNoteSummary(state.notes, savedNote);
+            if (Array.isArray(state.searchResults)) {
+                upsertNoteSummary(state.searchResults, savedNote, false);
+            }
             state.currentNote = savedNote;
+            state.selectedNoteHashId = savedNote.hash_id;
             state.originalVersion = savedNote.version != null ? Number(savedNote.version) : null; // Set version for new notes
         }
 
@@ -245,6 +252,13 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
             if (pinnedDiff !== 0) return pinnedDiff;
             return new Date(b.updated_at) - new Date(a.updated_at);
         });
+        if (Array.isArray(state.searchResults)) {
+            state.searchResults.sort((a, b) => {
+                const pinnedDiff = (Number(b?.is_pinned) === 1 ? 1 : 0) - (Number(a?.is_pinned) === 1 ? 1 : 0);
+                if (pinnedDiff !== 0) return pinnedDiff;
+                return new Date(b.updated_at) - new Date(a.updated_at);
+            });
+        }
         updatePinButtonsForSavedNote(state.currentNote);
         renderSidebarTagFilters();
 
@@ -273,17 +287,9 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
             hasUnsavedChanges: false
         });
 
-        // Only re-render notes list if called from auto-save (not from selectNote)
-        // When called from selectNote (showFeedback=false), selectNote will handle rendering
-        if (!showFeedback) {
-            // Auto-save: for CREATE we must render so the new note appears in the sidebar.
-            // For UPDATE, re-render when the title changes (affects list/grouping).
-            if (saveType === 'CREATE' || previousTitle !== savedNote.title) {
-                renderNotesList(document.getElementById('searchInput').value);
-            }
-        } else {
-            // This branch is no longer needed since we removed manual save button
-            // But keeping it for safety in case showFeedback is true elsewhere
+        if (refreshNotesView) {
+            refreshNotesView();
+        } else if (saveType === 'CREATE' || previousTitle !== savedNote.title || showFeedback) {
             renderNotesList(document.getElementById('searchInput').value);
         }
 
@@ -360,9 +366,9 @@ export function saveBeforeUnload() {
                     setCurrentTags(data.tags || []);
                     state.hasUnsavedChanges = false;
                     // Update the note in the notes array
-                    const index = state.notes.findIndex(n => n.hash_id === data.hash_id);
-                    if (index !== -1) {
-                        state.notes[index] = data;
+                    upsertNoteSummary(state.notes, data);
+                    if (Array.isArray(state.searchResults)) {
+                        upsertNoteSummary(state.searchResults, data, false);
                     }
                     // Update UI indicators
                     updateUnsavedIndicator();
@@ -426,8 +432,9 @@ export function saveBeforeUnload() {
                     setSavedTags(data.tags || []);
                     setCurrentTags(data.tags || []);
                     state.hasUnsavedChanges = false;
-                    // Add to notes array
-                    state.notes.unshift(data);
+                    // Add a summary to the sidebar collection.
+                    upsertNoteSummary(state.notes, data);
+                    state.selectedNoteHashId = data.hash_id;
                     // Update UI indicators
                     updateUnsavedIndicator();
                     const savedAt = new Date(data.updated_at);

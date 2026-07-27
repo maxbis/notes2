@@ -3,11 +3,12 @@ import state, { API_ENDPOINT, AUTO_SAVE_DELAY_MS } from './state.js';
 import { readJsonResponse } from './api.js';
 import { setPinned } from './pin-api.js';
 import { setEditorHtml } from './editor.js';
-import { escapeHtml, stripHtmlTags, formatDate, isMobileLayout } from './utils.js';
+import { escapeHtml, formatDate, isMobileLayout } from './utils.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './indicators.js';
 import { showDeleteConfirmDialog } from './modals.js';
-import { noteMatchesActiveTags, renderSidebarTagFilters, setCurrentTags, setSavedTags } from './tags.js';
+import { getActiveTagFilters, renderSidebarTagFilters, setCurrentTags, setSavedTags } from './tags.js';
 import { renderInspector } from './inspector.js';
+import { noteToSummary, upsertNoteSummary } from './note-summary.js';
 
 // Dependencies that will be injected
 let saveNote = null;
@@ -18,10 +19,17 @@ const LIST_VIEW_STORAGE_KEY = 'notes2.listView';
 
 const FRESHNESS_CHECK_THROTTLE_MS = 5000;
 const FRESHNESS_CHECK_INTERVAL_MS = 60000;
+const NOTES_LIST_LIMIT = 100;
+const SEARCH_DEBOUNCE_MS = 250;
 // Must be block HTML: bare text in a contenteditable breaks Enter (insertParagraph); see editor.js EMPTY_EDITOR_HTML.
 const DEFAULT_NEW_NOTE_CONTENT = '<p>empty note</p>';
 let lastFreshnessCheck = 0;
 let freshnessIntervalId = null;
+let notesQueryTimerId = null;
+let notesQueryController = null;
+let notesQuerySequence = 0;
+let noteSelectionController = null;
+let noteSelectionSequence = 0;
 
 function normalizePinnedFlag(note) {
     return Number(note?.is_pinned) === 1 ? 1 : 0;
@@ -56,6 +64,62 @@ function updatePinButtons(note = null) {
         btn.setAttribute('aria-label', note ? `${label} this note` : 'No note selected');
         btn.setAttribute('title', note ? `${label} this note` : 'No note selected');
     });
+}
+
+function normalizeSummary(note) {
+    return noteToSummary({
+        ...note,
+        tags: Array.isArray(note?.tags) ? note.tags : [],
+        is_pinned: normalizePinnedFlag(note)
+    });
+}
+
+function mergeSummaryIntoCollections(note) {
+    upsertNoteSummary(state.notes, note);
+    if (Array.isArray(state.searchResults)) {
+        upsertNoteSummary(state.searchResults, note, false);
+    }
+}
+
+function currentSearchTerm() {
+    return (document.getElementById('searchInput')?.value || '').trim();
+}
+
+function hasServerFilters(searchTerm = currentSearchTerm()) {
+    return searchTerm !== '' || getActiveTagFilters().length > 0;
+}
+
+function setEditorLoading(isLoading) {
+    const title = document.getElementById('noteTitle');
+    const editor = document.getElementById('noteContent');
+    const htmlEditor = document.getElementById('noteContentHtml');
+    const editorShell = editor?.closest('.editor-container') || editor?.parentElement;
+
+    if (title) title.disabled = isLoading;
+    if (editor) editor.setAttribute('contenteditable', isLoading ? 'false' : 'true');
+    if (htmlEditor) htmlEditor.disabled = isLoading;
+    if (editorShell) editorShell.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+}
+
+async function fetchNotesMetadata({ searchTerm = '', tags = [], signal } = {}) {
+    const params = new URLSearchParams({
+        view: 'list',
+        limit: String(NOTES_LIST_LIMIT)
+    });
+    if (searchTerm) params.set('q', searchTerm);
+    tags.forEach(tag => params.append('tags[]', tag));
+
+    const response = await fetch(`${API_ENDPOINT}?${params.toString()}`, { signal });
+    const data = await readJsonResponse(response, 'fetchNotesMetadata');
+    if (!response.ok || data?.error) {
+        throw new Error(data?.error || `HTTP ${response.status}`);
+    }
+
+    return {
+        notes: (Array.isArray(data?.notes) ? data.notes : []).map(normalizeSummary),
+        publicDefaultHashId: data?.public_default_hash_id || null,
+        hasMore: data?.has_more === true
+    };
 }
 
 function getRequestedNoteHashId() {
@@ -220,58 +284,50 @@ export function stopFreshnessInterval() {
 
 export async function loadNotes() {
     try {
-        const response = await fetch(API_ENDPOINT);
-        const data = await readJsonResponse(response, 'loadNotes');
-        if (!response.ok) {
-            throw new Error(data?.error || `HTTP ${response.status}`);
-        }
-        if (data?.error) {
-            throw new Error(data.error);
-        }
-        if (Array.isArray(data)) {
-            state.notes = data;
-            state.publicDefaultHashId = null;
-        } else {
-            state.notes = Array.isArray(data.notes) ? data.notes : [];
-            state.publicDefaultHashId = (data.public_default_hash_id != null && data.public_default_hash_id !== '') ? data.public_default_hash_id : null;
-        }
-        state.notes = state.notes.map(note => ({
-            ...note,
-            tags: Array.isArray(note.tags) ? note.tags : [],
-            is_pinned: normalizePinnedFlag(note)
-        }));
+        const data = await fetchNotesMetadata();
+        state.notes = data.notes;
+        state.publicDefaultHashId = data.publicDefaultHashId;
+        state.notesHasMore = data.hasMore;
         state.notes = sortNotesByPinnedAndUpdated(state.notes);
         updatePinButtons(state.currentNote);
         renderSidebarTagFilters();
-        renderNotesList();
+        if (hasServerFilters()) {
+            await refreshNotesView();
+        } else {
+            state.searchResults = null;
+            state.searchHasMore = false;
+            renderNotesList();
+        }
         if (state.notes.length > 0 && !state.currentNote) {
             const requestedHashId = getRequestedNoteHashId();
-            const requestedNoteExists = requestedHashId && state.notes.some(n => n.hash_id === requestedHashId);
-            selectNote(requestedNoteExists ? requestedHashId : state.notes[0].hash_id);
+            await selectNote(requestedHashId || state.notes[0].hash_id);
         }
     } catch (error) {
         console.error('Error loading notes:', error);
+        const notesList = document.getElementById('notesList');
+        if (notesList) {
+            notesList.innerHTML = '<div class="empty-state wp-empty"><p>Could not load notes</p></div>';
+        }
     }
 }
 
 export function renderNotesList(searchTerm = '') {
     const notesList = document.getElementById('notesList');
-    const searchLower = (searchTerm || '').toLowerCase();
+    if (!notesList) return;
+
+    const normalizedSearchTerm = (searchTerm || '').trim();
+    const filteredView = hasServerFilters(normalizedSearchTerm);
     if (notesList) {
-        notesList.classList.toggle('search-active', searchLower !== '');
+        notesList.classList.toggle('search-active', filteredView);
     }
-    const filteredNotes = state.notes.filter(note => {
-        if (!noteMatchesActiveTags(note)) return false;
-        if (!searchLower) return true;
-        const titleLower = (note.title || '').toLowerCase();
-        const contentText = stripHtmlTags(note.content || '').toLowerCase();
-        const tagsText = Array.isArray(note.tags)
-            ? note.tags.map(tag => String(tag || '').toLowerCase()).join(' ')
-            : '';
-        return titleLower.includes(searchLower)
-            || contentText.includes(searchLower)
-            || tagsText.includes(searchLower);
-    });
+    if (state.isNotesQueryLoading && filteredView) {
+        notesList.innerHTML = '<div class="empty-state wp-empty"><p>Searching…</p></div>';
+        return;
+    }
+
+    const filteredNotes = filteredView
+        ? (Array.isArray(state.searchResults) ? state.searchResults : [])
+        : state.notes;
 
     if (filteredNotes.length === 0) {
         notesList.innerHTML = '<div class="empty-state wp-empty"><p>No notes found</p></div>';
@@ -279,20 +335,20 @@ export function renderNotesList(searchTerm = '') {
     }
 
     const isMobile = window.innerWidth <= 768;
-    const notesToShow = isMobile && !searchTerm ? filteredNotes.slice(0, 20) : filteredNotes;
+    const notesToShow = isMobile && !filteredView ? filteredNotes.slice(0, 20) : filteredNotes;
 
     if (state.listView === 'all') {
         const sorted = sortNotesByPinnedAndUpdated(notesToShow);
         const itemsHtml = sorted.map(note => {
             const title = note.title || 'Untitled';
             return `
-            <div class="note-item ${state.currentNote && state.currentNote.hash_id === note.hash_id ? 'active' : ''}"
+            <div class="note-item ${state.selectedNoteHashId === note.hash_id ? 'active' : ''}"
                  onclick="window.selectNote('${note.hash_id}')">
                 <div class="note-item-header">
                     <div class="note-item-title">${normalizePinnedFlag(note) ? '<span class="note-item-pin" aria-hidden="true">📌</span>' : ''}${escapeHtml(title)}</div>
                     <div class="note-item-date">${formatDate(note.updated_at)}</div>
                 </div>
-                <div class="note-item-preview">${escapeHtml(stripHtmlTags(note.content).substring(0, 100))}</div>
+                <div class="note-item-preview">${escapeHtml((note.preview || '').substring(0, 100))}</div>
             </div>
             `;
         }).join('');
@@ -318,13 +374,13 @@ export function renderNotesList(searchTerm = '') {
     notesList.innerHTML = Array.from(groups.entries()).map(([groupKey, { groupName, items }]) => {
         const isCollapsed = groupState[groupKey] === true;
         const itemsHtml = items.map(({ note, itemTitle }) => `
-            <div class="note-item ${state.currentNote && state.currentNote.hash_id === note.hash_id ? 'active' : ''}"
+            <div class="note-item ${state.selectedNoteHashId === note.hash_id ? 'active' : ''}"
                  onclick="window.selectNote('${note.hash_id}')">
                 <div class="note-item-header">
                     <div class="note-item-title">${normalizePinnedFlag(note) ? '<span class="note-item-pin" aria-hidden="true">📌</span>' : ''}${escapeHtml(itemTitle || 'Untitled')}</div>
                     <div class="note-item-date">${formatDate(note.updated_at)}</div>
                 </div>
-                <div class="note-item-preview">${escapeHtml(stripHtmlTags(note.content).substring(0, 100))}</div>
+                <div class="note-item-preview">${escapeHtml((note.preview || '').substring(0, 100))}</div>
             </div>
         `).join('');
 
@@ -391,59 +447,153 @@ export function setupListViewTabs() {
     });
 }
 
+export async function refreshNotesView() {
+    const searchTerm = currentSearchTerm();
+    const tags = getActiveTagFilters();
+    state.searchTerm = searchTerm;
+
+    if (!searchTerm && !tags.length) {
+        notesQuerySequence += 1;
+        if (notesQueryController) notesQueryController.abort();
+        notesQueryController = null;
+        state.searchResults = null;
+        state.searchHasMore = false;
+        state.isNotesQueryLoading = false;
+        renderNotesList('');
+        return;
+    }
+
+    const requestSequence = ++notesQuerySequence;
+    if (notesQueryController) notesQueryController.abort();
+    notesQueryController = new AbortController();
+    state.isNotesQueryLoading = true;
+    renderNotesList(searchTerm);
+
+    try {
+        const data = await fetchNotesMetadata({
+            searchTerm,
+            tags,
+            signal: notesQueryController.signal
+        });
+        if (requestSequence !== notesQuerySequence) return;
+
+        state.searchResults = sortNotesByPinnedAndUpdated(data.notes);
+        state.searchHasMore = data.hasMore;
+        state.isNotesQueryLoading = false;
+        renderNotesList(searchTerm);
+    } catch (error) {
+        if (error?.name === 'AbortError' || requestSequence !== notesQuerySequence) return;
+        state.searchResults = [];
+        state.searchHasMore = false;
+        state.isNotesQueryLoading = false;
+        console.error('Error searching notes:', error);
+        const notesList = document.getElementById('notesList');
+        if (notesList) {
+            notesList.innerHTML = '<div class="empty-state wp-empty"><p>Could not search notes</p></div>';
+        }
+    }
+}
+
 export function filterNotes(e) {
-    renderSidebarTagFilters();
-    renderNotesList(e.target.value);
+    const searchTerm = e?.target?.value ?? currentSearchTerm();
+    state.searchTerm = String(searchTerm).trim();
+    clearTimeout(notesQueryTimerId);
+    notesQuerySequence += 1;
+    if (notesQueryController) notesQueryController.abort();
+    notesQueryController = null;
+
+    if (!hasServerFilters(state.searchTerm)) {
+        refreshNotesView();
+        return;
+    }
+
+    state.isNotesQueryLoading = true;
+    renderNotesList(state.searchTerm);
+    notesQueryTimerId = setTimeout(() => {
+        refreshNotesView();
+    }, SEARCH_DEBOUNCE_MS);
 }
 
 export async function selectNote(hashId) {
-    // Save current note if there are unsaved changes
-    // Save the hash_id we're switching to before saving, in case currentNote changes
-    const targetHashId = hashId;
-    
+    const targetHashId = String(hashId || '');
+    if (!targetHashId) return;
+
+    const requestSequence = ++noteSelectionSequence;
     if (state.hasUnsavedChanges) {
         await saveNote(false);
     }
-    
-    const note = state.notes.find(n => n.hash_id === targetHashId);
-    if (!note) return;
+    if (requestSequence !== noteSelectionSequence) return;
 
-    state.currentNote = note;
-    const title = note.title || '';
-    const content = note.content || '';
-    
-    document.getElementById('noteTitle').value = title;
-    setEditorHtml(content);
-    setCurrentTags(note.tags || []);
-    
-    // Update saved state
-    state.savedTitle = title;
-    state.savedContent = content;
-    setSavedTags(note.tags || []);
-    state.hasUnsavedChanges = false;
-    clearTimeout(state.autoSaveTimer);
-    
-    // Update unsaved indicator
-    updateUnsavedIndicator();
-    
-    // Store original version for conflict detection
-    state.originalVersion = (note && note.version != null) ? Number(note.version) : null;
-    updatePinButtons(note);
-    
-    const updatedAt = new Date(note.updated_at);
-    document.getElementById('noteMeta').textContent = 
-        `Last updated: ${updatedAt.toLocaleString()}`;
-    
-    // Update last saved timestamp
-    updateLastSavedTime(updatedAt);
-    renderInspector();
+    if (noteSelectionController) noteSelectionController.abort();
+    noteSelectionController = new AbortController();
+    state.selectedNoteHashId = targetHashId;
+    setEditorLoading(true);
+    renderNotesList(currentSearchTerm());
 
-    syncCurrentNoteToUrl(targetHashId);
+    try {
+        const response = await fetch(
+            `${API_ENDPOINT}?id=${encodeURIComponent(targetHashId)}`,
+            { signal: noteSelectionController.signal }
+        );
+        const note = await readJsonResponse(response, 'selectNote');
+        if (!response.ok || note?.error) {
+            throw new Error(note?.error || `HTTP ${response.status}`);
+        }
+        if (requestSequence !== noteSelectionSequence) return;
 
-    renderNotesList(document.getElementById('searchInput').value);
+        const normalizedNote = {
+            ...note,
+            tags: Array.isArray(note.tags) ? note.tags : [],
+            is_pinned: normalizePinnedFlag(note)
+        };
+        mergeSummaryIntoCollections(normalizedNote);
+        state.notes = sortNotesByPinnedAndUpdated(state.notes);
+        if (Array.isArray(state.searchResults)) {
+            state.searchResults = sortNotesByPinnedAndUpdated(state.searchResults);
+        }
+        state.currentNote = normalizedNote;
+        state.selectedNoteHashId = targetHashId;
+        const title = normalizedNote.title || '';
+        const content = normalizedNote.content || '';
 
-    // Mobile UX: once a note is opened, hide the list to maximize editor space
-    if (hideNotesSidebarForEditing) hideNotesSidebarForEditing();
+        document.getElementById('noteTitle').value = title;
+        setEditorHtml(content);
+        setCurrentTags(normalizedNote.tags || []);
+        state.savedTitle = title;
+        state.savedContent = content;
+        setSavedTags(normalizedNote.tags || []);
+        state.hasUnsavedChanges = false;
+        clearTimeout(state.autoSaveTimer);
+        updateUnsavedIndicator();
+        state.originalVersion = normalizedNote.version != null ? Number(normalizedNote.version) : null;
+        updatePinButtons(normalizedNote);
+
+        const updatedAt = new Date(normalizedNote.updated_at);
+        document.getElementById('noteMeta').textContent =
+            `Last updated: ${updatedAt.toLocaleString()}`;
+        updateLastSavedTime(updatedAt);
+        renderInspector();
+        renderSidebarTagFilters();
+        syncCurrentNoteToUrl(targetHashId);
+        renderNotesList(currentSearchTerm());
+
+        if (hideNotesSidebarForEditing) hideNotesSidebarForEditing();
+    } catch (error) {
+        if (error?.name === 'AbortError' || requestSequence !== noteSelectionSequence) return;
+        console.error('Error loading note:', error);
+        state.selectedNoteHashId = state.currentNote?.hash_id || null;
+        renderNotesList(currentSearchTerm());
+
+        if (!state.currentNote && state.notes[0]?.hash_id && state.notes[0].hash_id !== targetHashId) {
+            await selectNote(state.notes[0].hash_id);
+        } else {
+            alert('Could not load this note. Please try again.');
+        }
+    } finally {
+        if (requestSequence === noteSelectionSequence) {
+            setEditorLoading(false);
+        }
+    }
 }
 
 export function openLastModifiedNote() {
@@ -469,12 +619,13 @@ export async function togglePinnedForCurrentNote() {
             tags: Array.isArray(updatedNote.tags) ? updatedNote.tags : [],
             is_pinned: normalizePinnedFlag(updatedNote)
         };
-        const index = state.notes.findIndex(n => n.hash_id === normalizedNote.hash_id);
-        if (index !== -1) {
-            state.notes[index] = normalizedNote;
-        }
+        mergeSummaryIntoCollections(normalizedNote);
         state.notes = sortNotesByPinnedAndUpdated(state.notes);
+        if (Array.isArray(state.searchResults)) {
+            state.searchResults = sortNotesByPinnedAndUpdated(state.searchResults);
+        }
         state.currentNote = normalizedNote;
+        state.selectedNoteHashId = normalizedNote.hash_id;
         updatePinButtons(normalizedNote);
         state.savedTitle = normalizedNote.title || '';
         state.savedContent = normalizedNote.content || '';
@@ -495,12 +646,19 @@ export async function togglePinnedForCurrentNote() {
 }
 
 export async function createNewNote() {
+    const requestSequence = ++noteSelectionSequence;
+    if (noteSelectionController) noteSelectionController.abort();
+    noteSelectionController = null;
+
     // Save current note if there are unsaved changes
     if (state.hasUnsavedChanges) {
         await saveNote(false);
     }
-    
+    if (requestSequence !== noteSelectionSequence) return;
+
+    setEditorLoading(false);
     state.currentNote = null;
+    state.selectedNoteHashId = null;
     document.getElementById('noteTitle').value = '';
     setEditorHtml(DEFAULT_NEW_NOTE_CONTENT);
     setCurrentTags([]);
@@ -578,8 +736,11 @@ export async function deleteNote() {
         renderSidebarTagFilters();
         renderNotesList(document.getElementById('searchInput').value);
 
-        if (state.notes.length > 0) {
-            await selectNote(state.notes[0].hash_id);
+        const firstVisibleNote = hasServerFilters()
+            ? state.searchResults?.[0]
+            : state.notes[0];
+        if (firstVisibleNote) {
+            await selectNote(firstVisibleNote.hash_id);
         }
         return;
     }
@@ -605,7 +766,11 @@ export async function deleteNote() {
 
         // Remove from local array
         state.notes = state.notes.filter(n => n.hash_id !== noteToDelete.hash_id);
+        if (Array.isArray(state.searchResults)) {
+            state.searchResults = state.searchResults.filter(n => n.hash_id !== noteToDelete.hash_id);
+        }
         state.currentNote = null;
+        state.selectedNoteHashId = null;
         state.hasUnsavedChanges = false;
         clearTimeout(state.autoSaveTimer);
         state.autoSaveTimer = null;
@@ -624,11 +789,18 @@ export async function deleteNote() {
         renderInspector();
         
         renderSidebarTagFilters();
-        renderNotesList(document.getElementById('searchInput').value);
+        if (hasServerFilters()) {
+            await refreshNotesView();
+        } else {
+            renderNotesList(currentSearchTerm());
+        }
         
         // Select first note if available
-        if (state.notes.length > 0) {
-            selectNote(state.notes[0].hash_id);
+        const firstVisibleNote = hasServerFilters()
+            ? state.searchResults?.[0]
+            : state.notes[0];
+        if (firstVisibleNote) {
+            selectNote(firstVisibleNote.hash_id);
         }
     } catch (error) {
         console.error('Error deleting note:', error);
@@ -650,15 +822,15 @@ export async function refreshCurrentNote() {
                 tags: Array.isArray(note.tags) ? note.tags : [],
                 is_pinned: normalizePinnedFlag(note)
             };
-            // Update the note in the notes array
-            const index = state.notes.findIndex(n => n.hash_id === state.currentNote.hash_id);
-            if (index !== -1) {
-                state.notes[index] = normalizedNote;
-            }
+            mergeSummaryIntoCollections(normalizedNote);
             state.notes = sortNotesByPinnedAndUpdated(state.notes);
+            if (Array.isArray(state.searchResults)) {
+                state.searchResults = sortNotesByPinnedAndUpdated(state.searchResults);
+            }
             
             // Reload the note
             state.currentNote = normalizedNote;
+            state.selectedNoteHashId = normalizedNote.hash_id;
             updatePinButtons(normalizedNote);
             const title = normalizedNote.title || '';
             const content = normalizedNote.content || '';

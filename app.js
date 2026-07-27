@@ -6,7 +6,7 @@ import { setupFormattingToolbar, initToolbar } from './js/toolbar.js';
 import { insertDate, insertCheckmark } from './js/insert.js';
 import { initSmartPaste } from './js/smart-paste.js';
 import { saveNote, saveBeforeUnload } from './js/save.js';
-import { loadNotes, renderNotesList, filterNotes, selectNote, createNewNote, deleteNote, refreshCurrentNote, initNotes, checkFreshness, setupStaleBannerHandlers, startFreshnessInterval, stopFreshnessInterval, openLastModifiedNote, setupListViewTabs, togglePinnedForCurrentNote } from './js/notes.js';
+import { loadNotes, renderNotesList, filterNotes, refreshNotesView, selectNote, createNewNote, deleteNote, refreshCurrentNote, initNotes, checkFreshness, setupStaleBannerHandlers, startFreshnessInterval, stopFreshnessInterval, openLastModifiedNote, setupListViewTabs, togglePinnedForCurrentNote } from './js/notes.js';
 import { showModal, showLinkDialog, showConflictDialog, showDeleteConfirmDialog, showShareDialog, showPasteChoiceDialog } from './js/modals.js';
 import { setPublicDefault } from './js/api.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './js/indicators.js';
@@ -278,7 +278,7 @@ function setupEventListeners() {
         clearSearchBtn.addEventListener('click', () => {
             searchInput.value = '';
             updateSearchClearButtonVisibility();
-            renderNotesList('');
+            searchInput.dispatchEvent(new Event('input'));
             searchInput.focus();
         });
     }
@@ -496,7 +496,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     initSave({
         showConflictDialog,
         refreshCurrentNote,
-        renderNotesList
+        renderNotesList,
+        refreshNotesView
     });
     
     setupListViewTabs();

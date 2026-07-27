@@ -4,7 +4,13 @@ export const AUTO_SAVE_DELAY_MS = 4000; // Delay in milliseconds before auto-sav
 // Global application state - using a mutable object to allow property assignment
 const state = {
     currentNote: null,
+    selectedNoteHashId: null,
     notes: [],
+    searchResults: null,
+    searchTerm: '',
+    isNotesQueryLoading: false,
+    notesHasMore: false,
+    searchHasMore: false,
     /** hash_id of the note set as "easy access" (public.php with no id redirects here), or null */
     publicDefaultHashId: null,
     hasUnsavedChanges: false,
