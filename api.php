@@ -47,6 +47,26 @@ try {
     exit;
 }
 
+// Shared-key cookie gate (same validation cookie as app.php)
+require_once __DIR__ . '/login/auth.php';
+if (!validateUser()) {
+    if (ob_get_level() > 0) {
+        @ob_clean();
+    }
+    if (!headers_sent()) {
+        header('Content-Type: application/json; charset=UTF-8');
+    }
+    http_response_code(403);
+    $payload = ['error' => 'Unauthorized'];
+    $debugReason = notes_validation_debug_reason();
+    if ($debugReason !== null) {
+        $payload['debug'] = $debugReason;
+    }
+    echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+refreshValidationCookie();
+
 // Load config (absolute path). Any fatal here will be converted to JSON by the shutdown handler above.
 require_once __DIR__ . '/config.php';
 // Load database functions

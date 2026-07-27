@@ -1,3 +1,4 @@
 config.php
 config.local.php
 config.*.local.php
+login/validkeys.txt

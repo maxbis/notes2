@@ -1,0 +1,3 @@
+# One SHA-256 hash per line (hash of the plaintext validation key).
+# Example: echo -n "your-key" | shasum -a 256
+0000000000000000000000000000000000000000000000000000000000000000

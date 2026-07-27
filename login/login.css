@@ -1,0 +1,95 @@
+/* Standalone auth gate layout (login + access denied) */
+
+.wp-theme.notes-auth {
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0;
+    background: var(--wp-surface-page);
+}
+
+.notes-auth__shell {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--wp-space-5);
+}
+
+.notes-auth__panel {
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--wp-shadow-raised);
+}
+
+.notes-auth__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--wp-space-2);
+    margin-bottom: var(--wp-space-4);
+}
+
+.notes-auth__brand-name {
+    color: var(--wp-text-primary);
+    font-size: var(--wp-text-dialog);
+    font-weight: 600;
+}
+
+.notes-auth__panel .wp-page-title {
+    margin-bottom: var(--wp-space-2);
+    font-size: var(--wp-text-title);
+}
+
+.notes-auth__panel .wp-page-description {
+    margin-bottom: var(--wp-space-5);
+}
+
+.notes-auth__form {
+    display: grid;
+    gap: var(--wp-space-4);
+}
+
+.notes-auth__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--wp-space-2);
+    margin-top: var(--wp-space-5);
+}
+
+.notes-auth__actions .wp-button {
+    min-width: 7.5rem;
+}
+
+.notes-auth__hash {
+    margin-top: var(--wp-space-4);
+    padding: var(--wp-space-3);
+    border: 1px solid var(--wp-border-subtle);
+    border-radius: var(--wp-radius-control);
+    background: var(--wp-surface-subtle);
+}
+
+.notes-auth__hash-label {
+    display: block;
+    margin-bottom: var(--wp-space-2);
+    color: var(--wp-text-secondary);
+    font-size: var(--wp-text-xs);
+    font-weight: 500;
+}
+
+.notes-auth__hash-value {
+    display: block;
+    padding: var(--wp-space-2) var(--wp-space-3);
+    border: 1px solid var(--wp-border-subtle);
+    border-radius: var(--wp-radius-control);
+    background: var(--wp-surface-panel);
+    color: var(--wp-text-primary);
+    font-family: var(--wp-font-mono);
+    font-size: var(--wp-text-xs);
+    line-height: 1.4;
+    word-break: break-all;
+    cursor: pointer;
+}
+
+.notes-auth__panel .wp-alert {
+    margin-top: var(--wp-space-4);
+}
