@@ -8,7 +8,8 @@ import { initSmartPaste } from './js/smart-paste.js';
 import { saveNote, saveBeforeUnload } from './js/save.js';
 import { loadNotes, renderNotesList, filterNotes, refreshNotesView, selectNote, createNewNote, deleteNote, refreshCurrentNote, initNotes, checkFreshness, setupStaleBannerHandlers, startFreshnessInterval, stopFreshnessInterval, openLastModifiedNote, setupListViewTabs, togglePinnedForCurrentNote } from './js/notes.js';
 import { showModal, showLinkDialog, showConflictDialog, showDeleteConfirmDialog, showShareDialog, showPasteChoiceDialog } from './js/modals.js';
-import { setPublicDefault } from './js/api.js';
+import { setPublicDefault, updateNoteSharing } from './js/api.js';
+import { upsertNoteSummary } from './js/note-summary.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './js/indicators.js';
 import { exportNoteToPdf } from './js/pdf-export.js';
 import { initMarkdownImport, setupMarkdownImport } from './js/markdown-import.js';
@@ -155,8 +156,8 @@ function trackChanges() {
     }
 }
 
-async function copyPublicLinkForCurrentNote() {
-    // Ensure we have a note hash id. If it's a new note, save first.
+async function manageSharingForCurrentNote() {
+    // Sharing is note-level state, so create or save the note first.
     if (!state.currentNote) {
         // Only attempt to create a note if there is any meaningful content;
         // otherwise show a gentle hint.
@@ -165,13 +166,13 @@ async function copyPublicLinkForCurrentNote() {
         const tags = getCurrentTags();
 
         if (!hasMeaningfulNoteContent(title, content, tags)) {
-            await showModal('Share link', 'Write something first, then share the note.', 'OK', 'Close');
+            await showModal('Sharing', 'Write something first, then publish the note.', 'OK', 'Close');
             return;
         }
 
         await saveNote(false);
         if (!state.currentNote || !state.currentNote.hash_id) {
-            await showModal('Share link', 'Could not create the note to generate a link. Please try again.', 'OK', 'Close');
+            await showModal('Sharing', 'Could not create the note. Please try again.', 'OK', 'Close');
             return;
         }
     } else if (state.hasUnsavedChanges) {
@@ -179,38 +180,36 @@ async function copyPublicLinkForCurrentNote() {
         await saveNote(false);
     }
 
-    const url = getPublicLink(state.currentNote?.hash_id);
-    if (!url) {
-        await showModal('Share link', 'No link could be generated for this note.', 'OK', 'Close');
-        return;
-    }
-
-    try {
-        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-            await navigator.clipboard.writeText(url);
-            await showShareDialog(url, {
-                title: 'Share link copied',
-                publicDefaultHashId: state.publicDefaultHashId,
-                currentHashId: state.currentNote?.hash_id ?? null,
-                onSetEasyAccess: async () => {
-                    await setPublicDefault(state.currentNote?.hash_id ?? null);
-                    state.publicDefaultHashId = state.currentNote?.hash_id ?? null;
-                },
-                onRemoveEasyAccess: async () => {
-                    await setPublicDefault(null);
-                    state.publicDefaultHashId = null;
-                }
-            });
-            return;
+    const applySharingAction = async (action) => {
+        const updatedNote = await updateNoteSharing(state.currentNote.hash_id, action);
+        state.currentNote = updatedNote;
+        upsertNoteSummary(state.notes, updatedNote);
+        if (Array.isArray(state.searchResults)) {
+            upsertNoteSummary(state.searchResults, updatedNote, false);
         }
-    } catch (e) {
-        // fall through to prompt fallback
-        console.warn('Clipboard write failed:', e);
-    }
+        if (action === 'disable' && state.publicDefaultHashId === updatedNote.hash_id) {
+            state.publicDefaultHashId = null;
+        }
+        renderInspector();
+        return updatedNote;
+    };
 
-    // Fallback: prompt lets the user copy manually in older browsers / insecure contexts.
-    // eslint-disable-next-line no-alert
-    window.prompt('Copy this public link:', url);
+    await showShareDialog({
+        note: state.currentNote,
+        getUrl: (note) => getPublicLink(note?.public_token),
+        onPublish: () => applySharingAction('publish'),
+        onDisable: () => applySharingAction('disable'),
+        onRegenerate: () => applySharingAction('regenerate'),
+        isEasyAccess: () => state.publicDefaultHashId === state.currentNote?.hash_id,
+        onSetEasyAccess: async () => {
+            await setPublicDefault(state.currentNote?.hash_id ?? null);
+            state.publicDefaultHashId = state.currentNote?.hash_id ?? null;
+        },
+        onRemoveEasyAccess: async () => {
+            await setPublicDefault(null);
+            state.publicDefaultHashId = null;
+        }
+    });
 }
 
 async function copyEditorLinkForCurrentNote() {
@@ -302,7 +301,7 @@ function setupEventListeners() {
                 const details = e.currentTarget && e.currentTarget.closest ? e.currentTarget.closest('details') : null;
                 if (details && details.hasAttribute('open')) details.removeAttribute('open');
             } catch { /* ignore */ }
-            await copyPublicLinkForCurrentNote();
+            await manageSharingForCurrentNote();
         });
     };
     bindShare('shareLinkBtn');

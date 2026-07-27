@@ -13,6 +13,8 @@ function previewFromContent(content) {
 export function noteToSummary(note) {
     return {
         hash_id: note?.hash_id || '',
+        public_token: note?.public_token || null,
+        is_published: Number(note?.is_published) === 1 ? 1 : 0,
         title: note?.title || '',
         preview: typeof note?.preview === 'string'
             ? note.preview

@@ -179,6 +179,21 @@ export function renderInspector() {
     const pinBadge = document.getElementById('inspectorPinBadge');
     if (pinBadge) pinBadge.hidden = !isPinned;
 
+    const isPublished = Number(state.currentNote?.is_published) === 1 && Boolean(state.currentNote?.public_token);
+    const shareBadge = document.getElementById('inspectorShareBadge');
+    if (shareBadge) {
+        shareBadge.textContent = isPublished ? 'Published' : 'Private';
+        shareBadge.classList.toggle('published', isPublished);
+    }
+    ['shareLinkBtn', 'shareLinkBtnMobile', 'shareLinkBtnInspector'].forEach((id) => {
+        const button = document.getElementById(id);
+        if (!button) return;
+        button.classList.toggle('sharing-published', isPublished);
+        button.setAttribute('aria-label', `${isPublished ? 'Published' : 'Private'} — manage public access`);
+        const label = button.querySelector('.inspector-action-label');
+        if (label) label.textContent = isPublished ? 'Published' : 'Private';
+    });
+
     renderTags(draft.tags);
     renderOutline(metrics.headings.map((heading) => ({
         ...heading,

@@ -224,7 +224,7 @@ $styleVersion = (string) filemtime(__DIR__ . '/style.css');
 
                     <div class="toolbar-group desktop-only toolbar-group-utility" role="group" aria-label="Utilities">
                         <button class="toolbar-btn wp-icon-button" id="htmlModeBtn" title="Edit HTML" aria-label="Edit HTML">HTML</button>
-                        <button class="toolbar-btn wp-icon-button" id="formatHtmlBtn" title="Format HTML" aria-label="Format HTML" hidden>Format</button>
+                        <button class="toolbar-btn wp-icon-button" id="formatHtmlBtn" title="Reformat HTML" aria-label="Reformat HTML" hidden>Format</button>
                     </div>
                 </div>
                 <div class="editor-body">
@@ -237,7 +237,7 @@ $styleVersion = (string) filemtime(__DIR__ . '/style.css');
 
                             <div class="editor-actions desktop-only">
                                 <button class="btn-secondary wp-button wp-button--secondary" id="pinNoteBtn" type="button" title="Pin or unpin this note" aria-label="Pin or unpin this note">Pin</button>
-                                <button class="btn-secondary wp-button wp-button--secondary" id="shareLinkBtn" type="button" title="Copy public link" aria-label="Copy public link">Share</button>
+                                <button class="btn-secondary wp-button wp-button--secondary" id="shareLinkBtn" type="button" title="Manage public access" aria-label="Manage public access">Sharing</button>
                                 <button class="btn-secondary wp-button wp-button--secondary" id="editLinkBtn" type="button" title="Copy editable link" aria-label="Copy editable link">Edit link</button>
                                 <button class="btn-secondary wp-button wp-button--secondary" id="exportPdfBtn" type="button" title="Export to PDF" aria-label="Export to PDF">PDF</button>
                                 <button class="btn-danger wp-button wp-button--danger-subtle deleteBtn" type="button" title="Delete this note" aria-label="Delete this note">Delete</button>
@@ -247,7 +247,7 @@ $styleVersion = (string) filemtime(__DIR__ . '/style.css');
                                 <summary class="overflow-menu-btn wp-icon-button" aria-label="More actions" title="More actions">⋯</summary>
                                 <div class="overflow-menu-panel wp-menu">
                                     <button class="overflow-menu-item wp-menu__item" id="pinNoteBtnMobile" type="button">Pin</button>
-                                    <button class="overflow-menu-item wp-menu__item" id="shareLinkBtnMobile" type="button">Share (copy link)</button>
+                                    <button class="overflow-menu-item wp-menu__item" id="shareLinkBtnMobile" type="button">Sharing…</button>
                                     <button class="overflow-menu-item wp-menu__item" id="editLinkBtnMobile" type="button">Edit link</button>
                                     <hr class="overflow-menu-sep wp-menu__separator">
                                     <button class="overflow-menu-item wp-menu__item wp-menu__item--danger danger deleteBtn" type="button">Delete</button>
@@ -266,6 +266,7 @@ $styleVersion = (string) filemtime(__DIR__ . '/style.css');
                                 <div class="inspector-status-card">
                                     <div class="inspector-status-top">
                                         <span class="inspector-note-state" id="inspectorNoteState">Saved</span>
+                                        <span class="inspector-share-badge" id="inspectorShareBadge">Private</span>
                                         <span class="inspector-pin-badge" id="inspectorPinBadge" hidden>Pinned</span>
                                     </div>
                                 </div>
@@ -305,7 +306,7 @@ $styleVersion = (string) filemtime(__DIR__ . '/style.css');
                                             <path d="m8.6 10.5 6.8-4"></path>
                                             <path d="m8.6 13.5 6.8 4"></path>
                                         </svg>
-                                        <span class="inspector-action-label">Share</span>
+                                        <span class="inspector-action-label">Sharing</span>
                                     </button>
                                     <button class="btn-secondary wp-button wp-button--secondary inspector-action-btn" id="editLinkBtnInspector" type="button">
                                         <svg class="inspector-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -386,7 +387,7 @@ $styleVersion = (string) filemtime(__DIR__ . '/style.css');
                 <button class="modal-close wp-icon-button wp-dialog__close" type="button" data-dialog-close aria-label="Close dialog">&times;</button>
             </div>
             <div class="modal-body wp-dialog__body">
-                <p id="modalMessage">Message</p>
+                <div id="modalMessage">Message</div>
             </div>
             <div class="modal-footer wp-dialog__actions">
                 <button class="btn-secondary wp-button wp-button--secondary" id="modalCancelBtn">Cancel</button>

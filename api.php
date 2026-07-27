@@ -75,6 +75,7 @@ require_once __DIR__ . '/api/database.php';
 require_once __DIR__ . '/api/config.php';
 // Load utility functions (needed by handlers)
 require_once __DIR__ . '/api/utils.php';
+require_once __DIR__ . '/api/sharing_helper.php';
 
 if (!headers_sent()) header('Content-Type: application/json; charset=UTF-8');
 
@@ -82,6 +83,7 @@ if (!headers_sent()) header('Content-Type: application/json; charset=UTF-8');
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 try {
     $conn = getDBConnection();
+    ensure_note_sharing_schema($conn);
 } catch (Throwable $e) {
     global $__notes_debug;
     $extra = [];

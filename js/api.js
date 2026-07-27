@@ -18,6 +18,24 @@ export async function setPublicDefault(hashId) {
     return data;
 }
 
+export async function updateNoteSharing(hashId, action) {
+    const response = await fetch(API_ENDPOINT, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            set_sharing: {
+                hash_id: hashId,
+                action
+            }
+        })
+    });
+    const data = await readJsonResponse(response, 'updateNoteSharing');
+    if (!response.ok) {
+        throw new Error(data?.error || `HTTP ${response.status}`);
+    }
+    return data;
+}
+
 export async function setPinned(hashId, isPinned) {
     const response = await fetch(API_ENDPOINT, {
         method: 'PUT',

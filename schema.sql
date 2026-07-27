@@ -15,3 +15,8 @@ CREATE TABLE IF NOT EXISTS note_tags (
 
 ALTER TABLE notes
     ADD COLUMN IF NOT EXISTS is_pinned TINYINT(1) NOT NULL DEFAULT 0;
+
+ALTER TABLE notes
+    ADD COLUMN IF NOT EXISTS public_token VARCHAR(64) NULL AFTER hash_id,
+    ADD COLUMN IF NOT EXISTS is_published TINYINT(1) NOT NULL DEFAULT 0 AFTER public_token,
+    ADD UNIQUE KEY IF NOT EXISTS uq_notes_public_token (public_token);

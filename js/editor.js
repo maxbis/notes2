@@ -1,5 +1,10 @@
 // Editor HTML management and HTML mode handling
 import state from './state.js';
+import {
+    applySearchHighlights,
+    clearSearchHighlights,
+    getEditorHtmlWithoutSearchHighlights
+} from './search-highlights.js';
 
 const INLINE_TAGS = new Set([
     'a', 'abbr', 'b', 'bdi', 'bdo', 'br', 'cite', 'code', 'data', 'dfn', 'em',
@@ -23,7 +28,9 @@ export function getEditorHtml() {
     const text = editor.textContent || '';
     const hasOnlyInlineTypingMarkers = text.includes('\u200B')
         && text.replace(/\u200B/g, '').trim() === '';
-    return hasOnlyInlineTypingMarkers ? EMPTY_EDITOR_HTML : editor.innerHTML;
+    return hasOnlyInlineTypingMarkers
+        ? EMPTY_EDITOR_HTML
+        : getEditorHtmlWithoutSearchHighlights(editor);
 }
 
 export function formatHtmlForDisplay(html) {
@@ -160,9 +167,11 @@ export function setEditorHtml(html) {
     if (htmlEl) {
         htmlEl.value = state.isHtmlMode ? formatHtmlForDisplay(state.htmlModeRawHtml) : state.htmlModeRawHtml;
     }
+    applySearchHighlights(state.searchTerm);
 }
 
 export function setHtmlMode(enabled) {
+    if (enabled) clearSearchHighlights();
     state.isHtmlMode = !!enabled;
     const editor = document.getElementById('noteContent');
     const htmlEl = document.getElementById('noteContentHtml');
@@ -188,6 +197,7 @@ export function setHtmlMode(enabled) {
         editor.innerHTML = state.htmlModeRawHtml;
         editor.hidden = false;
         htmlEl.hidden = true;
+        applySearchHighlights(state.searchTerm);
         updateHtmlModeToolbar(false);
         btn.classList.remove('active');
         if (formatBtn) formatBtn.hidden = true;

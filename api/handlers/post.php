@@ -49,7 +49,7 @@ function handle_post(mysqli $conn): void {
         replace_note_tags($conn, (int)$note_id, $tags);
         $result = $conn->query("SELECT * FROM notes WHERE id = $note_id");
         if ($result === false) __notes_db_fail($conn, 'query: select inserted note');
-        echo json_encode(attach_tags_to_note($conn, $result->fetch_assoc()), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        echo json_encode(normalize_note_sharing(attach_tags_to_note($conn, $result->fetch_assoc())), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     } else {
         __notes_db_fail($conn, 'execute: insert note');
     }

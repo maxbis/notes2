@@ -9,6 +9,7 @@ import { showDeleteConfirmDialog } from './modals.js';
 import { getActiveTagFilters, renderSidebarTagFilters, setCurrentTags, setSavedTags } from './tags.js';
 import { renderInspector } from './inspector.js';
 import { noteToSummary, upsertNoteSummary } from './note-summary.js';
+import { applySearchHighlights } from './search-highlights.js';
 
 // Dependencies that will be injected
 let saveNote = null;
@@ -497,6 +498,7 @@ export async function refreshNotesView() {
 export function filterNotes(e) {
     const searchTerm = e?.target?.value ?? currentSearchTerm();
     state.searchTerm = String(searchTerm).trim();
+    applySearchHighlights(state.searchTerm);
     clearTimeout(notesQueryTimerId);
     notesQuerySequence += 1;
     if (notesQueryController) notesQueryController.abort();
@@ -558,6 +560,7 @@ export async function selectNote(hashId) {
 
         document.getElementById('noteTitle').value = title;
         setEditorHtml(content);
+        applySearchHighlights(currentSearchTerm(), { scrollToFirst: true });
         setCurrentTags(normalizedNote.tags || []);
         state.savedTitle = title;
         state.savedContent = content;

@@ -47,6 +47,62 @@ function handle_put(mysqli $conn): void {
         echo json_encode(['ok' => true, 'public_default_hash_id' => $hashId], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         return;
     }
+    if (array_key_exists('set_sharing', $data) && is_array($data['set_sharing'] ?? null)) {
+        $payload = $data['set_sharing'];
+        $hashId = isset($payload['hash_id']) ? trim((string)$payload['hash_id']) : '';
+        $action = isset($payload['action']) ? (string)$payload['action'] : '';
+        if ($hashId === '') {
+            __notes_json_error(400, 'hash_id is required');
+        }
+        if (!in_array($action, ['publish', 'disable', 'regenerate'], true)) {
+            __notes_json_error(400, 'Invalid sharing action');
+        }
+
+        if ($action === 'disable') {
+            $stmtShare = $conn->prepare("UPDATE notes SET is_published = 0, public_token = NULL WHERE hash_id = ?");
+            if (!$stmtShare) __notes_db_fail($conn, 'prepare: disable sharing');
+            $stmtShare->bind_param("s", $hashId);
+        } else {
+            $token = generate_public_token();
+            if ($action === 'publish') {
+                $stmtShare = $conn->prepare(
+                    "UPDATE notes SET is_published = 1, public_token = COALESCE(public_token, ?) WHERE hash_id = ?"
+                );
+            } else {
+                $stmtShare = $conn->prepare(
+                    "UPDATE notes SET is_published = 1, public_token = ? WHERE hash_id = ?"
+                );
+            }
+            if (!$stmtShare) __notes_db_fail($conn, 'prepare: update sharing');
+            $stmtShare->bind_param("ss", $token, $hashId);
+        }
+
+        if (!$stmtShare->execute()) __notes_db_fail($conn, 'execute: update sharing');
+        if ($stmtShare->affected_rows === 0) {
+            $exists = $conn->prepare("SELECT id FROM notes WHERE hash_id = ?");
+            if (!$exists) __notes_db_fail($conn, 'prepare: check sharing note');
+            $exists->bind_param("s", $hashId);
+            if (!$exists->execute()) __notes_db_fail($conn, 'execute: check sharing note');
+            if (!fetch_assoc_from_stmt($exists)) {
+                __notes_json_error(404, 'Note not found');
+            }
+        }
+
+        if ($action === 'disable') {
+            $defaultHashId = get_setting($conn, 'public_default_hash_id');
+            if ($defaultHashId === $hashId) {
+                set_setting($conn, 'public_default_hash_id', '');
+            }
+        }
+
+        $stmtSharedNote = $conn->prepare("SELECT * FROM notes WHERE hash_id = ?");
+        if (!$stmtSharedNote) __notes_db_fail($conn, 'prepare: reload shared note');
+        $stmtSharedNote->bind_param("s", $hashId);
+        if (!$stmtSharedNote->execute()) __notes_db_fail($conn, 'execute: reload shared note');
+        $note = normalize_note_sharing(attach_tags_to_note($conn, fetch_assoc_from_stmt($stmtSharedNote)));
+        echo json_encode($note, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        return;
+    }
     if (array_key_exists('set_pinned', $data) && is_array($data['set_pinned'] ?? null)) {
         $payload = $data['set_pinned'];
         $hashId = isset($payload['hash_id']) ? (string)$payload['hash_id'] : '';
@@ -168,6 +224,6 @@ function handle_put(mysqli $conn): void {
     $stmtReload->bind_param("s", $hash_id);
     if (!$stmtReload->execute()) __notes_db_fail($conn, 'execute: reload updated note');
 
-    $note = attach_tags_to_note($conn, fetch_assoc_from_stmt($stmtReload));
+    $note = normalize_note_sharing(attach_tags_to_note($conn, fetch_assoc_from_stmt($stmtReload)));
     echo json_encode($note, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 }

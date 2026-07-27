@@ -168,6 +168,8 @@ function handle_notes_list(mysqli $conn): void {
             n.id,
             n.hash_id,
             n.title,
+            n.public_token,
+            n.is_published,
             LEFT(n.content, 4096) AS content_excerpt,
             n.is_pinned,
             n.created_at,
@@ -223,17 +225,17 @@ function handle_get(mysqli $conn): void {
         $stmt->bind_param("s", $hash_id);
         if (!$stmt->execute()) __notes_db_fail($conn, 'execute: select by hash_id');
 
-        $note = attach_tags_to_note($conn, fetch_assoc_from_stmt($stmt));
+        $note = normalize_note_sharing(attach_tags_to_note($conn, fetch_assoc_from_stmt($stmt)));
         echo json_encode($note ? $note : ['error' => 'Note not found'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     } elseif (isset($_GET['view']) && $_GET['view'] === 'list') {
         handle_notes_list($conn);
     } else {
         // Get all notes and public "easy access" default
-        $result = $conn->query("SELECT id, hash_id, title, content, is_pinned, created_at, updated_at, version FROM notes ORDER BY updated_at DESC");
+        $result = $conn->query("SELECT id, hash_id, public_token, is_published, title, content, is_pinned, created_at, updated_at, version FROM notes ORDER BY updated_at DESC");
         if ($result === false) __notes_db_fail($conn, 'query: select all notes');
         $notes = [];
         while ($row = $result->fetch_assoc()) {
-            $notes[] = $row;
+            $notes[] = normalize_note_sharing($row);
         }
         $publicDefaultHashId = get_setting($conn, 'public_default_hash_id');
         $payload = [

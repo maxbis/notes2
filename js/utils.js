@@ -9,10 +9,10 @@ export function isMobileLayout() {
     return Boolean(window.matchMedia && window.matchMedia(mobileLayoutQuery).matches);
 }
 
-export function getPublicLink(hashId) {
-    if (!hashId) return '';
+export function getPublicLink(publicToken) {
+    if (!publicToken) return '';
     const u = new URL('public.php', window.location.href);
-    u.searchParams.set('id', hashId);
+    u.searchParams.set('id', publicToken);
     return u.toString();
 }
 

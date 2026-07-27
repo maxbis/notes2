@@ -2,8 +2,9 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/api/database.php';
 require_once __DIR__ . '/api/settings_helper.php';
+require_once __DIR__ . '/api/sharing_helper.php';
 
-$hash_id = isset($_GET['id']) ? trim((string)$_GET['id']) : '';
+$public_token = isset($_GET['id']) ? trim((string)$_GET['id']) : '';
 
 function public_asset_url($path) {
     $version = @filemtime(__DIR__ . '/' . $path);
@@ -49,18 +50,30 @@ function render_error_page($title, $message, $statusCode = 400) {
     exit;
 }
 
-if ($hash_id === '') {
+if ($public_token === '') {
     $easyAccessEnabled = defined('PUBLIC_EASY_ACCESS_ENABLED') ? PUBLIC_EASY_ACCESS_ENABLED : true;
     if ($easyAccessEnabled) {
         try {
             $conn = getDBConnection();
+            ensure_note_sharing_schema($conn);
             $defaultHashId = get_setting($conn, 'public_default_hash_id');
-            $conn->close();
             if ($defaultHashId !== null && $defaultHashId !== '') {
-                $redirect = 'public.php?id=' . rawurlencode($defaultHashId);
-                header('Location: ' . $redirect, true, 302);
-                exit;
+                $stmtDefault = $conn->prepare(
+                    "SELECT public_token FROM notes WHERE hash_id = ? AND is_published = 1 AND public_token IS NOT NULL LIMIT 1"
+                );
+                if ($stmtDefault) {
+                    $stmtDefault->bind_param("s", $defaultHashId);
+                    $stmtDefault->execute();
+                    $defaultNote = fetch_assoc_from_stmt($stmtDefault);
+                    if (!empty($defaultNote['public_token'])) {
+                        $redirect = 'public.php?id=' . rawurlencode($defaultNote['public_token']);
+                        $conn->close();
+                        header('Location: ' . $redirect, true, 302);
+                        exit;
+                    }
+                }
             }
+            $conn->close();
         } catch (Throwable $e) {
             // Fall through to error page
         }
@@ -70,17 +83,18 @@ if ($hash_id === '') {
 
 try {
     $conn = getDBConnection();
+    ensure_note_sharing_schema($conn);
 } catch (Throwable $e) {
     render_error_page('Server error', 'Database connection failed.', 500);
 }
 
-$stmt = $conn->prepare("SELECT title, content, created_at, updated_at FROM notes WHERE hash_id = ? LIMIT 1");
+$stmt = $conn->prepare("SELECT title, content, created_at, updated_at FROM notes WHERE public_token = ? AND is_published = 1 LIMIT 1");
 if (!$stmt) {
     $conn->close();
     render_error_page('Server error', 'Failed to prepare database query.', 500);
 }
 
-$stmt->bind_param("s", $hash_id);
+$stmt->bind_param("s", $public_token);
 $stmt->execute();
 $result = $stmt->get_result();
 $note = $result ? $result->fetch_assoc() : null;
@@ -88,7 +102,7 @@ $stmt->close();
 $conn->close();
 
 if (!$note) {
-    render_error_page('Not found', 'This note does not exist (or the link is incorrect).', 404);
+    render_error_page('Link unavailable', 'This sharing link is disabled, expired, or incorrect.', 404);
 }
 
 $title = $note['title'] ?? 'Untitled';

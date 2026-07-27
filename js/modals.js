@@ -215,98 +215,303 @@ export function showLinkDialog(selectedText = '', existingUrl = '') {
     });
 }
 
-/**
- * @param {string} url - Public link URL
- * @param {string|{ title?: string, publicDefaultHashId?: string|null, currentHashId?: string|null, onSetEasyAccess?: () => Promise<void>|void, onRemoveEasyAccess?: () => Promise<void>|void }} titleOrOptions
- */
-export function showShareDialog(url, titleOrOptions = 'Share link copied') {
-    const opts = typeof titleOrOptions === 'object' && titleOrOptions !== null
-        ? titleOrOptions
-        : { title: titleOrOptions };
-    const title = opts.title ?? 'Share link copied';
-    const publicDefaultHashId = opts.publicDefaultHashId ?? null;
-    const currentHashId = opts.currentHashId ?? null;
-    const onSetEasyAccess = opts.onSetEasyAccess ?? null;
-    const onRemoveEasyAccess = opts.onRemoveEasyAccess ?? null;
-    const showEasyAccess = Boolean(currentHashId && (onSetEasyAccess || onRemoveEasyAccess));
-    const isCurrentDefault = Boolean(publicDefaultHashId && currentHashId && publicDefaultHashId === currentHashId);
-
+export function showShareDialog(options) {
     return new Promise((resolve) => {
+        const opts = options || {};
         const overlay = document.getElementById('modalOverlay');
         const titleEl = document.getElementById('modalTitle');
         const messageEl = document.getElementById('modalMessage');
-        const confirmBtn = document.getElementById('modalConfirmBtn');
+        let confirmBtn = document.getElementById('modalConfirmBtn');
         const cancelBtn = document.getElementById('modalCancelBtn');
-        const footer = confirmBtn.parentElement;
-        const actionButtons = [];
+        const dialog = overlay.querySelector('.wp-dialog');
+        let note = opts.note || null;
+        let confirmingRegenerate = false;
         let session;
 
-        titleEl.textContent = title;
-        messageEl.textContent = url;
+        titleEl.textContent = 'Sharing';
+        dialog?.classList.add('sharing-dialog-shell');
         cancelBtn.textContent = 'Close';
-        confirmBtn.hidden = true;
+        confirmBtn.hidden = false;
 
-        const addAction = (text, className, handler) => {
+        const copyText = async (value) => {
+            if (!value) return false;
+            try {
+                if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                    await navigator.clipboard.writeText(value);
+                    return true;
+                }
+            } catch (error) {
+                console.warn('Clipboard write failed:', error);
+            }
+            window.prompt('Copy this public link:', value);
+            return true;
+        };
+
+        const createActionButton = (text, className, handler) => {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = className;
             button.textContent = text;
             button.addEventListener('click', handler);
-            footer.insertBefore(button, confirmBtn);
-            actionButtons.push([button, handler]);
             return button;
         };
 
-        const cleanup = (result) => {
-            cancelBtn.removeEventListener('click', handleCancel);
-            actionButtons.forEach(([button, handler]) => {
-                button.removeEventListener('click', handler);
-                button.remove();
-            });
+        const clearActions = () => {
+            const cleanConfirmBtn = confirmBtn.cloneNode(true);
+            cleanConfirmBtn.disabled = false;
+            confirmBtn.replaceWith(cleanConfirmBtn);
+            confirmBtn = cleanConfirmBtn;
+        };
+
+        const cleanup = () => {
+            const cleanConfirmBtn = confirmBtn.cloneNode(true);
+            cleanConfirmBtn.disabled = false;
+            confirmBtn.replaceWith(cleanConfirmBtn);
+            confirmBtn = cleanConfirmBtn;
             confirmBtn.hidden = false;
             confirmBtn.textContent = 'Confirm';
+            messageEl.replaceChildren();
             cancelBtn.textContent = 'Cancel';
+            cancelBtn.removeEventListener('click', handleCancel);
+            dialog?.classList.remove('sharing-dialog-shell');
             session.close();
-            resolve(result);
+            resolve(note);
         };
-        const handleCancel = () => cleanup('close');
-        const handleOpen = () => {
-            if (url) window.open(url, '_blank', 'noopener');
-            cleanup('open');
-        };
-        const runSettingAction = (callback, result) => {
-            session.setDismissible(false);
-            Promise.resolve(callback()).then(() => {
-                cleanup(result);
-            }).catch((error) => {
-                session.setDismissible(true);
-                console.error('Easy access update failed:', error);
-            });
+        const handleCancel = () => cleanup();
+
+        const getEasyAccessUrl = () => {
+            const publicUrl = opts.getUrl?.(note) || '';
+            try {
+                const easyAccessUrl = new URL(publicUrl);
+                easyAccessUrl.search = '';
+                easyAccessUrl.hash = '';
+                return easyAccessUrl.toString();
+            } catch {
+                return '';
+            }
         };
 
-        if (showEasyAccess && onSetEasyAccess && !isCurrentDefault) {
-            addAction(
-                'Copy link + Easy access',
-                'btn-secondary wp-button wp-button--secondary',
-                () => runSettingAction(onSetEasyAccess, 'easy_access_set')
-            );
-        }
-        if (showEasyAccess && onRemoveEasyAccess && isCurrentDefault) {
-            addAction(
-                'Remove easy access',
-                'btn-secondary wp-button wp-button--secondary',
-                () => runSettingAction(onRemoveEasyAccess, 'easy_access_removed')
-            );
-        }
-        const openBtn = addAction(
-            'Open',
-            'btn-primary wp-button wp-button--primary',
-            handleOpen
-        );
+        const runAction = async (callback, { copy = false, success = '' } = {}) => {
+            session.setDismissible(false);
+            dialog?.querySelectorAll('button').forEach((button) => {
+                button.disabled = true;
+            });
+            try {
+                const updatedNote = await callback();
+                if (updatedNote) note = updatedNote;
+                confirmingRegenerate = false;
+                const url = opts.getUrl?.(note) || '';
+                if (copy && url) await copyText(url);
+                render(typeof success === 'function' ? success(note) : success);
+            } catch (error) {
+                console.error('Sharing update failed:', error);
+                render(error?.message || 'The sharing setting could not be updated.');
+            } finally {
+                session.setDismissible(true);
+                dialog?.querySelectorAll('button').forEach((button) => {
+                    button.disabled = false;
+                });
+            }
+        };
+
+        const render = (feedback = '') => {
+            clearActions();
+            const isPublished = Number(note?.is_published) === 1 && Boolean(note?.public_token);
+            const url = isPublished ? (opts.getUrl?.(note) || '') : '';
+
+            const content = document.createElement('div');
+            content.className = 'sharing-dialog';
+
+            const status = document.createElement('div');
+            status.className = `sharing-status sharing-status--${isPublished ? 'published' : 'private'}`;
+            const statusLabel = document.createElement('strong');
+            statusLabel.textContent = isPublished ? 'Published' : 'Private';
+            const statusText = document.createElement('span');
+            statusText.textContent = isPublished
+                ? 'Anyone with the active link can view this note.'
+                : 'Only people with editor access can view this note.';
+            status.append(statusLabel, statusText);
+            content.append(status);
+
+            if (url) {
+                const linkSection = document.createElement('section');
+                linkSection.className = 'sharing-link-section';
+
+                const field = document.createElement('label');
+                field.className = 'sharing-link-field';
+                const fieldLabel = document.createElement('span');
+                fieldLabel.textContent = 'Public link';
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.readOnly = true;
+                input.value = url;
+                input.className = 'wp-input sharing-link-input';
+                input.addEventListener('focus', () => input.select());
+                field.append(fieldLabel, input);
+                linkSection.append(field);
+
+                const warning = document.createElement('p');
+                warning.className = 'sharing-help';
+                warning.textContent = 'Generating a new link immediately disables the current one.';
+                linkSection.append(warning);
+
+                const linkActions = document.createElement('div');
+                linkActions.className = 'sharing-inline-actions';
+                linkActions.append(
+                    createActionButton(
+                        'Generate new link',
+                        'btn-secondary wp-button wp-button--secondary',
+                        () => {
+                            confirmingRegenerate = true;
+                            render();
+                            requestAnimationFrame(() => {
+                                dialog?.querySelector('.sharing-regenerate-confirm')?.focus();
+                            });
+                        }
+                    ),
+                    createActionButton(
+                        'Disable link',
+                        'btn-danger wp-button wp-button--danger-subtle',
+                        () => runAction(opts.onDisable, {
+                            success: 'The note is private and the old link no longer works.'
+                        })
+                    )
+                );
+                if (!confirmingRegenerate) {
+                    linkSection.append(linkActions);
+                }
+
+                if (confirmingRegenerate) {
+                    const confirmation = document.createElement('div');
+                    confirmation.className = 'sharing-regenerate-confirmation';
+                    confirmation.setAttribute('role', 'alert');
+
+                    const confirmationText = document.createElement('div');
+                    const confirmationTitle = document.createElement('strong');
+                    confirmationTitle.textContent = 'Generate a new public link?';
+                    const confirmationDescription = document.createElement('span');
+                    confirmationDescription.textContent = 'The current link will stop working immediately.';
+                    confirmationText.append(confirmationTitle, confirmationDescription);
+
+                    const confirmationActions = document.createElement('div');
+                    confirmationActions.className = 'sharing-regenerate-actions';
+                    confirmationActions.append(
+                        createActionButton(
+                            'Cancel',
+                            'btn-secondary wp-button wp-button--secondary',
+                            () => {
+                                confirmingRegenerate = false;
+                                render();
+                            }
+                        ),
+                        createActionButton(
+                            'Generate new link',
+                            'btn-danger wp-button wp-button--danger-subtle sharing-regenerate-confirm',
+                            () => runAction(opts.onRegenerate, {
+                                copy: true,
+                                success: 'New link generated and copied. The old link no longer works.'
+                            })
+                        )
+                    );
+                    confirmation.append(confirmationText, confirmationActions);
+                    linkSection.append(confirmation);
+                }
+
+                const isEasyAccess = Boolean(opts.isEasyAccess?.());
+                const easyAccessUrl = getEasyAccessUrl();
+                const defaultSection = document.createElement('section');
+                defaultSection.className = 'sharing-default-section';
+
+                const defaultHeading = document.createElement('div');
+                defaultHeading.className = 'sharing-default-heading';
+                const defaultTitle = document.createElement('strong');
+                defaultTitle.textContent = 'Default public note';
+                defaultHeading.append(defaultTitle);
+                if (isEasyAccess) {
+                    const activeBadge = document.createElement('span');
+                    activeBadge.className = 'sharing-default-badge';
+                    activeBadge.textContent = 'Active';
+                    defaultHeading.append(activeBadge);
+                }
+
+                const defaultDescription = document.createElement('p');
+                defaultDescription.className = 'sharing-default-description';
+                defaultDescription.append(document.createTextNode(
+                    isEasyAccess
+                        ? 'Opening '
+                        : 'Use this note when someone opens '
+                ));
+                if (easyAccessUrl) {
+                    const easyAccessLink = document.createElement('a');
+                    easyAccessLink.href = easyAccessUrl;
+                    easyAccessLink.target = '_blank';
+                    easyAccessLink.rel = 'noopener';
+                    easyAccessLink.textContent = easyAccessUrl;
+                    defaultDescription.append(easyAccessLink);
+                } else {
+                    defaultDescription.append(document.createTextNode('the public notes address'));
+                }
+                defaultDescription.append(document.createTextNode(
+                    isEasyAccess ? ' displays this note.' : '.'
+                ));
+
+                const defaultActions = document.createElement('div');
+                defaultActions.className = 'sharing-default-actions';
+                if (easyAccessUrl) {
+                    defaultActions.append(createActionButton(
+                        'Copy short link',
+                        'btn-secondary wp-button wp-button--secondary',
+                        () => copyText(easyAccessUrl).then(() => render('Short link copied.'))
+                    ));
+                }
+                defaultActions.append(createActionButton(
+                    isEasyAccess ? 'Remove as default public note' : 'Use as default public note',
+                    'btn-secondary wp-button wp-button--secondary',
+                    () => runAction(
+                        isEasyAccess ? opts.onRemoveEasyAccess : opts.onSetEasyAccess,
+                        {
+                            success: isEasyAccess
+                                ? 'Default public note removed.'
+                                : `This is now the default public note; ${easyAccessUrl}`
+                        }
+                    )
+                ));
+
+                defaultSection.append(defaultHeading, defaultDescription, defaultActions);
+                linkSection.append(defaultSection);
+                content.append(linkSection);
+            } else {
+                const help = document.createElement('p');
+                help.className = 'sharing-help';
+                help.textContent = 'Publish this note to create a revocable, read-only link.';
+                content.append(help);
+            }
+
+            if (feedback) {
+                const feedbackEl = document.createElement('div');
+                feedbackEl.className = 'sharing-feedback';
+                feedbackEl.setAttribute('role', 'status');
+                feedbackEl.textContent = feedback;
+                content.append(feedbackEl);
+            }
+            messageEl.replaceChildren(content);
+
+            if (isPublished) {
+                confirmBtn.textContent = 'Copy link';
+                confirmBtn.addEventListener('click', () => copyText(url).then(() => render('Link copied.')));
+            } else {
+                confirmBtn.textContent = 'Publish & copy link';
+                confirmBtn.addEventListener('click', () => runAction(
+                    opts.onPublish,
+                    { copy: true, success: 'Published. The new link was copied.' }
+                ));
+            }
+        };
 
         cancelBtn.addEventListener('click', handleCancel);
+        render();
         session = openDialog(overlay, {
-            initialFocus: openBtn,
+            initialFocus: () => confirmBtn,
             onDismiss: handleCancel
         });
     });
