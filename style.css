@@ -398,7 +398,7 @@ aside.sidebar {
 .notes-list {
     flex: 1;
     overflow-y: auto;
-    padding: 0.2rem 0 0;
+    padding: 0.2rem 2px 0 0;
 }
 
 .note-group {
@@ -898,6 +898,13 @@ aside.sidebar {
 .editor-content h2 { font-size: 1.3rem; margin: 1rem 0 0.45rem; line-height: 1.25;color: var(--accent-strong); font-style: italic; }
 .editor-content h3 { font-size: 1.1rem; margin: 0.8rem 0 0.4rem; line-height: 1.3;color: var(--accent-strong); }
 .editor-content h4, .editor-content h5 { font-size: 1.0rem; margin: 0.6rem 0 0.4rem; line-height: 1.3;color: var(--wp-text-heading-muted); font-weight:600; }
+
+/* The editor already provides top padding; avoid doubling that space on the
+   first block while preserving the roomier rhythm between later sections. */
+.editor-content > :first-child {
+    margin-top: 0px;
+}
+
 .editor-content pre {
     font-size: 0.8rem;
     margin: 0.5rem 0 0.35rem;
@@ -1168,6 +1175,18 @@ aside.sidebar {
     flex-direction: column;
     gap: 0.12rem;
     min-height: 60px;
+}
+
+.inspector-outline::before {
+    content: "";
+    position: sticky;
+    top: -1.3rem;
+    z-index: 1;
+    flex: 0 0 0;
+    height: 0;
+    margin: -0.34rem -0.34rem -0.12rem;
+    border-top: 1px solid var(--wp-border-subtle);
+    pointer-events: none;
 }
 
 .inspector-outline-empty {
@@ -1601,7 +1620,7 @@ button {
         max-height: calc(40vh - 56px);
         overflow-y: auto;
         -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-        padding: 0.05rem 0 0;
+        padding: 0.05rem 2px 0 0;
         touch-action: pan-y; /* Allow vertical panning for scrolling */
     }
 
@@ -2276,7 +2295,18 @@ button {
 }
 
 .wp-theme .modal-overlay {
+    position: fixed;
+    inset: 0;
     z-index: 1000;
+    display: none;
+    place-items: center;
+    padding: var(--wp-space-4);
+    background: rgba(37, 37, 37, 0.34);
+}
+
+.wp-theme .modal-overlay.active,
+.wp-theme .modal-overlay.is-open {
+    display: grid;
 }
 
 .wp-theme .modal-title {
