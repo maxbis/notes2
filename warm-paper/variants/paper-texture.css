@@ -18,28 +18,34 @@
 
 /* Apply grain directly to the editor panel background */
 .wp-theme.wp-textured .editor {
-    background-image: var(--wp-paper-grain);
-    background-blend-mode: multiply;
-    background-color: var(--wp-surface-panel);
+    background-image: var(--wp-paper-grain) !important;
+    background-blend-mode: multiply !important;
+    background-color: var(--wp-surface-panel) !important;
+}
+
+.wp-theme.wp-textured .editor-body {
+    background-image: var(--wp-paper-grain) !important;
+    background-blend-mode: multiply !important;
+    background-color: var(--wp-surface-panel) !important;
 }
 
 .wp-theme.wp-textured .editor-content {
-    background-image: var(--wp-paper-grain);
-    background-blend-mode: overlay;
-    background-color: transparent;
+    background-image: var(--wp-paper-grain) !important;
+    background-blend-mode: overlay !important;
+    background-color: transparent !important;
 }
 
 /* Sidebar gets lighter texture */
 .wp-theme.wp-textured aside.sidebar {
-    background-image: var(--wp-paper-grain);
-    background-blend-mode: multiply;
+    background-image: var(--wp-paper-grain) !important;
+    background-blend-mode: multiply !important;
 }
 
 /* Public note view */
 .wp-theme.wp-textured .public-note {
-    background-image: var(--wp-paper-grain);
-    background-blend-mode: multiply;
-    background-color: var(--wp-surface-panel);
+    background-image: var(--wp-paper-grain) !important;
+    background-blend-mode: multiply !important;
+    background-color: var(--wp-surface-panel) !important;
 }
 
 /* Stronger texture variant: add wp-textured-strong */
@@ -48,9 +54,10 @@
 }
 
 .wp-theme.wp-textured.wp-textured-strong .editor,
+.wp-theme.wp-textured.wp-textured-strong .editor-body,
 .wp-theme.wp-textured.wp-textured-strong .editor-content,
 .wp-theme.wp-textured.wp-textured-strong aside.sidebar {
-    background-blend-mode: soft-light;
+    background-blend-mode: soft-light !important;
 }
 
 /*
