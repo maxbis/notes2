@@ -80,13 +80,13 @@ if ($public_token === '') {
                 $conn->close();
             }
         } catch (Throwable $e) {
-            render_error_page('Server error', 'The default public note could not be loaded.', 500);
+            render_error_page('Server error', 'The Default Published note could not be loaded.', 500);
         }
     }
     if ($public_token === '') {
         render_error_page(
-            'No default public note',
-            'No published note is currently selected as the default public note.',
+            'No Default Published note',
+            'No Published note is currently selected as Default Published.',
             404
         );
     }

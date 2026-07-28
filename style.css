@@ -484,7 +484,7 @@ aside.sidebar {
 
 .note-item-header {
     display: grid;
-    grid-template-columns: 2fr 1fr; /* title 2/3, date 1/3 */
+    grid-template-columns: minmax(0, 1fr) minmax(6rem, auto);
     column-gap: 0.5rem;
     align-items: baseline;
     min-width: 0;
@@ -506,6 +506,40 @@ aside.sidebar {
     margin-right: 0.28rem;
     font-size: 0.82em;
     opacity: 0.78;
+}
+
+.note-item-trailing {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.38rem;
+    min-width: 0;
+}
+
+.note-item-sharing {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    min-width: 1rem;
+    color: var(--wp-text-secondary);
+    font-size: 0.65rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.note-item-sharing svg {
+    width: 0.9rem;
+    height: 0.9rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.7;
+}
+
+.note-item-sharing--default {
+    color: var(--wp-accent);
 }
 
 .note-item-preview {
@@ -726,13 +760,19 @@ aside.sidebar {
     line-height: 1;
 }
 
-.sharing-status--published {
+.sharing-status--published,
+.sharing-status--default-published {
     border-color: var(--wp-accent-border);
     background: var(--wp-accent-soft);
 }
 
-.sharing-status--published strong {
+.sharing-status--published strong,
+.sharing-status--default-published strong {
     color: var(--wp-accent-hover);
+}
+
+.sharing-status--default-published {
+    box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .sharing-status span,
@@ -1149,6 +1189,65 @@ aside.sidebar {
 .editor-content blockquote { margin: 0.5rem 0; }
 .editor-content code { margin: 0.5rem 0; }
 
+/* Plain tables in note HTML inherit a calm, readable default treatment.
+   This deliberately does not require inline attributes or editor-only classes,
+   so the same table renders consistently in editable and public notes. */
+.editor-content table {
+    width: 100%;
+    margin: 1rem 0;
+    border: 1px solid var(--wp-border-subtle);
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: var(--wp-radius-input);
+    background: var(--wp-surface-panel);
+    color: var(--wp-text-primary);
+    font-size: 0.94em;
+    line-height: 1.45;
+    overflow: hidden;
+}
+
+.editor-content th,
+.editor-content td {
+    padding: 0.5rem 0.75rem;
+    border-right: 1px solid var(--wp-border-subtle);
+    border-bottom: 1px solid var(--wp-border-subtle);
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+
+.editor-content th {
+    background: var(--wp-surface-subtle);
+    color: var(--wp-text-heading-muted);
+    font-weight: 600;
+}
+
+.editor-content tbody tr:nth-child(even) > * {
+    background: var(--wp-surface-input);
+}
+
+.editor-content tr:last-child > * {
+    border-bottom: 0;
+}
+
+.editor-content tr > :last-child {
+    border-right: 0;
+}
+
+@media (max-width: 720px) {
+    .editor-content table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .editor-content th,
+    .editor-content td {
+        overflow-wrap: normal;
+    }
+}
+
 .editor-content .indent-1 { padding-left: 40px; }
 .editor-content .indent-2 { padding-left: 80px; }
 .editor-content .indent-3 { padding-left: 120px; }
@@ -1302,6 +1401,10 @@ aside.sidebar {
 .inspector-share-badge.published {
     color: var(--accent);
     background: var(--wp-accent-soft);
+}
+
+.inspector-share-badge.default-published {
+    box-shadow: inset 0 0 0 1px var(--wp-accent-border);
 }
 
 .inspector-stats-grid {
@@ -1879,13 +1982,17 @@ button {
     
     .note-item-header {
         display: grid;
-        grid-template-columns: 7fr 3fr; /* 70% title, 30% date */
+        grid-template-columns: minmax(0, 1fr) minmax(6rem, auto);
         column-gap: 0.3rem;
         align-items: baseline;
         min-width: 0;
         margin-bottom: 0;
     }
-    
+
+    .note-item-trailing {
+        gap: 0.25rem;
+    }
+
     .note-item-title {
         font-size: 1.2rem; /* Increased from 0.7rem for better readability */
         margin-bottom: 0;

@@ -8,7 +8,7 @@ import { initSmartPaste } from './js/smart-paste.js';
 import { saveNote, saveBeforeUnload } from './js/save.js';
 import { loadNotes, renderNotesList, filterNotes, refreshNotesView, selectNote, createNewNote, deleteNote, refreshCurrentNote, initNotes, checkFreshness, setupStaleBannerHandlers, startFreshnessInterval, stopFreshnessInterval, openLastModifiedNote, setupListViewTabs, togglePinnedForCurrentNote } from './js/notes.js';
 import { showModal, showLinkDialog, showConflictDialog, showDeleteConfirmDialog, showShareDialog, showPasteChoiceDialog } from './js/modals.js';
-import { setPublicDefault, updateNoteSharing } from './js/api.js';
+import { setDefaultPublished, updateNoteSharing } from './js/api.js';
 import { upsertNoteSummary } from './js/note-summary.js';
 import { updateUnsavedIndicator, updateLastSavedTime } from './js/indicators.js';
 import { exportNoteToPdf } from './js/pdf-export.js';
@@ -180,6 +180,19 @@ async function manageSharingForCurrentNote() {
         await saveNote(false);
     }
 
+    const renderSharingSurfaces = () => {
+        renderInspector();
+        renderNotesList(document.getElementById('searchInput')?.value || '');
+    };
+
+    const getDefaultPublishedNote = () => {
+        const hashId = state.publicDefaultHashId;
+        if (!hashId) return null;
+        return state.notes.find(note => note.hash_id === hashId)
+            || state.searchResults?.find(note => note.hash_id === hashId)
+            || null;
+    };
+
     const applySharingAction = async (action) => {
         const updatedNote = await updateNoteSharing(state.currentNote.hash_id, action);
         state.currentNote = updatedNote;
@@ -190,7 +203,7 @@ async function manageSharingForCurrentNote() {
         if (action === 'disable' && state.publicDefaultHashId === updatedNote.hash_id) {
             state.publicDefaultHashId = null;
         }
-        renderInspector();
+        renderSharingSurfaces();
         return updatedNote;
     };
 
@@ -200,14 +213,17 @@ async function manageSharingForCurrentNote() {
         onPublish: () => applySharingAction('publish'),
         onDisable: () => applySharingAction('disable'),
         onRegenerate: () => applySharingAction('regenerate'),
-        isEasyAccess: () => state.publicDefaultHashId === state.currentNote?.hash_id,
-        onSetEasyAccess: async () => {
-            const result = await setPublicDefault(state.currentNote?.hash_id ?? null);
+        getPublicDefaultHashId: () => state.publicDefaultHashId,
+        getDefaultPublishedNote,
+        onSetDefaultPublished: async () => {
+            const result = await setDefaultPublished(state.currentNote?.hash_id ?? null);
             state.publicDefaultHashId = result.public_default_hash_id ?? null;
+            renderSharingSurfaces();
         },
-        onRemoveEasyAccess: async () => {
-            const result = await setPublicDefault(null);
+        onRemoveDefaultPublished: async () => {
+            const result = await setDefaultPublished(null);
             state.publicDefaultHashId = result.public_default_hash_id ?? null;
+            renderSharingSurfaces();
         }
     });
 }

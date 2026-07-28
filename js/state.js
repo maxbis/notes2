@@ -11,7 +11,7 @@ const state = {
     isNotesQueryLoading: false,
     notesHasMore: false,
     searchHasMore: false,
-    /** hash_id of the note set as "easy access" (public.php with no id redirects here), or null */
+    /** hash_id of the Default Published note (public.php with no id redirects here), or null */
     publicDefaultHashId: null,
     hasUnsavedChanges: false,
     savedTitle: '',

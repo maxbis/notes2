@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Describe how public links, editable links, pinning, and the public easy-access default are managed from the frontend.
+Describe how public links, editable links, pinning, and the Default Published note are managed from the frontend.
 
 ## Location
 
@@ -22,7 +22,7 @@ Describe how public links, editable links, pinning, and the public easy-access d
   - copied public links to `public.php?id=...`
   - copied editable links to `app.php?note=...`
   - pin state updates
-  - public easy-access default updates
+  - Default Published note updates
 
 ## Flow/Behavior
 
@@ -35,7 +35,8 @@ Describe how public links, editable links, pinning, and the public easy-access d
    - the app saves first so the shared or editable link reflects the current visible content
 5. If clipboard write succeeds:
    - the share dialog confirms the copied link
-   - the public-link dialog also exposes the easy-access default toggle
+   - the sharing dialog exposes the Default Published controls
+   - the default address can only be copied from the note that is currently Default Published
 6. If clipboard write fails:
    - the app falls back to `window.prompt()` so the user can copy the URL manually
 7. Pin actions call a dedicated `PUT` API branch and then refresh the local note state with the returned note payload.
@@ -48,9 +49,18 @@ Describe how public links, editable links, pinning, and the public easy-access d
 - When clipboard APIs are unavailable:
   - link generation still works through manual prompt fallback
 
-- When the user toggles easy access:
-  - only the public default setting changes
+- When the user changes the Default Published note:
+  - only the default setting changes
   - the current note content itself is not modified
+  - the previous Default Published note remains Published
+
+- When the Default Published note is unpublished or deleted:
+  - the default setting is cleared
+
+- Sharing state uses three canonical user-facing labels:
+  - `Private`
+  - `Published`
+  - `Default Published`
 
 - When pin state changes:
   - the note version is bumped on the server, so pinning participates in freshness and conflict-aware flows

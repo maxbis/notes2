@@ -55,8 +55,9 @@ Describe the HTTP entrypoint, request routing, and the note-oriented API contrac
    - note HTML is sanitized before insert
    - the inserted note is reloaded and returned with tags attached
 
-6. `PUT` handles three branches.
-   - `set_public_default` stores or clears the public easy-access default note
+6. `PUT` handles sharing, settings, pinning, and note updates.
+   - `set_public_default` stores or clears the Default Published note
+   - `set_sharing` publishes, disables, or regenerates a note’s public link
    - `set_pinned` toggles a note’s pinned flag and bumps its version
    - standard note update writes title, content, tags, and pin state
 
@@ -70,6 +71,8 @@ Describe the HTTP entrypoint, request routing, and the note-oriented API contrac
    - the original note is then updated unconditionally and its version is bumped
 
 9. `DELETE` removes a note by `hash_id`.
+   - deleting the Default Published note also clears the default setting
+   - the response includes the remaining `public_default_hash_id`, or `null`
 
 ## Edge Cases/Failure Modes
 

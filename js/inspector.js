@@ -1,6 +1,7 @@
 import state from './state.js';
 import { getEditorHtml } from './editor.js';
 import { getCurrentTags } from './tags.js';
+import { getNoteSharingStatus, SHARING_STATUS } from './sharing-state.js';
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -128,6 +129,28 @@ function setText(id, value) {
     if (el) el.textContent = value;
 }
 
+function renderSharingStatus() {
+    const sharingStatus = getNoteSharingStatus(state.currentNote, state.publicDefaultHashId);
+    const isPublished = sharingStatus !== SHARING_STATUS.PRIVATE;
+    const isDefaultPublished = sharingStatus === SHARING_STATUS.DEFAULT_PUBLISHED;
+    const shareBadge = document.getElementById('inspectorShareBadge');
+    if (shareBadge) {
+        shareBadge.textContent = sharingStatus.label;
+        shareBadge.classList.toggle('published', isPublished);
+        shareBadge.classList.toggle('default-published', isDefaultPublished);
+    }
+    ['shareLinkBtn', 'shareLinkBtnMobile', 'shareLinkBtnInspector'].forEach((id) => {
+        const button = document.getElementById(id);
+        if (!button) return;
+        button.classList.toggle('sharing-published', isPublished);
+        button.classList.toggle('sharing-default-published', isDefaultPublished);
+        button.setAttribute('aria-label', `${sharingStatus.label} — manage public access`);
+        button.setAttribute('title', `${sharingStatus.label} — manage public access`);
+        const label = button.querySelector('.inspector-action-label');
+        if (label) label.textContent = sharingStatus.label;
+    });
+}
+
 export function renderInspector() {
     const emptyEl = document.getElementById('noteInspectorEmpty');
     const contentEl = document.getElementById('noteInspectorContent');
@@ -139,6 +162,7 @@ export function renderInspector() {
     const htmlTrimmed = draft.html.replace(/\s+/g, ' ').trim();
     const isBlankDraft = !hasNote && htmlTrimmed === '<p>empty note</p>' && !draft.title && !draft.tags.length;
     const hasDraftContent = !isBlankDraft && Boolean(draft.title || metrics.wordCount || draft.tags.length);
+    renderSharingStatus();
 
     if (!hasNote && !hasDraftContent) {
         emptyEl.hidden = false;
@@ -178,21 +202,6 @@ export function renderInspector() {
 
     const pinBadge = document.getElementById('inspectorPinBadge');
     if (pinBadge) pinBadge.hidden = !isPinned;
-
-    const isPublished = Number(state.currentNote?.is_published) === 1 && Boolean(state.currentNote?.public_token);
-    const shareBadge = document.getElementById('inspectorShareBadge');
-    if (shareBadge) {
-        shareBadge.textContent = isPublished ? 'Published' : 'Private';
-        shareBadge.classList.toggle('published', isPublished);
-    }
-    ['shareLinkBtn', 'shareLinkBtnMobile', 'shareLinkBtnInspector'].forEach((id) => {
-        const button = document.getElementById(id);
-        if (!button) return;
-        button.classList.toggle('sharing-published', isPublished);
-        button.setAttribute('aria-label', `${isPublished ? 'Published' : 'Private'} — manage public access`);
-        const label = button.querySelector('.inspector-action-label');
-        if (label) label.textContent = isPublished ? 'Published' : 'Private';
-    });
 
     renderTags(draft.tags);
     renderOutline(metrics.headings.map((heading) => ({

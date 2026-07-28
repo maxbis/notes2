@@ -1,5 +1,7 @@
 // Promise-based modal dialogs with shared accessibility and focus management.
 
+import { getNoteSharingStatus, SHARING_STATUS } from './sharing-state.js';
+
 const FOCUSABLE_SELECTOR = [
     'a[href]',
     'button:not([disabled])',
@@ -279,13 +281,13 @@ export function showShareDialog(options) {
         };
         const handleCancel = () => cleanup();
 
-        const getEasyAccessUrl = () => {
+        const getDefaultPublishedUrl = () => {
             const publicUrl = opts.getUrl?.(note) || '';
             try {
-                const easyAccessUrl = new URL(publicUrl);
-                easyAccessUrl.search = '';
-                easyAccessUrl.hash = '';
-                return easyAccessUrl.toString();
+                const defaultPublishedUrl = new URL(publicUrl);
+                defaultPublishedUrl.search = '';
+                defaultPublishedUrl.hash = '';
+                return defaultPublishedUrl.toString();
             } catch {
                 return '';
             }
@@ -316,20 +318,25 @@ export function showShareDialog(options) {
 
         const render = (feedback = '') => {
             clearActions();
-            const isPublished = Number(note?.is_published) === 1 && Boolean(note?.public_token);
+            const publicDefaultHashId = opts.getPublicDefaultHashId?.() ?? null;
+            const sharingStatus = getNoteSharingStatus(note, publicDefaultHashId);
+            const isPublished = sharingStatus !== SHARING_STATUS.PRIVATE;
+            const isDefaultPublished = sharingStatus === SHARING_STATUS.DEFAULT_PUBLISHED;
             const url = isPublished ? (opts.getUrl?.(note) || '') : '';
 
             const content = document.createElement('div');
             content.className = 'sharing-dialog';
 
             const status = document.createElement('div');
-            status.className = `sharing-status sharing-status--${isPublished ? 'published' : 'private'}`;
+            status.className = `sharing-status sharing-status--${sharingStatus.key}`;
             const statusLabel = document.createElement('strong');
-            statusLabel.textContent = isPublished ? 'Published' : 'Private';
+            statusLabel.textContent = sharingStatus.label;
             const statusText = document.createElement('span');
-            statusText.textContent = isPublished
-                ? 'Anyone with the active link can view this note.'
-                : 'Only people with editor access can view this note.';
+            statusText.textContent = isDefaultPublished
+                ? 'Anyone with the active link or the default public address can view this note.'
+                : isPublished
+                    ? 'Anyone with the active link can view this note.'
+                    : 'Only people with editor access can view this note.';
             status.append(statusLabel, statusText);
             content.append(status);
 
@@ -417,60 +424,68 @@ export function showShareDialog(options) {
                     linkSection.append(confirmation);
                 }
 
-                const isEasyAccess = Boolean(opts.isEasyAccess?.());
-                const easyAccessUrl = getEasyAccessUrl();
+                const defaultPublishedUrl = getDefaultPublishedUrl();
+                const currentDefaultNote = opts.getDefaultPublishedNote?.() || null;
                 const defaultSection = document.createElement('section');
                 defaultSection.className = 'sharing-default-section';
 
                 const defaultHeading = document.createElement('div');
                 defaultHeading.className = 'sharing-default-heading';
                 const defaultTitle = document.createElement('strong');
-                defaultTitle.textContent = 'Default public note';
+                defaultTitle.textContent = 'Default Published';
                 defaultHeading.append(defaultTitle);
-                const defaultBadge = document.createElement('span');
-                defaultBadge.className = `sharing-default-badge ${isEasyAccess ? 'is-active' : 'is-inactive'}`;
-                defaultBadge.textContent = isEasyAccess ? 'Active' : 'Inactive';
-                defaultHeading.append(defaultBadge);
+                if (isDefaultPublished) {
+                    const defaultBadge = document.createElement('span');
+                    defaultBadge.className = 'sharing-default-badge is-active';
+                    defaultBadge.textContent = 'Current';
+                    defaultHeading.append(defaultBadge);
+                }
 
                 const defaultDescription = document.createElement('p');
                 defaultDescription.className = 'sharing-default-description';
-                defaultDescription.append(document.createTextNode(
-                    isEasyAccess
-                        ? 'Opening '
-                        : 'Use this note when someone opens '
-                ));
-                if (easyAccessUrl) {
-                    const easyAccessLink = document.createElement('a');
-                    easyAccessLink.href = easyAccessUrl;
-                    easyAccessLink.target = '_blank';
-                    easyAccessLink.rel = 'noopener';
-                    easyAccessLink.textContent = easyAccessUrl;
-                    defaultDescription.append(easyAccessLink);
+                if (isDefaultPublished) {
+                    defaultDescription.append(document.createTextNode('Opening '));
+                    if (defaultPublishedUrl) {
+                        const defaultPublishedLink = document.createElement('a');
+                        defaultPublishedLink.href = defaultPublishedUrl;
+                        defaultPublishedLink.target = '_blank';
+                        defaultPublishedLink.rel = 'noopener';
+                        defaultPublishedLink.textContent = defaultPublishedUrl;
+                        defaultDescription.append(defaultPublishedLink);
+                    } else {
+                        defaultDescription.append(document.createTextNode('the default public address'));
+                    }
+                    defaultDescription.append(document.createTextNode(' displays this note.'));
                 } else {
-                    defaultDescription.append(document.createTextNode('the public notes address'));
+                    const currentDefaultTitle = String(currentDefaultNote?.title || '').trim();
+                    if (currentDefaultNote?.hash_id && currentDefaultNote.hash_id !== note?.hash_id) {
+                        defaultDescription.textContent = currentDefaultTitle
+                            ? `Making this note Default Published will replace “${currentDefaultTitle}”.`
+                            : 'Making this note Default Published will replace the current default note.';
+                    } else {
+                        defaultDescription.textContent =
+                            'No Default Published note is selected. The default public address will open this note.';
+                    }
                 }
-                defaultDescription.append(document.createTextNode(
-                    isEasyAccess ? ' displays this note.' : '.'
-                ));
 
                 const defaultActions = document.createElement('div');
                 defaultActions.className = 'sharing-default-actions';
-                if (easyAccessUrl) {
+                if (isDefaultPublished && defaultPublishedUrl) {
                     defaultActions.append(createActionButton(
-                        'Copy short link',
+                        'Copy default link',
                         'btn-secondary wp-button wp-button--secondary',
-                        () => copyText(easyAccessUrl).then(() => render('Short link copied.'))
+                        () => copyText(defaultPublishedUrl).then(() => render('Default link copied.'))
                     ));
                 }
                 defaultActions.append(createActionButton(
-                    isEasyAccess ? 'Remove as default public note' : 'Use as default public note',
+                    isDefaultPublished ? 'Remove as default' : 'Make Default Published',
                     'btn-secondary wp-button wp-button--secondary',
                     () => runAction(
-                        isEasyAccess ? opts.onRemoveEasyAccess : opts.onSetEasyAccess,
+                        isDefaultPublished ? opts.onRemoveDefaultPublished : opts.onSetDefaultPublished,
                         {
-                            success: isEasyAccess
-                                ? 'Default public note removed.'
-                                : `This is now the default public note; ${easyAccessUrl}`
+                            success: isDefaultPublished
+                                ? 'Default Published status removed. The note is still Published.'
+                                : `This note is now Default Published.${defaultPublishedUrl ? ` ${defaultPublishedUrl}` : ''}`
                         }
                     )
                 ));

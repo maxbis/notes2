@@ -10,6 +10,7 @@ import { getActiveTagFilters, renderSidebarTagFilters, setCurrentTags, setSavedT
 import { renderInspector } from './inspector.js';
 import { noteToSummary, upsertNoteSummary } from './note-summary.js';
 import { applySearchHighlights } from './search-highlights.js';
+import { getNoteSharingStatus, SHARING_STATUS } from './sharing-state.js';
 
 // Dependencies that will be injected
 let saveNote = null;
@@ -88,6 +89,48 @@ function currentSearchTerm() {
 
 function hasServerFilters(searchTerm = currentSearchTerm()) {
     return searchTerm !== '' || getActiveTagFilters().length > 0;
+}
+
+function noteSharingIndicatorHtml(note) {
+    const status = getNoteSharingStatus(note, state.publicDefaultHashId);
+    if (status === SHARING_STATUS.PRIVATE) return '';
+
+    const isDefault = status === SHARING_STATUS.DEFAULT_PUBLISHED;
+    const icon = isDefault
+        ? `
+            <path d="m3 11 9-8 9 8"></path>
+            <path d="M5 10v10h14V10"></path>
+            <path d="M9 20v-6h6v6"></path>
+        `
+        : `
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9S14.5 18.5 12 21M12 3C9.5 5.5 8.2 8.5 8.2 12S9.5 18.5 12 21"></path>
+        `;
+    return `
+        <span class="note-item-sharing ${isDefault ? 'note-item-sharing--default' : 'note-item-sharing--published'}"
+              title="${escapeHtml(status.label)}"
+              aria-label="Sharing status: ${escapeHtml(status.label)}">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                ${icon}
+            </svg>
+        </span>
+    `;
+}
+
+function noteItemHtml(note, title) {
+    return `
+        <div class="note-item ${state.selectedNoteHashId === note.hash_id ? 'active' : ''}"
+             onclick="window.selectNote('${note.hash_id}')">
+            <div class="note-item-header">
+                <div class="note-item-title">${normalizePinnedFlag(note) ? '<span class="note-item-pin" aria-hidden="true">📌</span>' : ''}${escapeHtml(title || 'Untitled')}</div>
+                <div class="note-item-trailing">
+                    ${noteSharingIndicatorHtml(note)}
+                    <div class="note-item-date">${formatDate(note.updated_at)}</div>
+                </div>
+            </div>
+            <div class="note-item-preview">${escapeHtml((note.preview || '').substring(0, 100))}</div>
+        </div>
+    `;
 }
 
 function setEditorLoading(isLoading) {
@@ -340,19 +383,7 @@ export function renderNotesList(searchTerm = '') {
 
     if (state.listView === 'all') {
         const sorted = sortNotesByPinnedAndUpdated(notesToShow);
-        const itemsHtml = sorted.map(note => {
-            const title = note.title || 'Untitled';
-            return `
-            <div class="note-item ${state.selectedNoteHashId === note.hash_id ? 'active' : ''}"
-                 onclick="window.selectNote('${note.hash_id}')">
-                <div class="note-item-header">
-                    <div class="note-item-title">${normalizePinnedFlag(note) ? '<span class="note-item-pin" aria-hidden="true">📌</span>' : ''}${escapeHtml(title)}</div>
-                    <div class="note-item-date">${formatDate(note.updated_at)}</div>
-                </div>
-                <div class="note-item-preview">${escapeHtml((note.preview || '').substring(0, 100))}</div>
-            </div>
-            `;
-        }).join('');
+        const itemsHtml = sorted.map(note => noteItemHtml(note, note.title || 'Untitled')).join('');
         notesList.innerHTML = `<div class="notes-list-flat">${itemsHtml}</div>`;
         return;
     }
@@ -374,16 +405,9 @@ export function renderNotesList(searchTerm = '') {
 
     notesList.innerHTML = Array.from(groups.entries()).map(([groupKey, { groupName, items }]) => {
         const isCollapsed = groupState[groupKey] === true;
-        const itemsHtml = items.map(({ note, itemTitle }) => `
-            <div class="note-item ${state.selectedNoteHashId === note.hash_id ? 'active' : ''}"
-                 onclick="window.selectNote('${note.hash_id}')">
-                <div class="note-item-header">
-                    <div class="note-item-title">${normalizePinnedFlag(note) ? '<span class="note-item-pin" aria-hidden="true">📌</span>' : ''}${escapeHtml(itemTitle || 'Untitled')}</div>
-                    <div class="note-item-date">${formatDate(note.updated_at)}</div>
-                </div>
-                <div class="note-item-preview">${escapeHtml((note.preview || '').substring(0, 100))}</div>
-            </div>
-        `).join('');
+        const itemsHtml = items
+            .map(({ note, itemTitle }) => noteItemHtml(note, itemTitle || 'Untitled'))
+            .join('');
 
         return `
             <div class="note-group" data-group="${escapeHtml(groupKey)}" data-collapsed="${isCollapsed ? 'true' : 'false'}">
@@ -765,6 +789,10 @@ export async function deleteNote() {
             alert('Error deleting note: ' + result.error);
             resumeAutoSave();
             return;
+        }
+
+        if (state.publicDefaultHashId === noteToDelete.hash_id) {
+            state.publicDefaultHashId = result.public_default_hash_id ?? null;
         }
 
         // Remove from local array

@@ -230,7 +230,7 @@ function handle_get(mysqli $conn): void {
     } elseif (isset($_GET['view']) && $_GET['view'] === 'list') {
         handle_notes_list($conn);
     } else {
-        // Get all notes and public "easy access" default
+        // Get all notes and the Default Published note
         $result = $conn->query("SELECT id, hash_id, public_token, is_published, title, content, is_pinned, created_at, updated_at, version FROM notes ORDER BY updated_at DESC");
         if ($result === false) __notes_db_fail($conn, 'query: select all notes');
         $notes = [];

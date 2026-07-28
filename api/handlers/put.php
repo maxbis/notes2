@@ -49,7 +49,7 @@ function handle_put(mysqli $conn): void {
             $stmtDefaultCandidate->bind_param("s", $hashId);
             if (!$stmtDefaultCandidate->execute()) __notes_db_fail($conn, 'execute: validate public default');
             if (!fetch_assoc_from_stmt($stmtDefaultCandidate)) {
-                __notes_json_error(409, 'Only a published note can be used as the default public note');
+                __notes_json_error(409, 'Only a Published note can become Default Published');
             }
 
             if (!set_setting($conn, 'public_default_hash_id', $hashId)) {
@@ -57,14 +57,14 @@ function handle_put(mysqli $conn): void {
             }
         } else {
             if (!set_setting($conn, 'public_default_hash_id', '')) {
-                __notes_db_fail($conn, 'clear public default');
+                __notes_db_fail($conn, 'clear Default Published note');
             }
         }
 
         $storedHashId = get_setting($conn, 'public_default_hash_id');
         $expectedHashId = $hashId ?? '';
         if ($storedHashId !== $expectedHashId) {
-            __notes_json_error(500, 'Default public note setting was not saved');
+            __notes_json_error(500, 'Default Published setting was not saved');
         }
 
         echo json_encode([
