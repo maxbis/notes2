@@ -37,6 +37,9 @@ Document the backend safety rules that keep stored note HTML constrained, normal
 5. Class handling is narrow.
    - code blocks keep only `language-*` classes
    - block elements can keep only `indent-1` through `indent-4`
+   - application-owned todo markup keeps only `todo-list`, `todo-item`, and `todo-checkbox`
+   - todo IDs, ISO timestamps, completion labels, and checkbox accessibility attributes are validated individually
+   - the todo additions live in `api/sanitize.php` because `api/config.php` is installation-local and ignored by Git
 6. Numeric table attributes are normalized.
    - `colspan` and `rowspan` keep only digits
 7. Newlines inside `pre` and `code` are preserved through placeholder substitution so parser normalization does not collapse them.

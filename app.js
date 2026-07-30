@@ -15,6 +15,7 @@ import { exportNoteToPdf } from './js/pdf-export.js';
 import { initMarkdownImport, setupMarkdownImport } from './js/markdown-import.js';
 import { getCurrentTags, initTagInput, tagsEqual } from './js/tags.js';
 import { renderInspector } from './js/inspector.js';
+import { setupTodoInteractions } from './js/todos.js';
 
 // Make selectNote available globally for onclick handlers in rendered HTML
 window.selectNote = selectNote;
@@ -365,6 +366,7 @@ function setupEventListeners() {
     
     // Setup formatting toolbar
     setupFormattingToolbar();
+    setupTodoInteractions();
     updateSearchClearButtonVisibility();
     const htmlModeBtn = document.getElementById('htmlModeBtn');
     if (htmlModeBtn) {

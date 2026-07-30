@@ -5,6 +5,7 @@ import {
     clearSearchHighlights,
     getEditorHtmlWithoutSearchHighlights
 } from './search-highlights.js';
+import { normalizeTodoItems } from './todos.js';
 
 const INLINE_TAGS = new Set([
     'a', 'abbr', 'b', 'bdi', 'bdo', 'br', 'cite', 'code', 'data', 'dfn', 'em',
@@ -142,12 +143,11 @@ export function formatHtmlModeTextarea() {
 
 function updateHtmlModeToolbar(isHtmlModeActive) {
     const richTextGroup = document.querySelector('.toolbar-group[aria-label="Inline formatting"]');
-    const structureGroup = document.querySelector('.toolbar-group[aria-label="Structure and insertion"]');
+    const structureGroup = document.querySelector('.toolbar-group[aria-label="Lists and indentation"]');
     const headingGroup = document.querySelector('.toolbar-group.desktop-only[aria-label="Headings and code"]');
-    const dateBtn = document.getElementById('insertDateBtn');
-    const checkBtn = document.getElementById('insertCheckmarkBtn');
+    const insertGroup = document.querySelector('.toolbar-group[aria-label="Insert"]');
 
-    [richTextGroup, structureGroup, headingGroup, dateBtn, checkBtn].forEach((el) => {
+    [richTextGroup, structureGroup, headingGroup, insertGroup].forEach((el) => {
         if (!el) return;
         el.hidden = !!isHtmlModeActive;
     });
@@ -163,7 +163,10 @@ export function setEditorHtml(html) {
     state.htmlModeRawHtml = raw === '' ? EMPTY_EDITOR_HTML : raw;
     state.htmlModeDirty = false;
 
-    if (editor) editor.innerHTML = state.htmlModeRawHtml;
+    if (editor) {
+        editor.innerHTML = state.htmlModeRawHtml;
+        normalizeTodoItems(editor);
+    }
     if (htmlEl) {
         htmlEl.value = state.isHtmlMode ? formatHtmlForDisplay(state.htmlModeRawHtml) : state.htmlModeRawHtml;
     }
@@ -195,6 +198,7 @@ export function setHtmlMode(enabled) {
         // If the user edited the textarea, `htmlModeRawHtml` is updated on input.
         // If they did not, keep the original raw HTML (not the formatted display string).
         editor.innerHTML = state.htmlModeRawHtml;
+        normalizeTodoItems(editor);
         editor.hidden = false;
         htmlEl.hidden = true;
         applySearchHighlights(state.searchTerm);

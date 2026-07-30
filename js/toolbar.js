@@ -2,6 +2,13 @@
 import { escapeHtml, isMobileLayout } from './utils.js';
 import { isHtmlMode } from './state.js';
 import { handleSmartPaste } from './smart-paste.js';
+import {
+    clearTodoFormattingForSelection,
+    isSelectionInTodoList,
+    normalizeTodoItems,
+    runWithoutTodoNormalization,
+    toggleTodoList
+} from './todos.js';
 
 // These will be imported from other modules
 let trackChanges = null;
@@ -348,6 +355,7 @@ export function updateToolbarState() {
     const bulletListBtn = document.getElementById('bulletListBtn');
     const bulletListBtnMobile = document.getElementById('bulletListBtnMobile');
     const numberedListBtn = document.getElementById('numberedListBtn');
+    const todoListBtn = document.getElementById('todoListBtn');
     const outdentBtn = document.getElementById('outdentBtn');
     const indentBtn = document.getElementById('indentBtn');
     const h1Btn = document.getElementById('h1Btn');
@@ -378,6 +386,7 @@ export function updateToolbarState() {
         setPressed(bulletListBtn, false);
         setPressed(bulletListBtnMobile, false);
         setPressed(numberedListBtn, false);
+        setPressed(todoListBtn, false);
         setPressed(h1Btn, false);
         setPressed(h2Btn, false);
         setPressed(h3Btn, false);
@@ -389,9 +398,11 @@ export function updateToolbarState() {
         return;
     }
 
-    setPressed(bulletListBtn, document.queryCommandState('insertUnorderedList'));
-    setPressed(bulletListBtnMobile, document.queryCommandState('insertUnorderedList'));
+    const isTodoList = isSelectionInTodoList(editor, anchorNode);
+    setPressed(bulletListBtn, !isTodoList && document.queryCommandState('insertUnorderedList'));
+    setPressed(bulletListBtnMobile, !isTodoList && document.queryCommandState('insertUnorderedList'));
     setPressed(numberedListBtn, document.queryCommandState('insertOrderedList'));
+    setPressed(todoListBtn, isTodoList);
 
     const indentTarget = getIndentTarget(editor);
     const indentLevel = getIndentLevel(indentTarget);
@@ -517,6 +528,11 @@ export function setupFormattingToolbar() {
         document.execCommand('insertUnorderedList', false, null);
         focusEditorAndSync();
     });
+
+    bindClickIfExists('todoListBtn', () => {
+        toggleTodoList();
+        focusEditorAndSync();
+    });
     
     document.getElementById('numberedListBtn').addEventListener('click', () => {
         document.execCommand('insertOrderedList', false, null);
@@ -638,6 +654,9 @@ export function setupFormattingToolbar() {
         } else if (key === 'n') {
             document.execCommand('insertOrderedList', false, null);
             focusEditorAndSync();
+        } else if (key === 't') {
+            toggleTodoList();
+            focusEditorAndSync();
         } else if (key === 'c') {
             togglePre();
         } else if (key === 'd') {
@@ -653,32 +672,38 @@ export function setupFormattingToolbar() {
     };
 
     const clearFormatting = () => {
-        // Remove inline formatting such as bold, italic, underline, links, etc.
-        try {
-            document.execCommand('removeFormat', false, null);
-        } catch {
-            // ignore
-        }
+        const editor = getEditorElement();
+        runWithoutTodoNormalization(() => {
+            clearTodoFormattingForSelection(editor);
 
-        // Reset block type back to a normal paragraph (removes H1/H2/H3/pre wrappers)
-        try {
-            document.execCommand('formatBlock', false, 'p');
-        } catch {
-            // ignore
-        }
-
-        // If a list is active, toggle it off so list styling is cleared as well.
-        try {
-            if (document.queryCommandState('insertUnorderedList')) {
-                document.execCommand('insertUnorderedList', false, null);
+            // Remove inline formatting such as bold, italic, underline, links, etc.
+            try {
+                document.execCommand('removeFormat', false, null);
+            } catch {
+                // ignore
             }
-            if (document.queryCommandState('insertOrderedList')) {
-                document.execCommand('insertOrderedList', false, null);
-            }
-        } catch {
-            // ignore
-        }
 
+            // Reset block type back to a normal paragraph (removes H1/H2/H3/pre wrappers)
+            try {
+                document.execCommand('formatBlock', false, 'p');
+            } catch {
+                // ignore
+            }
+
+            // If a list is active, toggle it off so list styling is cleared as well.
+            try {
+                if (document.queryCommandState('insertUnorderedList')) {
+                    document.execCommand('insertUnorderedList', false, null);
+                }
+                if (document.queryCommandState('insertOrderedList')) {
+                    document.execCommand('insertOrderedList', false, null);
+                }
+            } catch {
+                // ignore
+            }
+        });
+
+        normalizeTodoItems(editor);
         focusEditorAndSync();
     };
 
@@ -931,7 +956,7 @@ export function setupFormattingToolbar() {
     // - type ";0" to clear formatting
     // - type ";p" to convert the current block back to a paragraph
     // - type ";1", ";2", ";3" to apply H1/H2/H3
-    // - type ";b", ";n", ";c" for bullet list, numbered list, code block
+    // - type ";b", ";n", ";t", ";c" for bullet list, numbered list, todo list, code block
     // - type ";d" to insert date
     // - type ";v" to insert a checkmark
     // Update toolbar button states based on selection
@@ -945,7 +970,7 @@ export function setupFormattingToolbar() {
             const { node, offset } = getTextNodeAndOffsetAtCaret(range);
             if (node && offset >= 2) {
                 const shortcut = node.data.slice(offset - 2, offset);
-                if (shortcut.length === 2 && shortcut[0] === ';' && ['0', 'p', '1', '2', '3', 'b', 'n', 'c', 'd', 'v'].includes(shortcut[1])) {
+                if (shortcut.length === 2 && shortcut[0] === ';' && ['0', 'p', '1', '2', '3', 'b', 'n', 't', 'c', 'd', 'v'].includes(shortcut[1])) {
                     applyInlineShortcut(shortcut[1]);
                     return;
                 }

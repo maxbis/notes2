@@ -1133,6 +1133,77 @@ aside.sidebar {
     padding: 3px;
 }
 
+.editor-content ul.todo-list {
+    margin-left: 0;
+    padding-left: 2rem;
+    list-style: none;
+}
+
+.editor-content ul.todo-list > li.todo-item {
+    position: relative;
+    min-height: 1.7em;
+    padding-left: 0.15rem;
+}
+
+.editor-content .todo-checkbox {
+    position: absolute;
+    top: calc(0.43em + 2px);
+    left: -1.6rem;
+    width: 1.05rem;
+    height: 1.05rem;
+    border: 1.5px solid var(--wp-border-strong);
+    border-radius: 3px;
+    background: var(--wp-surface-panel);
+    cursor: pointer;
+    transition:
+        background-color var(--wp-duration-fast) var(--wp-ease-standard),
+        border-color var(--wp-duration-fast) var(--wp-ease-standard);
+}
+
+.editor-content .todo-checkbox:hover {
+    border-color: var(--wp-accent);
+    background: var(--wp-accent-soft);
+}
+
+.editor-content .todo-checkbox:focus-visible {
+    outline: 2px solid var(--wp-accent);
+    outline-offset: 2px;
+}
+
+.editor-content li.todo-item[data-todo-completed-at] {
+    color: var(--wp-text-secondary);
+}
+
+.editor-content li.todo-item[data-todo-completed-at] > .todo-checkbox {
+    border-color: var(--wp-accent);
+    background: var(--wp-accent);
+}
+
+.editor-content li.todo-item[data-todo-completed-at] > .todo-checkbox::before {
+    content: "";
+    position: absolute;
+    left: 0.31rem;
+    top: 0.08rem;
+    width: 0.27rem;
+    height: 0.55rem;
+    border: solid var(--wp-surface-panel);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.editor-content li.todo-item[data-todo-completed-at]::after {
+    content: attr(data-todo-completed-label);
+    margin-left: 0.55rem;
+    color: var(--wp-text-secondary);
+    font-size: 0.78em;
+    font-style: italic;
+    white-space: nowrap;
+}
+
+.public-note .editor-content .todo-checkbox {
+    cursor: default;
+}
+
 .editor-content strong {
     font-weight: 600;
 }

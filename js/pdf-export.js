@@ -115,6 +115,48 @@ const PRINT_DOCUMENT_STYLES = `
         margin: 0 0 1.6mm;
     }
 
+    .print-content ul.todo-list {
+        padding-left: 6.5mm;
+        list-style: none;
+    }
+
+    .print-content ul.todo-list > li.todo-item {
+        position: relative;
+    }
+
+    .print-content .todo-checkbox {
+        position: absolute;
+        left: -5.4mm;
+        top: 0.15em;
+        width: 3.7mm;
+        height: 3.7mm;
+        border: 0.35mm solid #6c6a64;
+        border-radius: 0.6mm;
+    }
+
+    .print-content li.todo-item[data-todo-completed-at] > .todo-checkbox {
+        background: #315f8d;
+        border-color: #315f8d;
+    }
+
+    .print-content li.todo-item[data-todo-completed-at] > .todo-checkbox::before {
+        content: "✓";
+        position: absolute;
+        inset: -0.9mm 0 0 0;
+        color: #fff;
+        font-size: 3.2mm;
+        text-align: center;
+    }
+
+    .print-content li.todo-item[data-todo-completed-at]::after {
+        content: attr(data-todo-completed-label);
+        margin-left: 2mm;
+        color: #6c6a64;
+        font-size: 8pt;
+        font-style: italic;
+        white-space: nowrap;
+    }
+
     .print-content a {
         color: inherit;
         text-decoration: underline;

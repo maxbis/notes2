@@ -44,8 +44,21 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
     }
 
     $allowedSet = array_fill_keys(array_map('strtolower', $allowedTags), true);
+    // Todo markers are application-owned structural HTML. Keep their narrow
+    // allowlist here because api/config.php is installation-local and ignored.
+    $allowedSet['span'] = true;
     $forbiddenSet = array_fill_keys(array_map('strtolower', $forbiddenTags), true);
     $indentClassTags = array_fill_keys(['div', 'p', 'h1', 'h2', 'h3', 'h4', 'li', 'blockquote', 'pre', 'td', 'th'], true);
+    $allowedStaticClasses = [
+        'ul' => ['todo-list' => true],
+        'li' => ['todo-item' => true],
+        'span' => ['todo-checkbox' => true],
+    ];
+    $todoAllowedAttrsByTag = [
+        'ul' => ['class'],
+        'li' => ['class', 'data-todo-id', 'data-todo-created-at', 'data-todo-completed-at', 'data-todo-completed-label'],
+        'span' => ['class', 'contenteditable', 'role', 'tabindex', 'aria-checked'],
+    ];
     $isSafeHref = static function ($value) {
         $href = trim((string)$value);
         if ($href === '') return false;
@@ -53,7 +66,7 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
         return preg_match('/^(https?:|mailto:|tel:)/i', $href) === 1;
     };
 
-    $sanitizeNode = function ($node) use (&$sanitizeNode, $allowedSet, $allowedAttrsByTag, $forbiddenSet, $dom, $placeholder, $isSafeHref, $indentClassTags) {
+    $sanitizeNode = function ($node) use (&$sanitizeNode, $allowedSet, $allowedAttrsByTag, $forbiddenSet, $dom, $placeholder, $isSafeHref, $indentClassTags, $allowedStaticClasses, $todoAllowedAttrsByTag) {
         if (!$node) return;
 
         // Remove comments
@@ -108,6 +121,9 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
                 $allowedAttrs[strtolower($a)] = true;
             }
         }
+        foreach ($todoAllowedAttrsByTag[$tag] ?? [] as $a) {
+            $allowedAttrs[strtolower($a)] = true;
+        }
 
         if ($node->hasAttributes()) {
             // Snapshot attributes first (live list).
@@ -144,16 +160,60 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
                     continue;
                 }
 
-                if ($name === 'class' && isset($indentClassTags[$tag])) {
+                if ($name === 'class') {
                     $classes = preg_split('/\s+/', trim((string)$attr->nodeValue)) ?: [];
-                    $classes = array_values(array_filter($classes, static function ($className) {
-                        return preg_match('/^indent-[1-4]$/', $className) === 1;
+                    $classes = array_values(array_filter($classes, static function ($className) use ($tag, $indentClassTags, $allowedStaticClasses) {
+                        if (isset($allowedStaticClasses[$tag][$className])) return true;
+                        return isset($indentClassTags[$tag])
+                            && preg_match('/^indent-[1-4]$/', $className) === 1;
                     }));
                     if (!$classes) {
                         $toRemove[] = $attr->nodeName;
                     } else {
                         $node->setAttribute($attr->nodeName, implode(' ', $classes));
                     }
+                    continue;
+                }
+
+                if ($name === 'data-todo-id') {
+                    if (preg_match('/^[a-z0-9-]{8,64}$/i', (string)$attr->nodeValue) !== 1) {
+                        $toRemove[] = $attr->nodeName;
+                    }
+                    continue;
+                }
+
+                if ($name === 'data-todo-created-at' || $name === 'data-todo-completed-at') {
+                    if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/', (string)$attr->nodeValue) !== 1) {
+                        $toRemove[] = $attr->nodeName;
+                    }
+                    continue;
+                }
+
+                if ($name === 'data-todo-completed-label') {
+                    $label = trim((string)$attr->nodeValue);
+                    if ($label === '' || strlen($label) > 100) {
+                        $toRemove[] = $attr->nodeName;
+                    }
+                    continue;
+                }
+
+                if ($name === 'contenteditable' && strtolower((string)$attr->nodeValue) !== 'false') {
+                    $toRemove[] = $attr->nodeName;
+                    continue;
+                }
+
+                if ($name === 'role' && strtolower((string)$attr->nodeValue) !== 'checkbox') {
+                    $toRemove[] = $attr->nodeName;
+                    continue;
+                }
+
+                if ($name === 'tabindex' && (string)$attr->nodeValue !== '0') {
+                    $toRemove[] = $attr->nodeName;
+                    continue;
+                }
+
+                if ($name === 'aria-checked' && !in_array(strtolower((string)$attr->nodeValue), ['true', 'false'], true)) {
+                    $toRemove[] = $attr->nodeName;
                     continue;
                 }
 

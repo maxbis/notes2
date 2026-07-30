@@ -35,6 +35,11 @@ Explain how the note editor manages rich-text content, HTML mode, formatting con
    - the live `innerHTML` when rich-text mode is active
 4. `formatHtmlForDisplay()` pretty-prints HTML for readability in HTML mode without changing the semantic content being saved.
 5. The toolbar module applies inline formatting, headings, lists, indentation classes, block structure changes, links, and utility insertions.
+   - Todo-list formatting converts selected lines or an existing bullet list into todo items.
+   - each todo receives a stable ID and creation timestamp in its saved HTML
+   - clicking its square toggles an ISO completion timestamp and a human-readable completion label
+   - completed items can be reopened by clicking the square again
+   - todo metadata is kept in safe allowlisted attributes; real form inputs are not embedded in note content
    - on mobile layouts, typing a second consecutive space in rich-text prose replaces the two spaces with a full stop followed by one space
    - this shortcut is disabled in `pre` and `code` content and in HTML source mode
 6. Smart paste examines pasted input before inserting it.
@@ -63,6 +68,13 @@ Explain how the note editor manages rich-text content, HTML mode, formatting con
 - When code block classes are present:
   - only `language-*` classes survive client paste sanitization
 
+- When Enter creates a new todo item:
+  - duplicate metadata inherited from the preceding item is replaced with a new ID and creation timestamp
+  - completion metadata is cleared for the new item
+
+- When todo HTML is saved:
+  - the server sanitizer only preserves the exact todo classes, metadata attributes, and non-editable checkbox semantics used by the editor
+
 - When export content is empty:
   - PDF export stops early and alerts instead of generating a blank print document
 
@@ -71,6 +83,7 @@ Explain how the note editor manages rich-text content, HTML mode, formatting con
 - `/Users/maxbisschop/dev/www/notes2/js/editor.js`
 - `/Users/maxbisschop/dev/www/notes2/js/toolbar.js`
 - `/Users/maxbisschop/dev/www/notes2/js/insert.js`
+- `/Users/maxbisschop/dev/www/notes2/js/todos.js`
 - `/Users/maxbisschop/dev/www/notes2/js/smart-paste.js`
 - `/Users/maxbisschop/dev/www/notes2/js/markdown-import.js`
 - `/Users/maxbisschop/dev/www/notes2/js/pdf-export.js`
