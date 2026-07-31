@@ -671,10 +671,50 @@ export function setupFormattingToolbar() {
         return true;
     };
 
+    const unlinkSelection = (editor) => {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return;
+
+        const range = selection.getRangeAt(0);
+        const startElement = range.startContainer.nodeType === Node.ELEMENT_NODE
+            ? range.startContainer
+            : range.startContainer.parentElement;
+
+        if (!startElement || !editor.contains(startElement)) return;
+
+        const links = [];
+        if (range.collapsed) {
+            const link = startElement.closest('a');
+            if (link && editor.contains(link)) links.push(link);
+        } else {
+            editor.querySelectorAll('a').forEach((link) => {
+                try {
+                    if (range.intersectsNode(link)) links.push(link);
+                } catch {
+                    // Ignore nodes that cannot be compared with the current range.
+                }
+            });
+        }
+
+        links.forEach((link) => {
+            const parent = link.parentNode;
+            if (!parent) return;
+
+            while (link.firstChild) {
+                parent.insertBefore(link.firstChild, link);
+            }
+            parent.removeChild(link);
+        });
+    };
+
     const clearFormatting = () => {
         const editor = getEditorElement();
         runWithoutTodoNormalization(() => {
             clearTodoFormattingForSelection(editor);
+
+            // removeFormat does not consistently remove anchor elements across
+            // browsers, so explicitly unwrap links while preserving their text.
+            unlinkSelection(editor);
 
             // Remove inline formatting such as bold, italic, underline, links, etc.
             try {
