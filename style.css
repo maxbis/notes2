@@ -1002,8 +1002,8 @@ aside.sidebar {
 .toolbar-btn.active {
     background: var(--accent-soft);
     border-color: var(--wp-accent-border);
-    color: var(--accent);
-    box-shadow: inset 0 -2px 0 var(--wp-accent);
+    color: var(--accent-strong);
+    box-shadow: none;
 }
 
 .toolbar-btn strong {
@@ -2572,7 +2572,8 @@ button {
 .wp-theme .toolbar-btn.active {
     background: var(--wp-surface-selected);
     border-color: var(--wp-accent-border);
-    color: var(--wp-accent);
+    color: var(--wp-accent-hover);
+    box-shadow: none;
 }
 
 .wp-theme .editor-content,
