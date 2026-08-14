@@ -1,0 +1,77 @@
+/*
+ * Paper White Variant
+ *
+ * A cooler, more neutral take on the warm-paper theme.
+ * Load this AFTER warm-paper.css to override the warm tones
+ * with true paper-white colors.
+ *
+ * Usage: Add class "wp-paper-white" alongside "wp-theme"
+ *        <body class="wp-theme wp-paper-white">
+ */
+
+.wp-theme.wp-paper-white {
+    /* Surfaces - neutral whites with slight cool undertone */
+    --wp-surface-page: #f7f7f7;
+    --wp-surface-panel: #ffffff;
+    --wp-surface-input: #fafafa;
+    --wp-surface-subtle: #f2f2f3;
+    --wp-surface-hover: #eef1f5;
+    --wp-surface-selected: #e3ebf5;
+
+    /* Borders - neutral grays instead of warm browns */
+    --wp-border-subtle: #e0e0e0;
+    --wp-border-strong: #9e9e9e;
+
+    /* Text - slightly cooler charcoal */
+    --wp-text-primary: #1a1a1a;
+    --wp-text-secondary: #6b6b6b;
+    --wp-text-heading-muted: #5a6a7a;
+    --wp-control-muted: #8a8a8a;
+
+    /* Accent - slightly more saturated blue for contrast on white */
+    --wp-accent: #2563eb;
+    --wp-accent-hover: #1d4ed8;
+    --wp-accent-soft: #eff6ff;
+    --wp-accent-border: #93c5fd;
+    --wp-focus-ring: rgba(37, 99, 235, 0.25);
+
+    /* Semantic states - adjusted for cooler palette */
+    --wp-danger: #dc2626;
+    --wp-danger-hover: #b91c1c;
+    --wp-danger-soft: #fef2f2;
+    --wp-danger-border: #fca5a5;
+    --wp-success: #16a34a;
+    --wp-success-hover: #15803d;
+    --wp-success-soft: #f0fdf4;
+    --wp-success-border: #86efac;
+    --wp-warning: #ca8a04;
+    --wp-warning-hover: #a16207;
+    --wp-warning-soft: #fefce8;
+    --wp-warning-border: #fde047;
+
+    /* Elevation - neutral shadows */
+    --wp-shadow-raised: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --wp-shadow-floating: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+/*
+ * Optional: Slightly warm paper-white (best of both worlds)
+ * Use class "wp-paper-white-warm" for a subtle warmth
+ */
+.wp-theme.wp-paper-white-warm {
+    --wp-surface-page: #f9f8f7;
+    --wp-surface-panel: #fffffe;
+    --wp-surface-input: #fcfbfa;
+    --wp-surface-subtle: #f4f3f1;
+    --wp-surface-hover: #edf0f4;
+    --wp-surface-selected: #e1eaf4;
+
+    --wp-border-subtle: #e5e3e0;
+    --wp-border-strong: #a09a94;
+
+    --wp-text-primary: #1f1f1e;
+    --wp-text-secondary: #68686a;
+
+    --wp-shadow-raised: 0 1px 3px rgba(30, 25, 20, 0.07);
+    --wp-shadow-floating: 0 10px 25px rgba(30, 25, 20, 0.14);
+}

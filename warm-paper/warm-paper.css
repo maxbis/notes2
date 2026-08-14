@@ -4,6 +4,14 @@
  *
  * Add class="wp-theme" to the application root, then use the wp-* component
  * classes documented in README.md.
+ *
+ * VARIANTS (load after this file):
+ * - variants/paper-white.css   → Cooler, neutral paper-white colors
+ *                                 Add class "wp-paper-white" or "wp-paper-white-warm"
+ * - variants/paper-texture.css → Subtle grain and ruled-paper effects
+ *                                 Add class "wp-textured", "wp-ruled", "wp-margin-line"
+ *
+ * Example: <body class="wp-theme wp-paper-white wp-textured">
  */
 
 @import "./tokens.css";
