@@ -42,7 +42,7 @@ $appVersion = (string) filemtime(__DIR__ . '/app.js');
             </div>
             <div class="header-actions">
                 <div class="header-utility-actions">
-                    <button class="btn-secondary wp-button wp-button--secondary mobile-only" id="showNotesBtn" type="button" title="Search / Notes" aria-label="Search / Notes">🔍</button>
+                    <button class="btn-secondary wp-button wp-button--secondary global-search-trigger" id="globalSearchBtn" type="button" title="Search all notes" aria-label="Search all notes" aria-haspopup="dialog">🔍</button>
                     <button class="btn-secondary wp-button wp-button--secondary" id="openLastModifiedBtn" type="button" title="Open last modified note" aria-label="Open last modified note">Recent</button>
                     <button class="btn-secondary wp-button wp-button--secondary reload-page-btn" id="reloadPageBtn" type="button" title="Reload page" aria-label="Reload page">
                         <span class="reload-page-btn-label">↺ Reload</span>
@@ -54,6 +54,31 @@ $appVersion = (string) filemtime(__DIR__ . '/app.js');
                 <input type="file" id="importMarkdownInput" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
             </div>
         </header>
+
+        <div class="global-search" id="globalSearchDialog" role="dialog" aria-modal="true" aria-labelledby="globalSearchLabel" hidden>
+            <div class="global-search-panel">
+                <label class="global-search-label" id="globalSearchLabel" for="globalSearchInput">Search all notes</label>
+                <div class="global-search-input-shell">
+                    <span class="global-search-input-icon" aria-hidden="true">🔍</span>
+                    <input
+                        class="global-search-input wp-input"
+                        id="globalSearchInput"
+                        type="search"
+                        placeholder="Search notes, or enter todo..."
+                        autocomplete="off"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-controls="globalSearchResults"
+                        aria-expanded="false"
+                    >
+                    <button class="global-search-close wp-button wp-button--quiet" id="globalSearchCloseBtn" type="button" aria-label="Close search">Close</button>
+                </div>
+                <div class="global-search-results" id="globalSearchResults" role="listbox" aria-label="Matching notes">
+                    <div class="global-search-message">Type at least 2 characters to search, or enter todo for open todos.</div>
+                </div>
+                <div class="global-search-help" aria-hidden="true">↑↓ Navigate&nbsp;&nbsp; Enter Open&nbsp;&nbsp; Esc Close</div>
+            </div>
+        </div>
 
         <div class="main-content">
             <aside class="sidebar">

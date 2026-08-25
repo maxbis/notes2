@@ -16,6 +16,7 @@ import { initMarkdownImport, setupMarkdownImport } from './js/markdown-import.js
 import { getCurrentTags, initTagInput, tagsEqual } from './js/tags.js';
 import { renderInspector } from './js/inspector.js';
 import { setupTodoInteractions } from './js/todos.js';
+import { initGlobalSearch } from './js/global-search.js';
 
 // Make selectNote available globally for onclick handlers in rendered HTML
 window.selectNote = selectNote;
@@ -298,17 +299,6 @@ function setupEventListeners() {
             searchInput.focus();
         });
     }
-    const showNotesBtn = document.getElementById('showNotesBtn');
-    if (showNotesBtn) {
-        showNotesBtn.addEventListener('click', () => {
-            if (isMobileSearchMode()) {
-                closeMobileSearchMode();
-                return;
-            }
-            showNotesSidebarAndFocusSearch();
-        });
-    }
-
     const bindShare = (id) => {
         const btn = document.getElementById(id);
         if (!btn) return;
@@ -506,6 +496,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initSmartPaste({
         showPasteChoiceDialog
+    });
+
+    initGlobalSearch({
+        onSelect: (hashId, query) => selectNote(hashId, { highlightTerm: query })
     });
     
     // Import save module and initialize it

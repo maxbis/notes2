@@ -540,7 +540,7 @@ export function filterNotes(e) {
     }, SEARCH_DEBOUNCE_MS);
 }
 
-export async function selectNote(hashId) {
+export async function selectNote(hashId, { highlightTerm = '' } = {}) {
     const targetHashId = String(hashId || '');
     if (!targetHashId) return;
 
@@ -584,7 +584,7 @@ export async function selectNote(hashId) {
 
         document.getElementById('noteTitle').value = title;
         setEditorHtml(content);
-        applySearchHighlights(currentSearchTerm(), { scrollToFirst: true });
+        applySearchHighlights(highlightTerm || currentSearchTerm(), { scrollToFirst: true });
         setCurrentTags(normalizedNote.tags || []);
         state.savedTitle = title;
         state.savedContent = content;
