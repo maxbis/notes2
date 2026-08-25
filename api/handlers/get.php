@@ -167,7 +167,7 @@ function notes_open_todos_from_note(array $note, string $query = ''): array {
     $tags = is_array($note['tags'] ?? null) ? $note['tags'] : [];
     $noteMatches = notes_text_contains($title, $query)
         || array_filter($tags, static fn($tag) => notes_text_contains((string)$tag, $query));
-    $results = [];
+    $openItems = [];
     foreach ($items as $index => $item) {
         if (!$item instanceof DOMElement) continue;
         $completedAt = trim($item->getAttribute('data-todo-completed-at'));
@@ -178,16 +178,29 @@ function notes_open_todos_from_note(array $note, string $query = ''): array {
         if ($isCompleted) continue;
 
         $text = preg_replace('/\s+/u', ' ', trim((string)$item->textContent)) ?? '';
-        if ($text === '' || (!$noteMatches && !notes_text_contains($text, $query))) continue;
+        if ($text === '') continue;
+
+        $openItems[] = [
+            'text' => $text,
+            'todo_id' => $item->getAttribute('data-todo-id') ?: null,
+            'todo_index' => $index,
+        ];
+    }
+
+    $openTodoCount = count($openItems);
+    $results = [];
+    foreach ($openItems as $openItem) {
+        if (!$noteMatches && !notes_text_contains($openItem['text'], $query)) continue;
 
         $results[] = [
             'hash_id' => (string)($note['hash_id'] ?? ''),
             'title' => $title,
-            'preview' => notes_list_truncate_text($text, 180),
+            'preview' => notes_list_truncate_text($openItem['text'], 180),
             'tags' => $tags,
             'updated_at' => $note['updated_at'] ?? null,
-            'todo_id' => $item->getAttribute('data-todo-id') ?: null,
-            'todo_index' => $index,
+            'todo_id' => $openItem['todo_id'],
+            'todo_index' => $openItem['todo_index'],
+            'note_open_todo_count' => $openTodoCount,
             'is_todo' => true,
         ];
     }

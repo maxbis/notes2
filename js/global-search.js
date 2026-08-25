@@ -105,6 +105,93 @@ export function initGlobalSearch({ onSelect }) {
         }
     };
 
+    const createResultOption = (note, index, intent, { includeTitle = true, includeTags = true } = {}) => {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = `global-search-result${note.is_todo ? ' global-search-result--todo' : ''}`;
+        option.id = `globalSearchResult-${index}`;
+        option.setAttribute('role', 'option');
+        option.setAttribute('aria-selected', 'false');
+
+        if (includeTitle) {
+            const title = document.createElement('span');
+            title.className = 'global-search-result-title';
+            appendHighlightedText(title, note.title || 'Untitled', intent.term);
+            option.append(title);
+        }
+
+        const excerpt = document.createElement('span');
+        excerpt.className = 'global-search-result-excerpt';
+        appendHighlightedText(excerpt, note.preview || 'Match found in this note.', intent.term);
+        option.append(excerpt);
+
+        if (includeTags && Array.isArray(note.tags) && note.tags.length) {
+            const tags = document.createElement('span');
+            tags.className = 'global-search-result-tags';
+            tags.textContent = note.tags.slice(0, 4).map(tag => `#${tag}`).join('  ');
+            option.append(tags);
+        }
+
+        option.addEventListener('mouseenter', () => setActiveResult(index));
+        option.addEventListener('click', () => chooseResult(index));
+        return option;
+    };
+
+    const renderTodoGroups = (intent) => {
+        const groups = new Map();
+        renderedNotes.forEach((note, index) => {
+            const key = note.hash_id || `todo-group-${index}`;
+            const group = groups.get(key) || { note, items: [] };
+            group.items.push({ note, index });
+            groups.set(key, group);
+        });
+
+        groups.forEach(({ note, items }, groupIndex) => {
+            const group = document.createElement('section');
+            group.className = 'global-search-todo-group';
+            group.setAttribute('role', 'group');
+
+            const header = document.createElement('div');
+            header.className = 'global-search-todo-group-header';
+            const headingId = `globalSearchTodoGroup-${groupIndex}`;
+            const heading = document.createElement('span');
+            heading.className = 'global-search-todo-group-title';
+            heading.id = headingId;
+            appendHighlightedText(heading, note.title || 'Untitled', intent.term);
+            header.append(heading);
+            group.setAttribute('aria-labelledby', headingId);
+
+            const openCount = Number(note.note_open_todo_count) || items.length;
+            const count = document.createElement('span');
+            count.className = 'global-search-todo-group-count';
+            if (intent.term && items.length < openCount) {
+                count.textContent = `${items.length} ${items.length === 1 ? 'match' : 'matches'} · ${openCount} open`;
+            } else {
+                count.textContent = `${openCount} open`;
+            }
+            header.append(count);
+            group.append(header);
+
+            if (Array.isArray(note.tags) && note.tags.length) {
+                const tags = document.createElement('div');
+                tags.className = 'global-search-todo-group-tags';
+                tags.textContent = note.tags.slice(0, 4).map(tag => `#${tag}`).join('  ');
+                group.append(tags);
+            }
+
+            const itemList = document.createElement('div');
+            itemList.className = 'global-search-todo-group-items';
+            items.forEach(({ note: todo, index }) => {
+                itemList.append(createResultOption(todo, index, intent, {
+                    includeTitle: false,
+                    includeTags: false
+                }));
+            });
+            group.append(itemList);
+            results.append(group);
+        });
+    };
+
     const renderResults = (notes, intent, hasMore) => {
         renderedIntent = intent;
         renderedNotes = intent.mode === 'todos'
@@ -121,35 +208,13 @@ export function initGlobalSearch({ onSelect }) {
             return;
         }
 
-        renderedNotes.forEach((note, index) => {
-            const option = document.createElement('button');
-            option.type = 'button';
-            option.className = `global-search-result${note.is_todo ? ' global-search-result--todo' : ''}`;
-            option.id = `globalSearchResult-${index}`;
-            option.setAttribute('role', 'option');
-            option.setAttribute('aria-selected', 'false');
-
-            const title = document.createElement('span');
-            title.className = 'global-search-result-title';
-            appendHighlightedText(title, note.title || 'Untitled', intent.term);
-            option.append(title);
-
-            const excerpt = document.createElement('span');
-            excerpt.className = 'global-search-result-excerpt';
-            appendHighlightedText(excerpt, note.preview || 'Match found in this note.', intent.term);
-            option.append(excerpt);
-
-            if (Array.isArray(note.tags) && note.tags.length) {
-                const tags = document.createElement('span');
-                tags.className = 'global-search-result-tags';
-                tags.textContent = note.tags.slice(0, 4).map(tag => `#${tag}`).join('  ');
-                option.append(tags);
-            }
-
-            option.addEventListener('mouseenter', () => setActiveResult(index));
-            option.addEventListener('click', () => chooseResult(index));
-            results.append(option);
-        });
+        if (intent.mode === 'todos') {
+            renderTodoGroups(intent);
+        } else {
+            renderedNotes.forEach((note, index) => {
+                results.append(createResultOption(note, index, intent));
+            });
+        }
 
         if (hasMore) {
             const more = document.createElement('div');
