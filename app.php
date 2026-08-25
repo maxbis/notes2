@@ -34,7 +34,17 @@ $appVersion = (string) filemtime(__DIR__ . '/app.js');
         <header class="wp-header">
             <div class="app-title-shell">
                 <h1 class="app-title" aria-label="Notes">
-                    <img class="app-logo" src="icons/favicon-32x32.png" alt="" aria-hidden="true">
+                    <button
+                        class="app-logo-button"
+                        id="showNotesBtn"
+                        type="button"
+                        title="Browse notes"
+                        aria-label="Browse notes"
+                        aria-controls="notesSidebar"
+                        aria-expanded="false"
+                    >
+                        <img class="app-logo" src="icons/favicon-32x32.png" alt="" aria-hidden="true">
+                    </button>
                 </h1>
                 <div class="app-brand">
                     <span class="app-name">Notes</span>
@@ -42,11 +52,23 @@ $appVersion = (string) filemtime(__DIR__ . '/app.js');
             </div>
             <div class="header-actions">
                 <div class="header-utility-actions">
-                    <button class="btn-secondary wp-button wp-button--secondary global-search-trigger" id="globalSearchBtn" type="button" title="Search all notes" aria-label="Search all notes" aria-haspopup="dialog">🔍</button>
-                    <button class="btn-secondary wp-button wp-button--secondary" id="openLastModifiedBtn" type="button" title="Open last modified note" aria-label="Open last modified note">Recent</button>
-                    <button class="btn-secondary wp-button wp-button--secondary reload-page-btn" id="reloadPageBtn" type="button" title="Reload page" aria-label="Reload page">
-                        <span class="reload-page-btn-label">↺ Reload</span>
-                        <span class="reload-page-btn-icon" aria-hidden="true">↻</span>
+                    <button class="btn-secondary wp-button wp-button--secondary header-icon-button global-search-trigger" id="globalSearchBtn" type="button" title="Search all notes" aria-label="Search all notes" aria-haspopup="dialog">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <circle cx="10.5" cy="10.5" r="6.5"></circle>
+                            <path d="m15.5 15.5 5 5"></path>
+                        </svg>
+                    </button>
+                    <button class="btn-secondary wp-button wp-button--secondary header-icon-button" id="openLastModifiedBtn" type="button" title="Open most recently modified note" aria-label="Open most recently modified note">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <circle cx="12" cy="12" r="8.5"></circle>
+                            <path d="M12 7.5V12l3.2 2"></path>
+                        </svg>
+                    </button>
+                    <button class="btn-secondary wp-button wp-button--secondary header-icon-button reload-page-btn" id="reloadPageBtn" type="button" title="Reload page" aria-label="Reload page">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M19.5 8.5V4.5l-2 2A8 8 0 1 0 20 12"></path>
+                            <path d="M19.5 4.5h-4"></path>
+                        </svg>
                     </button>
                     <button class="btn-secondary wp-button wp-button--secondary" id="importMarkdownBtn" type="button" title="Import a Markdown file" aria-label="Import a Markdown file">Import MD</button>
                 </div>
@@ -81,7 +103,7 @@ $appVersion = (string) filemtime(__DIR__ . '/app.js');
         </div>
 
         <div class="main-content">
-            <aside class="sidebar">
+            <aside class="sidebar" id="notesSidebar">
                 <div class="search-box wp-search">
                     <input class="wp-input" type="text" id="searchInput" placeholder="Search notes..." aria-label="Search notes">
                     <button type="button" id="clearSearchBtn" class="search-clear-btn wp-icon-button" aria-label="Clear search" title="Clear search" hidden>&times;</button>

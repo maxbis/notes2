@@ -21,24 +21,24 @@ import { initGlobalSearch } from './js/global-search.js';
 // Make selectNote available globally for onclick handlers in rendered HTML
 window.selectNote = selectNote;
 
-function isMobileSearchMode() {
+function isMobileNotesOverviewMode() {
     return document.body.classList.contains('mobile-search-mode');
 }
 
-function updateMobileSearchButtonLabel() {
+function updateNotesOverviewButton() {
     const showNotesBtn = document.getElementById('showNotesBtn');
     if (!showNotesBtn) return;
-    const inSearchMode = isMobileLayout() && isMobileSearchMode();
-    showNotesBtn.textContent = inSearchMode ? 'Cancel' : '🔍';
-    showNotesBtn.setAttribute('aria-label', inSearchMode ? 'Close search' : 'Search / Notes');
-    showNotesBtn.setAttribute('title', inSearchMode ? 'Close search' : 'Search / Notes');
+    const inOverviewMode = isMobileLayout() && isMobileNotesOverviewMode();
+    showNotesBtn.setAttribute('aria-expanded', inOverviewMode ? 'true' : 'false');
+    showNotesBtn.setAttribute('aria-label', inOverviewMode ? 'Close notes overview' : 'Browse notes');
+    showNotesBtn.setAttribute('title', inOverviewMode ? 'Close notes overview' : 'Browse notes');
 }
 
 function showNotesSidebarAndFocusSearch() {
     if (!isMobileLayout()) return;
     document.body.classList.add('mobile-search-mode');
     document.body.classList.remove('mobile-sidebar-hidden');
-    updateMobileSearchButtonLabel();
+    updateNotesOverviewButton();
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         // Delay focus slightly to ensure layout is visible
@@ -50,25 +50,25 @@ function hideNotesSidebarForEditing() {
     if (!isMobileLayout()) return;
     document.body.classList.remove('mobile-search-mode');
     document.body.classList.add('mobile-sidebar-hidden');
-    updateMobileSearchButtonLabel();
+    updateNotesOverviewButton();
 }
 
 function closeMobileSearchMode() {
     if (!isMobileLayout()) return;
     document.body.classList.remove('mobile-search-mode');
     document.body.classList.add('mobile-sidebar-hidden');
-    updateMobileSearchButtonLabel();
+    updateNotesOverviewButton();
 }
 
 function syncMobileShellState() {
     if (isMobileLayout()) {
-        updateMobileSearchButtonLabel();
+        updateNotesOverviewButton();
         return;
     }
 
     document.body.classList.remove('mobile-search-mode');
     document.body.classList.remove('mobile-sidebar-hidden');
-    updateMobileSearchButtonLabel();
+    updateNotesOverviewButton();
 }
 
 function updateSearchClearButtonVisibility() {
@@ -297,6 +297,20 @@ function setupEventListeners() {
             updateSearchClearButtonVisibility();
             searchInput.dispatchEvent(new Event('input'));
             searchInput.focus();
+        });
+    }
+    const showNotesBtn = document.getElementById('showNotesBtn');
+    if (showNotesBtn) {
+        showNotesBtn.addEventListener('click', () => {
+            if (!isMobileLayout()) {
+                searchInput?.focus();
+                return;
+            }
+            if (isMobileNotesOverviewMode()) {
+                closeMobileSearchMode();
+                return;
+            }
+            showNotesSidebarAndFocusSearch();
         });
     }
     const bindShare = (id) => {
