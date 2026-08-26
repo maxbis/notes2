@@ -707,10 +707,160 @@ export function setupFormattingToolbar() {
         });
     };
 
+    const CLEAR_FORMAT_BLOCK_SELECTOR = 'li, p, h1, h2, h3, h4, pre, blockquote';
+
+    const rangeIntersectsNode = (range, node) => {
+        try {
+            return range.intersectsNode(node);
+        } catch {
+            return false;
+        }
+    };
+
+    const isBlockTextFullySelected = (range, block) => {
+        const blockText = document.createRange();
+        blockText.selectNodeContents(block);
+
+        if (block.contains(range.startContainer)) {
+            const textBeforeSelection = blockText.cloneRange();
+            try {
+                textBeforeSelection.setEnd(range.startContainer, range.startOffset);
+            } catch {
+                return false;
+            }
+            if (textBeforeSelection.toString().length > 0) return false;
+        }
+
+        if (block.contains(range.endContainer)) {
+            const textAfterSelection = blockText.cloneRange();
+            try {
+                textAfterSelection.setStart(range.endContainer, range.endOffset);
+            } catch {
+                return false;
+            }
+            if (textAfterSelection.toString().length > 0) return false;
+        }
+
+        return true;
+    };
+
+    const getSelectedTextWithinBlock = (range, block) => {
+        const selectedText = document.createRange();
+        selectedText.selectNodeContents(block);
+
+        try {
+            if (block.contains(range.startContainer)) {
+                selectedText.setStart(range.startContainer, range.startOffset);
+            }
+            if (block.contains(range.endContainer)) {
+                selectedText.setEnd(range.endContainer, range.endOffset);
+            }
+            return selectedText.toString();
+        } catch {
+            return '';
+        }
+    };
+
+    const createPlainParagraph = (block) => {
+        const content = block.cloneNode(true);
+        content.querySelectorAll('.todo-checkbox').forEach((checkbox) => checkbox.remove());
+
+        const paragraph = document.createElement('p');
+        const text = (content.textContent || '').replace(/\u200B/g, '').trim();
+        if (text) {
+            paragraph.textContent = text;
+        } else {
+            paragraph.appendChild(document.createElement('br'));
+        }
+        return paragraph;
+    };
+
+    const splitListAroundSelectedItems = (list, selectedItems, replacements) => {
+        const replacement = document.createDocumentFragment();
+        let remainingList = null;
+
+        Array.from(list.children).forEach((item) => {
+            if (item.tagName !== 'LI') return;
+
+            if (selectedItems.has(item)) {
+                remainingList = null;
+                const paragraph = createPlainParagraph(item);
+                replacements.push(paragraph);
+                replacement.appendChild(paragraph);
+                return;
+            }
+
+            if (!remainingList) {
+                remainingList = list.cloneNode(false);
+                replacement.appendChild(remainingList);
+            }
+            remainingList.appendChild(item);
+        });
+
+        list.replaceWith(replacement);
+    };
+
+    const replaceFullySelectedBlocksWithPlainParagraphs = (editor) => {
+        const selection = window.getSelection();
+        if (!editor || !selection || selection.rangeCount === 0 || selection.isCollapsed) return false;
+
+        const range = selection.getRangeAt(0);
+        const blocks = Array.from(editor.querySelectorAll(CLEAR_FORMAT_BLOCK_SELECTOR))
+            .filter((block) => rangeIntersectsNode(range, block))
+            // Range.intersectsNode also returns true when a selection merely
+            // touches the start of the following block.
+            .filter((block) => getSelectedTextWithinBlock(range, block).length > 0)
+            // Treat the outer item/block as the unit when it contains nested blocks.
+            .filter((block) => !block.parentElement?.closest(CLEAR_FORMAT_BLOCK_SELECTOR));
+
+        if (!blocks.length || !blocks.every((block) => isBlockTextFullySelected(range, block))) {
+            return false;
+        }
+
+        const replacements = [];
+        const selectedListItems = new Set(blocks.filter((block) => block.tagName === 'LI'));
+        const selectedLists = new Set(
+            Array.from(selectedListItems)
+                .map((item) => item.parentElement)
+                .filter((parent) => parent?.matches('ul, ol'))
+        );
+
+        selectedLists.forEach((list) => {
+            splitListAroundSelectedItems(list, selectedListItems, replacements);
+        });
+
+        blocks.forEach((block) => {
+            if (!block.isConnected || selectedLists.has(block.parentElement)) return;
+            const paragraph = createPlainParagraph(block);
+            replacements.push(paragraph);
+            block.replaceWith(paragraph);
+        });
+
+        if (!replacements.length) return false;
+
+        replacements.sort((left, right) => {
+            if (left === right) return 0;
+            return left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+        });
+
+        const nextRange = document.createRange();
+        nextRange.setStart(replacements[0], 0);
+        const last = replacements[replacements.length - 1];
+        nextRange.setEnd(last, last.childNodes.length);
+        selection.removeAllRanges();
+        selection.addRange(nextRange);
+        return true;
+    };
+
     const clearFormatting = () => {
         const editor = getEditorElement();
         runWithoutTodoNormalization(() => {
             clearTodoFormattingForSelection(editor);
+
+            // A selection that covers complete blocks should become deterministic,
+            // valid plain paragraphs instead of relying on deprecated execCommand
+            // behavior for list and block structure.
+            if (replaceFullySelectedBlocksWithPlainParagraphs(editor)) return;
 
             // removeFormat does not consistently remove anchor elements across
             // browsers, so explicitly unwrap links while preserving their text.
@@ -723,14 +873,8 @@ export function setupFormattingToolbar() {
                 // ignore
             }
 
-            // Reset block type back to a normal paragraph (removes H1/H2/H3/pre wrappers)
-            try {
-                document.execCommand('formatBlock', false, 'p');
-            } catch {
-                // ignore
-            }
-
-            // If a list is active, toggle it off so list styling is cleared as well.
+            // Toggle lists off before changing the block type. formatBlock can
+            // otherwise remove the list wrapper and leave orphan <li> elements.
             try {
                 if (document.queryCommandState('insertUnorderedList')) {
                     document.execCommand('insertUnorderedList', false, null);
@@ -738,6 +882,13 @@ export function setupFormattingToolbar() {
                 if (document.queryCommandState('insertOrderedList')) {
                     document.execCommand('insertOrderedList', false, null);
                 }
+            } catch {
+                // ignore
+            }
+
+            // Reset block type back to a normal paragraph (removes H1/H2/H3/pre wrappers)
+            try {
+                document.execCommand('formatBlock', false, 'p');
             } catch {
                 // ignore
             }
