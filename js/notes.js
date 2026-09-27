@@ -686,6 +686,7 @@ export async function createNewNote() {
     setEditorLoading(false);
     state.currentNote = null;
     state.selectedNoteHashId = null;
+    state.newNoteHashId = null;
     document.getElementById('noteTitle').value = '';
     setEditorHtml(DEFAULT_NEW_NOTE_CONTENT);
     setCurrentTags([]);
@@ -802,6 +803,7 @@ export async function deleteNote() {
         }
         state.currentNote = null;
         state.selectedNoteHashId = null;
+        state.newNoteHashId = null;
         state.hasUnsavedChanges = false;
         clearTimeout(state.autoSaveTimer);
         state.autoSaveTimer = null;

@@ -33,20 +33,33 @@ function handle_post(mysqli $conn): void {
     if (!is_array($data) && json_last_error() !== JSON_ERROR_NONE) {
         __notes_json_error(400, 'Invalid JSON');
     }
-    $hash_id = generateHashId();
+    $requestedHashId = isset($data['hash_id']) ? trim((string)$data['hash_id']) : '';
+    if ($requestedHashId !== '' && !preg_match('/^[A-Za-z0-9]{22}$/', $requestedHashId)) {
+        __notes_json_error(400, 'hash_id must be a 22-character alphanumeric value');
+    }
+    // The browser supplies a stable ID for a new draft. A repeated POST caused by
+    // a normal save racing with an unload save will therefore return the same note.
+    $hash_id = $requestedHashId !== '' ? $requestedHashId : generateHashId();
     $title = $data['title'] ?? 'Untitled';
     $content = $data['content'] ?? '';
     $tags = normalize_note_tags($data['tags'] ?? []);
     $isPinned = normalize_note_pinned($data['is_pinned'] ?? 0);
     $content = sanitize_note_html($content, $ALLOWED_TAGS, $ALLOWED_ATTRS_BY_TAG, $FORBIDDEN_TAGS);
     
-    $stmt = $conn->prepare("INSERT INTO notes (hash_id, title, content, is_pinned) VALUES (?, ?, ?, ?)");
+    $stmt = $conn->prepare(
+        "INSERT INTO notes (hash_id, title, content, is_pinned) VALUES (?, ?, ?, ?)\n"
+        . "ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)"
+    );
     if (!$stmt) __notes_db_fail($conn, 'prepare: insert note');
     $stmt->bind_param("sssi", $hash_id, $title, $content, $isPinned);
     
     if ($stmt->execute()) {
         $note_id = $conn->insert_id;
-        replace_note_tags($conn, (int)$note_id, $tags);
+        // Do not mutate the note on an idempotent retry: the original POST is
+        // authoritative and its tags were already stored.
+        if ($stmt->affected_rows === 1) {
+            replace_note_tags($conn, (int)$note_id, $tags);
+        }
         $result = $conn->query("SELECT * FROM notes WHERE id = $note_id");
         if ($result === false) __notes_db_fail($conn, 'query: select inserted note');
         echo json_encode(normalize_note_sharing(attach_tags_to_note($conn, $result->fetch_assoc())), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);

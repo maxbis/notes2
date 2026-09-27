@@ -14,6 +14,16 @@ let refreshCurrentNote = null;
 let renderNotesList = null;
 let refreshNotesView = null;
 
+function getNewNoteHashId() {
+    if (state.newNoteHashId) return state.newNoteHashId;
+
+    const alphabet = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const bytes = new Uint8Array(22);
+    crypto.getRandomValues(bytes);
+    state.newNoteHashId = Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join('');
+    return state.newNoteHashId;
+}
+
 function updatePinButtonsForSavedNote(note = null) {
     const isPinned = Number(note?.is_pinned) === 1;
     const label = isPinned ? 'Unpin' : 'Pin';
@@ -193,6 +203,7 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
             }
             // Create new note
             const createData = {
+                hash_id: getNewNoteHashId(),
                 title: title,
                 content: content,
                 tags: tags,
@@ -245,6 +256,7 @@ async function performSave(showFeedback = true, forceOverwrite = false) {
             state.selectedNoteHashId = savedNote.hash_id;
             state.originalVersion = savedNote.version != null ? Number(savedNote.version) : null; // Set version for new notes
         }
+        state.newNoteHashId = null;
 
         // Re-sort with pinned notes first.
         state.notes.sort((a, b) => {
@@ -409,6 +421,7 @@ export function saveBeforeUnload() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+                hash_id: getNewNoteHashId(),
                 title: title || 'Untitled',
                 content: content,
                 tags: tags,
@@ -426,6 +439,7 @@ export function saveBeforeUnload() {
                     });
                     // Update state to reflect the successful creation
                     state.currentNote = data;
+                    state.newNoteHashId = null;
                     state.originalVersion = data.version != null ? Number(data.version) : null;
                     state.savedTitle = data.title || '';
                     state.savedContent = data.content || '';

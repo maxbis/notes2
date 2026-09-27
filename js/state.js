@@ -5,6 +5,9 @@ export const AUTO_SAVE_DELAY_MS = 4000; // Delay in milliseconds before auto-sav
 const state = {
     currentNote: null,
     selectedNoteHashId: null,
+    // A client-generated ID for a draft that has not reached the server yet.
+    // Keeping it stable makes a retry (including an unload fallback) idempotent.
+    newNoteHashId: null,
     notes: [],
     searchResults: null,
     searchTerm: '',
