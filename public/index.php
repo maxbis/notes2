@@ -1,5 +1,4 @@
 <?php
-
-// Serve the public-note renderer while keeping /public/ in the browser address bar.
-define('PUBLIC_DOCUMENT_BASE_HREF', '../');
-require __DIR__ . '/../public.php';
+// App entrypoint for a server whose document root is this directory.
+header('Location: app.php', true, 302);
+exit;

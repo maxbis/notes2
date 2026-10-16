@@ -10,8 +10,8 @@ require_once __DIR__ . '/auth.php';
 
 if (!validateUser()) {
     $debugReason = notes_validation_debug_reason();
-    $warmPaperVersion = (string) @filemtime(__DIR__ . '/../warm-paper/warm-paper.css');
-    $loginCssVersion = (string) @filemtime(__DIR__ . '/login.css');
+    $warmPaperVersion = (string) @filemtime(__DIR__ . '/../public/warm-paper/warm-paper.css');
+    $loginCssVersion = (string) @filemtime(__DIR__ . '/../public/login/login.css');
 
     http_response_code(403);
     ?>

@@ -33,8 +33,8 @@ if (
     $validation_hash = (string) $_COOKIE['validation'];
 }
 
-$warmPaperVersion = (string) @filemtime(__DIR__ . '/../warm-paper/warm-paper.css');
-$loginCssVersion = (string) @filemtime(__DIR__ . '/login.css');
+$warmPaperVersion = (string) @filemtime(__DIR__ . '/../public/warm-paper/warm-paper.css');
+$loginCssVersion = (string) @filemtime(__DIR__ . '/../public/login/login.css');
 ?>
 <!DOCTYPE html>
 <html lang="en">

@@ -7,7 +7,7 @@ require_once __DIR__ . '/api/sharing_helper.php';
 $public_token = isset($_GET['id']) ? trim((string)$_GET['id']) : '';
 
 function public_asset_url($path) {
-    $version = @filemtime(__DIR__ . '/' . $path);
+    $version = @filemtime(__DIR__ . '/public/' . $path);
     $suffix = $version === false ? '' : '?v=' . rawurlencode((string) $version);
     return htmlspecialchars($path . $suffix, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }

@@ -3,9 +3,9 @@
 // Validate user access (shared-key cookie gate)
 require_once __DIR__ . '/login/validate.php';
 
-$warmPaperVersion = (string) filemtime(__DIR__ . '/warm-paper/warm-paper.css');
-$styleVersion = (string) filemtime(__DIR__ . '/style.css');
-$appVersion = (string) filemtime(__DIR__ . '/app.js');
+$warmPaperVersion = (string) filemtime(__DIR__ . '/public/warm-paper/warm-paper.css');
+$styleVersion = (string) filemtime(__DIR__ . '/public/style.css');
+$appVersion = (string) filemtime(__DIR__ . '/public/app.js');
 
 ?>
 
