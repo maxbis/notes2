@@ -6,9 +6,9 @@ Document how notes are imported from Markdown and exported through the browser p
 
 ## Location
 
-- Markdown import flow: `/Users/maxbisschop/dev/www/notes2/js/markdown-import.js`
-- PDF export flow: `/Users/maxbisschop/dev/www/notes2/js/pdf-export.js`
-- App-level wiring: `/Users/maxbisschop/dev/www/notes2/app.js`
+- Markdown import flow: `/Users/maxbisschop/dev/www/notes2/public/js/markdown-import.js`
+- PDF export flow: `/Users/maxbisschop/dev/www/notes2/public/js/pdf-export.js`
+- App-level wiring: `/Users/maxbisschop/dev/www/notes2/public/app.js`
 
 ## Inputs/Outputs
 
@@ -50,8 +50,8 @@ Document how notes are imported from Markdown and exported through the browser p
 
 ## Related Files
 
-- `/Users/maxbisschop/dev/www/notes2/js/markdown-import.js`
-- `/Users/maxbisschop/dev/www/notes2/js/pdf-export.js`
-- `/Users/maxbisschop/dev/www/notes2/app.js`
-- `/Users/maxbisschop/dev/www/notes2/js/editor.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/markdown-import.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/pdf-export.js`
+- `/Users/maxbisschop/dev/www/notes2/public/app.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/editor.js`
 - `/Users/maxbisschop/dev/www/notes2/api/handlers/post.php`

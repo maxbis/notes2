@@ -50,8 +50,8 @@ Define which source areas need documentation next, where those docs should live 
 - `/Users/maxbisschop/dev/www/notes2/docs/project-overview.md`
 - `/Users/maxbisschop/dev/www/notes2/docs/js/save-behavior.md`
 - `/Users/maxbisschop/dev/www/notes2/app.php`
-- `/Users/maxbisschop/dev/www/notes2/app.js`
-- `/Users/maxbisschop/dev/www/notes2/js/`
+- `/Users/maxbisschop/dev/www/notes2/public/app.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/`
 - `/Users/maxbisschop/dev/www/notes2/api/`
 - `/Users/maxbisschop/dev/www/notes2/public.php`
 - `/Users/maxbisschop/dev/www/notes2/schema.sql`

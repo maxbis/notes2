@@ -6,9 +6,9 @@ Document how tags are normalized and edited, how tag-based filtering works, and 
 
 ## Location
 
-- Tag state and UI: `/Users/maxbisschop/dev/www/notes2/js/tags.js`
-- Inspector rendering: `/Users/maxbisschop/dev/www/notes2/js/inspector.js`
-- Save-state indicators: `/Users/maxbisschop/dev/www/notes2/js/indicators.js`
+- Tag state and UI: `/Users/maxbisschop/dev/www/notes2/public/js/tags.js`
+- Inspector rendering: `/Users/maxbisschop/dev/www/notes2/public/js/inspector.js`
+- Save-state indicators: `/Users/maxbisschop/dev/www/notes2/public/js/indicators.js`
 
 ## Inputs/Outputs
 
@@ -65,9 +65,9 @@ Document how tags are normalized and edited, how tag-based filtering works, and 
 
 ## Related Files
 
-- `/Users/maxbisschop/dev/www/notes2/js/tags.js`
-- `/Users/maxbisschop/dev/www/notes2/js/inspector.js`
-- `/Users/maxbisschop/dev/www/notes2/js/indicators.js`
-- `/Users/maxbisschop/dev/www/notes2/js/state.js`
-- `/Users/maxbisschop/dev/www/notes2/js/notes.js`
-- `/Users/maxbisschop/dev/www/notes2/js/save.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/tags.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/inspector.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/indicators.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/state.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/notes.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/save.js`

@@ -6,10 +6,10 @@ Describe how public links, editable links, pinning, and the Default Published no
 
 ## Location
 
-- Top-level share and pin actions: `/Users/maxbisschop/dev/www/notes2/app.js`
-- Link and API helpers: `/Users/maxbisschop/dev/www/notes2/js/api.js`
-- Pin update helper: `/Users/maxbisschop/dev/www/notes2/js/pin-api.js`
-- URL helpers: `/Users/maxbisschop/dev/www/notes2/js/utils.js`
+- Top-level share and pin actions: `/Users/maxbisschop/dev/www/notes2/public/app.js`
+- Link and API helpers: `/Users/maxbisschop/dev/www/notes2/public/js/api.js`
+- Pin update helper: `/Users/maxbisschop/dev/www/notes2/public/js/pin-api.js`
+- URL helpers: `/Users/maxbisschop/dev/www/notes2/public/js/utils.js`
 - Public rendering target: `/Users/maxbisschop/dev/www/notes2/public.php`
 
 ## Inputs/Outputs
@@ -19,7 +19,7 @@ Describe how public links, editable links, pinning, and the Default Published no
   - share, edit-link, and pin button clicks
   - clipboard API availability
 - Outputs:
-  - copied public links to `public.php?id=...`
+  - copied public links to `/public/?id=...`
   - copied editable links to `app.php?note=...`
   - pin state updates
   - Default Published note updates
@@ -29,7 +29,7 @@ Describe how public links, editable links, pinning, and the Default Published no
 1. Share actions require a real note.
    - if the draft is new and meaningful, the app saves it first
    - if the draft is empty, sharing is blocked with a user-facing message
-2. Public links are built with `getPublicLink(hashId)`.
+2. Public links are built with `getPublicLink(publicToken)`.
 3. Editable links are built with `getEditorLink(hashId)`.
 4. When unsaved changes exist on an existing note:
    - the app saves first so the shared or editable link reflects the current visible content
@@ -67,9 +67,9 @@ Describe how public links, editable links, pinning, and the Default Published no
 
 ## Related Files
 
-- `/Users/maxbisschop/dev/www/notes2/app.js`
-- `/Users/maxbisschop/dev/www/notes2/js/api.js`
-- `/Users/maxbisschop/dev/www/notes2/js/pin-api.js`
-- `/Users/maxbisschop/dev/www/notes2/js/utils.js`
+- `/Users/maxbisschop/dev/www/notes2/public/app.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/api.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/pin-api.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/utils.js`
 - `/Users/maxbisschop/dev/www/notes2/api/handlers/put.php`
 - `/Users/maxbisschop/dev/www/notes2/public.php`

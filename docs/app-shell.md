@@ -7,9 +7,9 @@ Describe the authenticated Notes application shell, its major screen regions, ho
 ## Location
 
 - Main shell markup: `/Users/maxbisschop/dev/www/notes2/app.php`
-- Frontend bootstrap and event wiring: `/Users/maxbisschop/dev/www/notes2/app.js`
-- Shared visual shell styles: `/Users/maxbisschop/dev/www/notes2/style.css`
-- Web app manifest: `/Users/maxbisschop/dev/www/notes2/manifest.webmanifest`
+- Frontend bootstrap and event wiring: `/Users/maxbisschop/dev/www/notes2/public/app.js`
+- Shared visual shell styles: `/Users/maxbisschop/dev/www/notes2/public/style.css`
+- Web app manifest: `/Users/maxbisschop/dev/www/notes2/public/manifest.webmanifest`
 
 ## Inputs/Outputs
 
@@ -64,9 +64,9 @@ Describe the authenticated Notes application shell, its major screen regions, ho
 
 - `/Users/maxbisschop/dev/www/notes2/index.php`
 - `/Users/maxbisschop/dev/www/notes2/app.php`
-- `/Users/maxbisschop/dev/www/notes2/app.js`
-- `/Users/maxbisschop/dev/www/notes2/style.css`
-- `/Users/maxbisschop/dev/www/notes2/manifest.webmanifest`
-- `/Users/maxbisschop/dev/www/notes2/js/notes.js`
-- `/Users/maxbisschop/dev/www/notes2/js/save.js`
-- `/Users/maxbisschop/dev/www/notes2/js/editor.js`
+- `/Users/maxbisschop/dev/www/notes2/public/app.js`
+- `/Users/maxbisschop/dev/www/notes2/public/style.css`
+- `/Users/maxbisschop/dev/www/notes2/public/manifest.webmanifest`
+- `/Users/maxbisschop/dev/www/notes2/public/js/notes.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/save.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/editor.js`

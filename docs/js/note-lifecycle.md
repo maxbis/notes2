@@ -6,11 +6,11 @@ Document how notes are loaded, selected, created, updated, refreshed, and delete
 
 ## Location
 
-- Note list and selection behavior: `/Users/maxbisschop/dev/www/notes2/js/notes.js`
-- Note summary normalization: `/Users/maxbisschop/dev/www/notes2/js/note-summary.js`
-- Save queue and conflict handling: `/Users/maxbisschop/dev/www/notes2/js/save.js`
-- Shared frontend state: `/Users/maxbisschop/dev/www/notes2/js/state.js`
-- App wiring: `/Users/maxbisschop/dev/www/notes2/app.js`
+- Note list and selection behavior: `/Users/maxbisschop/dev/www/notes2/public/js/notes.js`
+- Note summary normalization: `/Users/maxbisschop/dev/www/notes2/public/js/note-summary.js`
+- Save queue and conflict handling: `/Users/maxbisschop/dev/www/notes2/public/js/save.js`
+- Shared frontend state: `/Users/maxbisschop/dev/www/notes2/public/js/state.js`
+- App wiring: `/Users/maxbisschop/dev/www/notes2/public/app.js`
 - Save deep-dive: `/Users/maxbisschop/dev/www/notes2/docs/js/save-behavior.md`
 
 ## Inputs/Outputs
@@ -109,11 +109,11 @@ Document how notes are loaded, selected, created, updated, refreshed, and delete
 
 ## Related Files
 
-- `/Users/maxbisschop/dev/www/notes2/js/notes.js`
-- `/Users/maxbisschop/dev/www/notes2/js/note-summary.js`
-- `/Users/maxbisschop/dev/www/notes2/js/save.js`
-- `/Users/maxbisschop/dev/www/notes2/js/state.js`
-- `/Users/maxbisschop/dev/www/notes2/app.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/notes.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/note-summary.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/save.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/state.js`
+- `/Users/maxbisschop/dev/www/notes2/public/app.js`
 - `/Users/maxbisschop/dev/www/notes2/api/handlers/get.php`
 - `/Users/maxbisschop/dev/www/notes2/api/handlers/post.php`
 - `/Users/maxbisschop/dev/www/notes2/api/handlers/put.php`

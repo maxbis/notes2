@@ -210,6 +210,28 @@ function getSelectionElement() {
     return container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
 }
 
+function getSmallTextElement(node, editor) {
+    const element = node?.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    const small = element?.closest?.('small');
+    return small && editor?.contains(small) ? small : null;
+}
+
+function unwrapElement(element) {
+    if (!element?.parentNode) return;
+    element.replaceWith(...Array.from(element.childNodes));
+}
+
+function unwrapSmallTextInFragment(fragment) {
+    fragment.querySelectorAll?.('small').forEach(unwrapElement);
+}
+
+function wrapSmallTextFragment(fragment) {
+    if (!fragment?.hasChildNodes()) return null;
+    const wrapper = document.createElement('small');
+    wrapper.appendChild(fragment);
+    return wrapper;
+}
+
 function getIndentTarget(editor) {
     const element = getSelectionElement();
     if (!element || !editor) return null;
@@ -352,6 +374,7 @@ export function updateToolbarState() {
     const italicBtn = document.getElementById('italicBtn');
     const underlineBtn = document.getElementById('underlineBtn');
     const underlineBtnMobile = document.getElementById('underlineBtnMobile');
+    const smallTextBtn = document.getElementById('smallTextBtn');
     const bulletListBtn = document.getElementById('bulletListBtn');
     const bulletListBtnMobile = document.getElementById('bulletListBtnMobile');
     const numberedListBtn = document.getElementById('numberedListBtn');
@@ -380,6 +403,7 @@ export function updateToolbarState() {
     setPressed(italicBtn, document.queryCommandState('italic'));
     setPressed(underlineBtn, document.queryCommandState('underline'));
     setPressed(underlineBtnMobile, document.queryCommandState('underline'));
+    setPressed(smallTextBtn, !!getSmallTextElement(anchorNode, editor));
 
     const isEditorEmpty = (editor.textContent || '').replace(/\u200B/g, '').trim() === '';
     if (isEditorEmpty) {
@@ -387,6 +411,7 @@ export function updateToolbarState() {
         setPressed(bulletListBtnMobile, false);
         setPressed(numberedListBtn, false);
         setPressed(todoListBtn, false);
+        setPressed(smallTextBtn, false);
         setPressed(h1Btn, false);
         setPressed(h2Btn, false);
         setPressed(h3Btn, false);
@@ -498,6 +523,110 @@ export function setupFormattingToolbar() {
         focusEditorAndSync();
     };
 
+    const toggleSmallText = () => {
+        const editor = getEditorElement();
+        const selection = window.getSelection();
+        if (!editor || !selection || selection.rangeCount === 0) return;
+
+        const range = selection.getRangeAt(0);
+        const commonAncestor = range.commonAncestorContainer;
+        const isInsideEditor = commonAncestor === editor
+            || (commonAncestor.nodeType === Node.ELEMENT_NODE && editor.contains(commonAncestor))
+            || (commonAncestor.nodeType === Node.TEXT_NODE && editor.contains(commonAncestor.parentNode));
+        if (!isInsideEditor) return;
+
+        const small = getSmallTextElement(range.startContainer, editor);
+        const selectionEndsInSameSmall = small && getSmallTextElement(range.endContainer, editor) === small;
+
+        if (selectionEndsInSameSmall) {
+            if (range.collapsed) {
+                const marker = document.createElement('span');
+                const markerRange = range.cloneRange();
+                markerRange.insertNode(marker);
+
+                const beforeRange = document.createRange();
+                beforeRange.selectNodeContents(small);
+                beforeRange.setEndBefore(marker);
+                const afterRange = document.createRange();
+                afterRange.selectNodeContents(small);
+                afterRange.setStartAfter(marker);
+
+                const beforeSmall = wrapSmallTextFragment(beforeRange.cloneContents());
+                const afterSmall = wrapSmallTextFragment(afterRange.cloneContents());
+                const caretMarker = document.createElement('span');
+                small.replaceWith(...[beforeSmall, caretMarker, afterSmall].filter(Boolean));
+
+                const nextRange = document.createRange();
+                nextRange.setStartBefore(caretMarker);
+                nextRange.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(nextRange);
+                caretMarker.remove();
+            } else {
+                const startMarker = document.createElement('span');
+                const endMarker = document.createElement('span');
+                const endRange = range.cloneRange();
+                endRange.collapse(false);
+                endRange.insertNode(endMarker);
+                const startRange = range.cloneRange();
+                startRange.collapse(true);
+                startRange.insertNode(startMarker);
+
+                const beforeRange = document.createRange();
+                beforeRange.selectNodeContents(small);
+                beforeRange.setEndBefore(startMarker);
+                const selectedRange = document.createRange();
+                selectedRange.setStartAfter(startMarker);
+                selectedRange.setEndBefore(endMarker);
+                const afterRange = document.createRange();
+                afterRange.selectNodeContents(small);
+                afterRange.setStartAfter(endMarker);
+
+                const beforeSmall = wrapSmallTextFragment(beforeRange.cloneContents());
+                const selectedContents = selectedRange.cloneContents();
+                unwrapSmallTextInFragment(selectedContents);
+                const afterSmall = wrapSmallTextFragment(afterRange.cloneContents());
+                const selectionStart = document.createElement('span');
+                const selectionEnd = document.createElement('span');
+                small.replaceWith(
+                    ...[beforeSmall, selectionStart, selectedContents, selectionEnd, afterSmall].filter(Boolean)
+                );
+
+                const nextRange = document.createRange();
+                nextRange.setStartAfter(selectionStart);
+                nextRange.setEndBefore(selectionEnd);
+                selection.removeAllRanges();
+                selection.addRange(nextRange);
+                selectionStart.remove();
+                selectionEnd.remove();
+            }
+        } else if (range.collapsed) {
+            const wrapper = document.createElement('small');
+            const marker = document.createTextNode('\u200B');
+            wrapper.appendChild(marker);
+            range.insertNode(wrapper);
+
+            const nextRange = document.createRange();
+            nextRange.setStart(marker, marker.data.length);
+            nextRange.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(nextRange);
+        } else {
+            const contents = range.extractContents();
+            unwrapSmallTextInFragment(contents);
+            const wrapper = document.createElement('small');
+            wrapper.appendChild(contents);
+            range.insertNode(wrapper);
+
+            const nextRange = document.createRange();
+            nextRange.selectNodeContents(wrapper);
+            selection.removeAllRanges();
+            selection.addRange(nextRange);
+        }
+
+        focusEditorAndSync();
+    };
+
     const adjustBlockIndentation = (delta) => {
         const editor = document.getElementById('noteContent');
         const target = getIndentTarget(editor);
@@ -523,6 +652,8 @@ export function setupFormattingToolbar() {
     bindClickIfExists('underlineBtn', () => {
         toggleInlineFormat('underline', 'u');
     });
+
+    bindClickIfExists('smallTextBtn', toggleSmallText);
     
     document.getElementById('bulletListBtn').addEventListener('click', () => {
         document.execCommand('insertUnorderedList', false, null);

@@ -72,5 +72,5 @@ Document the backend safety rules that keep stored note HTML constrained, normal
 - `/Users/maxbisschop/dev/www/notes2/api/sanitize.php`
 - `/Users/maxbisschop/dev/www/notes2/api/error_handler.php`
 - `/Users/maxbisschop/dev/www/notes2/api.php`
-- `/Users/maxbisschop/dev/www/notes2/js/smart-paste.js`
-- `/Users/maxbisschop/dev/www/notes2/js/editor.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/smart-paste.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/editor.js`

@@ -1318,6 +1318,12 @@ body.global-search-open {
     font-weight: 500;
 }
 
+.toolbar-btn .small-text-icon {
+    font-size: 0.62rem;
+    font-weight: 650;
+    line-height: 1;
+}
+
 .editor-body {
     flex: 1;
     min-height: 0;

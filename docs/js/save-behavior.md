@@ -6,9 +6,9 @@ Describe how note saves work during normal editing, context switches, and page e
 
 ## Location
 
-- Main event wiring: `/Users/maxbisschop/dev/www/notes2/app.js`
-- Save queue and unload fallback: `/Users/maxbisschop/dev/www/notes2/js/save.js`
-- Note selection and new-note flow: `/Users/maxbisschop/dev/www/notes2/js/notes.js`
+- Main event wiring: `/Users/maxbisschop/dev/www/notes2/public/app.js`
+- Save queue and unload fallback: `/Users/maxbisschop/dev/www/notes2/public/js/save.js`
+- Note selection and new-note flow: `/Users/maxbisschop/dev/www/notes2/public/js/notes.js`
 - Server-side update semantics: `/Users/maxbisschop/dev/www/notes2/api/handlers/put.php`
 
 ## Inputs/Outputs
@@ -70,7 +70,7 @@ Describe how note saves work during normal editing, context switches, and page e
 
 ## Related Files
 
-- `/Users/maxbisschop/dev/www/notes2/js/state.js`
-- `/Users/maxbisschop/dev/www/notes2/js/indicators.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/state.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/indicators.js`
 - `/Users/maxbisschop/dev/www/notes2/api/handlers/post.php`
 - `/Users/maxbisschop/dev/www/notes2/auto-save-readme.MD`

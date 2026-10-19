@@ -6,10 +6,10 @@ Describe the icon assets, manifest files, and installability-related metadata us
 
 ## Location
 
-- Main manifest: `/Users/maxbisschop/dev/www/notes2/manifest.webmanifest`
-- Icon directory: `/Users/maxbisschop/dev/www/notes2/icons/`
-- Icon notes: `/Users/maxbisschop/dev/www/notes2/icons/README.md`
-- Secondary manifest-like file: `/Users/maxbisschop/dev/www/notes2/icons/site.webmanifest`
+- Main manifest: `/Users/maxbisschop/dev/www/notes2/public/manifest.webmanifest`
+- Icon directory: `/Users/maxbisschop/dev/www/notes2/public/icons/`
+- Icon notes: `/Users/maxbisschop/dev/www/notes2/docs/icons/icon-generation.md`
+- Secondary manifest-like file: `/Users/maxbisschop/dev/www/notes2/public/icons/site.webmanifest`
 
 ## Inputs/Outputs
 
@@ -32,7 +32,7 @@ Describe the icon assets, manifest files, and installability-related metadata us
    - background and theme colors
    - icon entries for 192px and 512px PNG assets
 3. `app.php` also links favicon assets and `apple-touch-icon.png` directly for iOS home-screen behavior.
-4. `icons/README.md` documents expected generated assets from the SVG icon source, including iOS and manifest sizes.
+4. `docs/icons/icon-generation.md` documents how to regenerate icon assets if a source image is available.
 5. `icons/site.webmanifest` exists as an additional manifest-style asset file and appears to reflect favicon-generator output rather than the main app manifest.
 
 ## Edge Cases/Failure Modes
@@ -49,10 +49,10 @@ Describe the icon assets, manifest files, and installability-related metadata us
 
 ## Related Files
 
-- `/Users/maxbisschop/dev/www/notes2/manifest.webmanifest`
+- `/Users/maxbisschop/dev/www/notes2/public/manifest.webmanifest`
 - `/Users/maxbisschop/dev/www/notes2/app.php`
-- `/Users/maxbisschop/dev/www/notes2/icons/README.md`
-- `/Users/maxbisschop/dev/www/notes2/icons/site.webmanifest`
-- `/Users/maxbisschop/dev/www/notes2/icons/apple-touch-icon.png`
-- `/Users/maxbisschop/dev/www/notes2/icons/icon-192.png`
-- `/Users/maxbisschop/dev/www/notes2/icons/android-chrome-512x512.png`
+- `/Users/maxbisschop/dev/www/notes2/docs/icons/icon-generation.md`
+- `/Users/maxbisschop/dev/www/notes2/public/icons/site.webmanifest`
+- `/Users/maxbisschop/dev/www/notes2/public/icons/apple-touch-icon.png`
+- `/Users/maxbisschop/dev/www/notes2/public/icons/icon-192.png`
+- `/Users/maxbisschop/dev/www/notes2/public/icons/android-chrome-512x512.png`

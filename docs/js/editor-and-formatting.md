@@ -6,11 +6,11 @@ Explain how the note editor manages rich-text content, HTML mode, formatting con
 
 ## Location
 
-- Editor HTML mode and serialization: `/Users/maxbisschop/dev/www/notes2/js/editor.js`
-- Toolbar actions and caret-aware formatting: `/Users/maxbisschop/dev/www/notes2/js/toolbar.js`
-- Simple insertion helpers: `/Users/maxbisschop/dev/www/notes2/js/insert.js`
-- Paste sanitization and markdown-aware import logic: `/Users/maxbisschop/dev/www/notes2/js/smart-paste.js`
-- PDF export rendering: `/Users/maxbisschop/dev/www/notes2/js/pdf-export.js`
+- Editor HTML mode and serialization: `/Users/maxbisschop/dev/www/notes2/public/js/editor.js`
+- Toolbar actions and caret-aware formatting: `/Users/maxbisschop/dev/www/notes2/public/js/toolbar.js`
+- Simple insertion helpers: `/Users/maxbisschop/dev/www/notes2/public/js/insert.js`
+- Paste sanitization and markdown-aware import logic: `/Users/maxbisschop/dev/www/notes2/public/js/smart-paste.js`
+- PDF export rendering: `/Users/maxbisschop/dev/www/notes2/public/js/pdf-export.js`
 
 ## Inputs/Outputs
 
@@ -80,12 +80,12 @@ Explain how the note editor manages rich-text content, HTML mode, formatting con
 
 ## Related Files
 
-- `/Users/maxbisschop/dev/www/notes2/js/editor.js`
-- `/Users/maxbisschop/dev/www/notes2/js/toolbar.js`
-- `/Users/maxbisschop/dev/www/notes2/js/insert.js`
-- `/Users/maxbisschop/dev/www/notes2/js/todos.js`
-- `/Users/maxbisschop/dev/www/notes2/js/smart-paste.js`
-- `/Users/maxbisschop/dev/www/notes2/js/markdown-import.js`
-- `/Users/maxbisschop/dev/www/notes2/js/pdf-export.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/editor.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/toolbar.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/insert.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/todos.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/smart-paste.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/markdown-import.js`
+- `/Users/maxbisschop/dev/www/notes2/public/js/pdf-export.js`
 - `/Users/maxbisschop/dev/www/notes2/api/config.php`
 - `/Users/maxbisschop/dev/www/notes2/api/sanitize.php`

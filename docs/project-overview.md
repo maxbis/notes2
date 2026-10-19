@@ -7,8 +7,9 @@ Document the overall structure of the Notes project so future feature docs have 
 ## Location
 
 - Source root: `/Users/maxbisschop/dev/www/notes2`
+- Web document root: `/Users/maxbisschop/dev/www/notes2/public`
 - Main authenticated app shell: `/Users/maxbisschop/dev/www/notes2/app.php`
-- Frontend entrypoint: `/Users/maxbisschop/dev/www/notes2/app.js`
+- Frontend entrypoint: `/Users/maxbisschop/dev/www/notes2/public/app.js`
 - API entrypoint: `/Users/maxbisschop/dev/www/notes2/api.php`
 - Public read-only page: `/Users/maxbisschop/dev/www/notes2/public.php`
 - Existing save doc: `/Users/maxbisschop/dev/www/notes2/docs/js/save-behavior.md`
@@ -18,7 +19,7 @@ Document the overall structure of the Notes project so future feature docs have 
 - Inputs:
   - authenticated browser requests to `app.php`
   - frontend fetch requests to `api.php`
-  - public note links to `public.php?id=...`
+  - public note links to `/public/?id=...`
   - database state in `notes`, `note_tags`, and `settings`
 - Outputs:
   - interactive note editor UI
@@ -28,13 +29,14 @@ Document the overall structure of the Notes project so future feature docs have 
 
 ## Flow/Behavior
 
-1. `index.php` redirects the browser to `app.php`.
-2. `app.php` renders the authenticated application shell and loads `app.js` plus shared styles from `style.css`.
-3. `app.js` wires together the frontend modules in `js/` for note loading, editing, saving, search, tags, sharing, import, export, and inspector behavior.
-4. Frontend data operations call `api.php`, which sets up error handling, opens the database connection, and dispatches to method-specific handlers in `api/handlers/`.
-5. API handlers use shared helpers in `api/` for sanitization, tags, settings, pinning, database access, and error formatting.
-6. `public.php` renders a sanitized note in a read-only layout and can optionally redirect to a configured default public note.
-7. `schema.sql` currently documents additive schema changes for settings, note tags, and pinning support.
+1. `public/index.php` redirects the browser to `app.php`.
+2. The PHP entrypoints in `public/` include their implementations from the source root, keeping configuration and helpers outside the document root.
+3. `app.php` renders the authenticated application shell and loads `public/app.js` plus shared styles from `public/style.css`.
+4. `public/app.js` wires together the frontend modules in `public/js/` for note loading, editing, saving, search, tags, sharing, import, export, and inspector behavior.
+5. Frontend data operations call `public/api.php`, which includes the API implementation and dispatches to method-specific handlers in `api/handlers/`.
+6. API handlers use shared helpers in `api/` for sanitization, tags, settings, pinning, database access, and error formatting.
+7. `public/public/index.php` includes `public.php` to render a sanitized note in a read-only layout.
+8. `schema.sql` currently documents additive schema changes for settings, note tags, and pinning support.
 
 ## Edge Cases/Failure Modes
 
@@ -56,11 +58,15 @@ Document the overall structure of the Notes project so future feature docs have 
 ## Related Files
 
 - `/Users/maxbisschop/dev/www/notes2/index.php`
+- `/Users/maxbisschop/dev/www/notes2/public/index.php`
+- `/Users/maxbisschop/dev/www/notes2/public/app.php`
+- `/Users/maxbisschop/dev/www/notes2/public/api.php`
+- `/Users/maxbisschop/dev/www/notes2/public/public/index.php`
 - `/Users/maxbisschop/dev/www/notes2/app.php`
-- `/Users/maxbisschop/dev/www/notes2/app.js`
-- `/Users/maxbisschop/dev/www/notes2/style.css`
+- `/Users/maxbisschop/dev/www/notes2/public/app.js`
+- `/Users/maxbisschop/dev/www/notes2/public/style.css`
 - `/Users/maxbisschop/dev/www/notes2/public.php`
 - `/Users/maxbisschop/dev/www/notes2/api.php`
 - `/Users/maxbisschop/dev/www/notes2/api/`
-- `/Users/maxbisschop/dev/www/notes2/js/`
+- `/Users/maxbisschop/dev/www/notes2/public/js/`
 - `/Users/maxbisschop/dev/www/notes2/schema.sql`

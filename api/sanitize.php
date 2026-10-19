@@ -44,8 +44,9 @@ function sanitize_note_html($html, $allowedTags, $allowedAttrsByTag, $forbiddenT
     }
 
     $allowedSet = array_fill_keys(array_map('strtolower', $allowedTags), true);
-    // Todo markers are application-owned structural HTML. Keep their narrow
-    // allowlist here because api/config.php is installation-local and ignored.
+    // Application-owned editor markup belongs here because api/config.php is
+    // installation-local and ignored.
+    $allowedSet['small'] = true;
     $allowedSet['span'] = true;
     $forbiddenSet = array_fill_keys(array_map('strtolower', $forbiddenTags), true);
     $indentClassTags = array_fill_keys(['div', 'p', 'h1', 'h2', 'h3', 'h4', 'li', 'blockquote', 'pre', 'td', 'th'], true);

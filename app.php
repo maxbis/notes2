@@ -147,6 +147,9 @@ $appVersion = (string) filemtime(__DIR__ . '/public/app.js');
                         <button class="toolbar-btn wp-icon-button" id="underlineBtn" title="Underline (Ctrl/Cmd+U)" aria-label="Underline">
                             <u>U</u>
                         </button>
+                        <button class="toolbar-btn wp-icon-button" id="smallTextBtn" title="Small text" aria-label="Small text" aria-pressed="false">
+                            <span class="small-text-icon" aria-hidden="true">A</span>
+                        </button>
                     </div>
                     <div class="toolbar-group" role="group" aria-label="Lists and indentation">
                         <button class="toolbar-btn wp-icon-button" id="bulletListBtn" title="Bullet List (;b)" aria-label="Bullet list">
@@ -157,17 +160,17 @@ $appVersion = (string) filemtime(__DIR__ . '/public/app.js');
                                 <circle cx="4" cy="18" r="1"/>
                             </svg>
                         </button>
+                        <button class="toolbar-btn wp-icon-button" id="numberedListBtn" title="Numbered List (;n)" aria-label="Numbered list">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M10 6h10M10 12h10M10 18h10M3 5h2v4M3 14h2l-2 4h2"/>
+                            </svg>
+                        </button>
                         <button class="toolbar-btn wp-icon-button" id="todoListBtn" title="Todo List (;t)" aria-label="Todo list" aria-pressed="false">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <rect x="2.5" y="4.5" width="4" height="4" rx="0.6"/>
                                 <rect x="2.5" y="10" width="4" height="4" rx="0.6"/>
                                 <rect x="2.5" y="15.5" width="4" height="4" rx="0.6"/>
                                 <path d="M10 6.5h11M10 12h11M10 17.5h11"/>
-                            </svg>
-                        </button>
-                        <button class="toolbar-btn wp-icon-button" id="numberedListBtn" title="Numbered List (;n)" aria-label="Numbered list">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M10 6h10M10 12h10M10 18h10M3 5h2v4M3 14h2l-2 4h2"/>
                             </svg>
                         </button>
                         <button class="toolbar-btn wp-icon-button mobile-toolbar-hidden" id="outdentBtn" title="Outdent list item (Shift+Tab)" aria-label="Outdent list item">
