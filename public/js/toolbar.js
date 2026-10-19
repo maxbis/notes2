@@ -226,7 +226,9 @@ function unwrapSmallTextInFragment(fragment) {
 }
 
 function wrapSmallTextFragment(fragment) {
-    if (!fragment?.hasChildNodes()) return null;
+    const hasContent = !!fragment
+        && ((fragment.textContent || '').length > 0 || !!fragment.querySelector?.('br'));
+    if (!hasContent) return null;
     const wrapper = document.createElement('small');
     wrapper.appendChild(fragment);
     return wrapper;
@@ -553,15 +555,14 @@ export function setupFormattingToolbar() {
 
                 const beforeSmall = wrapSmallTextFragment(beforeRange.cloneContents());
                 const afterSmall = wrapSmallTextFragment(afterRange.cloneContents());
-                const caretMarker = document.createElement('span');
+                const caretMarker = document.createTextNode('\u200B');
                 small.replaceWith(...[beforeSmall, caretMarker, afterSmall].filter(Boolean));
 
                 const nextRange = document.createRange();
-                nextRange.setStartBefore(caretMarker);
+                nextRange.setStart(caretMarker, caretMarker.data.length);
                 nextRange.collapse(true);
                 selection.removeAllRanges();
                 selection.addRange(nextRange);
-                caretMarker.remove();
             } else {
                 const startMarker = document.createElement('span');
                 const endMarker = document.createElement('span');
@@ -592,13 +593,22 @@ export function setupFormattingToolbar() {
                     ...[beforeSmall, selectionStart, selectedContents, selectionEnd, afterSmall].filter(Boolean)
                 );
 
+                const selectionParent = selectionStart.parentNode;
+                const selectionStartOffset = Array.prototype.indexOf.call(
+                    selectionParent.childNodes,
+                    selectionStart
+                );
+                const selectionEndOffset = Array.prototype.indexOf.call(
+                    selectionParent.childNodes,
+                    selectionEnd
+                );
+                selectionEnd.remove();
+                selectionStart.remove();
                 const nextRange = document.createRange();
-                nextRange.setStartAfter(selectionStart);
-                nextRange.setEndBefore(selectionEnd);
+                nextRange.setStart(selectionParent, selectionStartOffset);
+                nextRange.setEnd(selectionParent, selectionEndOffset - 1);
                 selection.removeAllRanges();
                 selection.addRange(nextRange);
-                selectionStart.remove();
-                selectionEnd.remove();
             }
         } else if (range.collapsed) {
             const wrapper = document.createElement('small');
