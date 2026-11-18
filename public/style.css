@@ -1500,6 +1500,13 @@ body.global-search-open {
     transform: rotate(45deg);
 }
 
+/* A padding <br> directly before the checkbox is invisible until the
+   completion label is painted after it. Hide that break so the label
+   stays on the last line of text. A break with text after it still shows. */
+.editor-content li.todo-item > br:has(+ .todo-checkbox) {
+    display: none;
+}
+
 .editor-content li.todo-item[data-todo-completed-at]::after {
     content: attr(data-todo-completed-label);
     margin-left: 0.55rem;

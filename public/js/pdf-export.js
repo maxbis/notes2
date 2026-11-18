@@ -148,6 +148,10 @@ const PRINT_DOCUMENT_STYLES = `
         text-align: center;
     }
 
+    .print-content li.todo-item > br:has(+ .todo-checkbox) {
+        display: none;
+    }
+
     .print-content li.todo-item[data-todo-completed-at]::after {
         content: attr(data-todo-completed-label);
         margin-left: 2mm;
